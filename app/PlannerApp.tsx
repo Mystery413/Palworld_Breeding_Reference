@@ -196,6 +196,8 @@ export default function PlannerApp() {
   const [maxBreedingSteps, setMaxBreedingSteps] = useState(4);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
+  const [isPaldexOpen, setPaldexOpen] = useState(false);
+  const [paldexSearch, setPaldexSearch] = useState("");
   const [isInventoryOpen, setInventoryOpen] = useState(false);
   const [draft, setDraft] = useState<DraftPal>(EMPTY_DRAFT);
   const [palSearch, setPalSearch] = useState("");
@@ -213,12 +215,13 @@ export default function PlannerApp() {
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (detailPalId) setDetailPalId("");
+      else if (isPaldexOpen) setPaldexOpen(false);
       else if (isInventoryOpen) setInventoryOpen(false);
       else setTargetPickerOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [detailPalId, isInventoryOpen]);
+  }, [detailPalId, isPaldexOpen, isInventoryOpen]);
 
   useEffect(() => {
     fetch("/data/breeding-data.json")
@@ -330,6 +333,14 @@ export default function PlannerApp() {
       .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }))
       .slice(0, 40);
   }, [data, targetSearch]);
+
+  const paldexOptions = useMemo(() => {
+    if (!data) return [];
+    const query = normalizedSearch(paldexSearch);
+    return data.pals
+      .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
+      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }));
+  }, [data, paldexSearch]);
 
   const passiveSuggestions = (query: string, selected: string[]) => {
     const normalized = normalizedSearch(query);
@@ -448,6 +459,7 @@ export default function PlannerApp() {
           <span><strong>帕鲁育种实验室</strong><small>PAL GENETICS · 1.0</small></span>
         </a>
         <nav className="topnav" aria-label="主导航">
+          <button onClick={() => setPaldexOpen(true)}>完整图鉴</button>
           <a href="#inventory">我的帕鲁</a>
           <a href="#planner">智能规划</a>
           <a href="#steps">操作清单</a>
@@ -464,6 +476,7 @@ export default function PlannerApp() {
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setInventoryOpen(true)}>+ 录入第一只帕鲁</button>
             <button className="ghost-button" onClick={loadExample}>用示例体验</button>
+            <button className="ghost-button" onClick={() => setPaldexOpen(true)}>浏览完整图鉴</button>
           </div>
         </div>
         <div className="hero-console" aria-label="规划器概览">
@@ -655,9 +668,34 @@ export default function PlannerApp() {
         </section>
       </div>}
 
+      {isPaldexOpen && <PaldexBrowserModal pals={paldexOptions} total={data?.pals.length ?? 0} query={paldexSearch} onQueryChange={setPaldexSearch} onOpenPal={setDetailPalId} onClose={() => setPaldexOpen(false)} />}
       {detailPal && <PalDetailModal pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );
+}
+
+function PaldexBrowserModal({ pals, total, query, onQueryChange, onOpenPal, onClose }: { pals: Pal[]; total: number; query: string; onQueryChange: (value: string) => void; onOpenPal: (id: string) => void; onClose: () => void }) {
+  return <div className="modal-backdrop paldex-browser-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <section className="paldex-browser-modal" role="dialog" aria-modal="true" aria-labelledby="paldex-browser-title">
+      <header>
+        <div><span>PALDECK · ALL ENTRIES</span><h2 id="paldex-browser-title">完整帕鲁图鉴</h2><p>任意帕鲁都可查看属性、工作适应性与栖息地图。</p></div>
+        <button onClick={onClose} aria-label="关闭完整图鉴">×</button>
+      </header>
+      <div className="paldex-browser-tools">
+        <label htmlFor="paldex-search">搜索图鉴</label>
+        <input id="paldex-search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="搜索中文名、英文名或图鉴编号" autoFocus />
+        <span>显示 <b>{pals.length}</b> / {total} 个条目</span>
+      </div>
+      <div className="paldex-grid" role="list">
+        {pals.map((pal) => <button key={pal.id} role="listitem" onClick={() => onOpenPal(pal.id)}>
+          <img src={pal.image} alt="" />
+          <span><small>No.{pal.dex}</small><strong>{pal.nameZh}</strong><em>{pal.name}</em></span>
+          <i>查看图鉴 →</i>
+        </button>)}
+        {!pals.length && <div className="paldex-empty">没有找到匹配的帕鲁，请换一个名称或编号。</div>}
+      </div>
+    </section>
+  </div>;
 }
 
 function SearchSuggestions({ items, query, onSelect, emptyText }: { items: string[]; query: string; onSelect: (value: string) => void; emptyText: string }) {
