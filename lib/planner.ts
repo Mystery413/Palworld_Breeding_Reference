@@ -31,6 +31,25 @@ export type Pal = {
   elements: string[];
   image: string;
   sourceUrl: string;
+  habitat?: {
+    catchable: boolean;
+    minLevel: number | null;
+    maxLevel: number | null;
+    dayCount: number;
+    nightCount: number;
+    worldTreeDayCount: number;
+    worldTreeNightCount: number;
+    summary: string;
+    locations: Array<{
+      world: "palpagos" | "worldTree";
+      x: number;
+      y: number;
+      time: "day" | "night" | "both";
+      level?: number;
+      boss?: boolean;
+    }>;
+    mapSourceUrl: string;
+  };
 };
 
 export type ComboTuple = [string, string, string, "WILDCARD" | "MALE" | "FEMALE", "WILDCARD" | "MALE" | "FEMALE"];
@@ -58,7 +77,7 @@ type PlanNode = {
   depth: number;
   eggSteps: number;
   totalExpectedEggs: number;
-  kind: "owned" | "bred";
+  kind: "owned" | "captured" | "bred";
   inventoryId?: string;
   nickname?: string;
   parents?: [PlanNode, PlanNode];
@@ -83,12 +102,13 @@ export type PlanStep = {
   potentialTargets: Potentials;
   expectedEggs: number;
   duplicateParent: boolean;
+  duplicateAction: "catch" | "breed" | null;
 };
 
 export type PlanParent = {
   nodeId: string;
   palId: string;
-  source: "owned" | "bred";
+  source: "owned" | "captured" | "bred";
   inventoryId?: string;
   nickname?: string;
   passives: string[];
@@ -96,12 +116,14 @@ export type PlanParent = {
 
 export type PlanResult = {
   node: PlanNode;
+  source: "owned" | "captured" | "bred";
   steps: PlanStep[];
   generations: number;
   breedingSteps: number;
   expectedEggs: number;
   coveredPassives: string[];
   missingPassives: string[];
+  captures: Array<{ palId: string; count: number }>;
 };
 
 export type Recommendation = PlanResult & {
@@ -118,6 +140,11 @@ type SearchResult = {
   statesByPal: Map<string, PlanNode[]>;
   desiredPassives: string[];
   fullMask: number;
+};
+
+export type SearchOptions = {
+  maxGenerations?: number;
+  catchablePalIds?: string[];
 };
 
 const INHERIT_ROLL: Record<number, number> = { 1: 0.4, 2: 0.3, 3: 0.2, 4: 0.1 };
@@ -230,9 +257,11 @@ export function searchBreedingPlans(
   data: BreedingData,
   inventory: InventoryPal[],
   requestedPassives: string[],
+  options: SearchOptions = {},
 ): SearchResult {
   const desiredPassives = unique(requestedPassives).slice(0, 4);
   const fullMask = desiredPassives.length ? (1 << desiredPassives.length) - 1 : 0;
+  const maxGenerations = Math.max(0, Math.min(4, options.maxGenerations ?? 4));
   const recipesByParent = new Map<string, number[]>();
   data.combos.forEach((combo, index) => {
     for (const parentId of new Set([combo[1], combo[2]])) {
@@ -276,6 +305,21 @@ export function searchBreedingPlans(
     });
   });
 
+  unique(options.catchablePalIds ?? []).forEach((palId) => {
+    addState({
+      nodeId: `captured:${palId}`,
+      palId,
+      sex: "A",
+      mask: 0,
+      passives: [],
+      depth: 0,
+      eggSteps: 0,
+      totalExpectedEggs: 0,
+      kind: "captured",
+      potentials: { hp: null, attack: null, defense: null },
+    });
+  });
+
   let cursor = 0;
   const maxQueuedStates = Math.max(25_000, data.pals.length * Math.max(1, 1 << desiredPassives.length) * 5);
   while (cursor < queue.length && queue.length < maxQueuedStates) {
@@ -297,19 +341,22 @@ export function searchBreedingPlans(
         const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
         const combinedChance = chance * ivChance;
         const duplicateParent = parentA.nodeId === parentB.nodeId;
+        const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
+        const depth = Math.max(parentA.depth, parentB.depth) + 1;
+        if (depth > maxGenerations) continue;
         const node: PlanNode = {
           nodeId: `bred:${generatedId++}`,
           palId: combo[0],
           sex: "A",
           mask,
           passives: inheritedPassives,
-          depth: Math.max(parentA.depth, parentB.depth) + 1,
-          eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateParent ? 1 : 0),
+          depth,
+          eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
           totalExpectedEggs:
             parentA.totalExpectedEggs +
             parentB.totalExpectedEggs +
             (combinedChance > 0 ? 1 / combinedChance : 9999) +
-            (duplicateParent ? 1 / Math.max(combinedChance, 0.01) : 0),
+            (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
           kind: "bred",
           parents: [parentA, parentB],
           combo,
@@ -367,6 +414,11 @@ function flattenSteps(node: PlanNode): PlanStep[] {
             potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
         ),
       duplicateParent: Boolean(current.duplicateParent),
+      duplicateAction: current.duplicateParent
+        ? current.parents[0].kind === "captured"
+          ? "catch"
+          : "breed"
+        : null,
     });
   };
   visit(node);
@@ -374,14 +426,30 @@ function flattenSteps(node: PlanNode): PlanStep[] {
 }
 
 function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: number): PlanResult {
+  const steps = flattenSteps(node);
+  const captureCounts = new Map<string, number>();
+  if (node.kind === "captured") captureCounts.set(node.palId, 1);
+  for (const step of steps) {
+    const countsInStep = new Map<string, number>();
+    for (const parent of [step.parentA, step.parentB]) {
+      if (parent.source === "captured") {
+        countsInStep.set(parent.palId, (countsInStep.get(parent.palId) ?? 0) + 1);
+      }
+    }
+    for (const [palId, count] of countsInStep) {
+      captureCounts.set(palId, Math.max(captureCounts.get(palId) ?? 0, count));
+    }
+  }
   return {
     node,
-    steps: flattenSteps(node),
+    source: node.kind,
+    steps,
     generations: node.depth,
     breedingSteps: node.eggSteps,
     expectedEggs: node.totalExpectedEggs,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),
+    captures: [...captureCounts].map(([palId, count]) => ({ palId, count })),
   };
 }
 
@@ -432,6 +500,7 @@ export function recommendTargets(
       qualityScore +
       coverage * 24 -
       plan.missingPassives.length * 34 -
+      plan.captures.length * 2.5 -
       plan.generations * 7 -
       Math.log2(Math.max(1, plan.expectedEggs)) * 2.5;
     results.push({ ...plan, pal, score, qualityScore, profile });

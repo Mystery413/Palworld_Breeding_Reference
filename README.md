@@ -6,6 +6,9 @@
 
 - 299 个 1.0 帕鲁条目及简体中文名
 - 按物种、性别和被动词条计算可达图谱
+- 支持库存与当前等级可挑战的野外种源混合规划
+- 所有路线严格限制在四代以内
+- 内置帕洛斯群岛与世界树地图、昼夜分布点和出没等级
 - 支持性别限定特殊配方
 - 系统推荐与指定目标两种规划模式
 - 按战斗、输出、据点和全能四种目标评分
@@ -30,9 +33,10 @@ npm run check
 
 ## 数据更新
 
-前端运行时数据由仓库根目录 CSV 与 `data/pal-metadata-1.0.json` 合并生成：
+前端运行时数据由仓库根目录 CSV 与 `data/pal-metadata-1.0.json` 合并生成。更新栖息地快照后再构建浏览器数据：
 
 ```bash
+python3 scripts/enrich_habitats.py
 python3 scripts/build_dataset.py
 ```
 
@@ -40,7 +44,7 @@ python3 scripts/build_dataset.py
 
 ## 规则边界
 
-路线规划直接查 1.0 组合表，不用旧版配种力公式猜测结果。普通蛋糕的干净词条池概率按 1/2/3/4 个目标词条分别为 40%/24%/12%/10% 估算；功能蛋糕、突变和未公布倍率不会被伪装成精确概率。潜力值目前用于个体记录与步骤提示，不进入物种最短路权重。
+路线规划直接查 1.0 组合表，不用旧版配种力公式猜测结果。搜索深度最多四代；允许补抓时，仅把最低出没等级不高于“玩家当前等级＋8”的帕鲁作为起始种源。普通蛋糕的干净词条池概率按 1/2/3/4 个目标词条分别为 40%/24%/12%/10% 估算；功能蛋糕、突变和未公布倍率不会被伪装成精确概率。
 
 详细依据见仓库根目录的 `PALWORLD_BREEDING_MECHANICS_1_0.md`。
 
@@ -49,6 +53,7 @@ python3 scripts/build_dataset.py
 - [Palworld v1.0 官方更新说明（Steam）](https://store.steampowered.com/news/app/1623730/view/686383649529010623)
 - [Palworld Wiki 配种机制](https://palworld.wiki.gg/wiki/Breeding)
 - [PalDB 当前帕鲁数据](https://paldb.cc/en/Pals)
+- [PalDB 1.0 栖息地图与分布数据](https://paldb.cc/cn/Palpagos_Islands)
 - [PalDB 被动技能中文表](https://paldb.cc/cn/Passive_Skills)
 - [Pal Breeding Calculator 1.0](https://palbreedingcalculator.org)
 

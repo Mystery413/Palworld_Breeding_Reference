@@ -89,6 +89,35 @@ test("性别限定配方严格匹配父母位置", () => {
   assert.equal(findTargetPlan(searchBreedingPlans(data, invalid, []), "C"), null);
 });
 
+test("路线最多允许四代，五代目标不会被误报可达", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["D", "C", "B", "WILDCARD", "WILDCARD"],
+    ["E", "D", "B", "WILDCARD", "WILDCARD"],
+    ["F", "E", "B", "WILDCARD", "WILDCARD"],
+    ["G", "F", "B", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "a", palId: "A", sex: "M", passives: ["甲"] },
+    { id: "b", palId: "B", sex: "F", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, ["甲"], { maxGenerations: 4 });
+  assert.equal(findTargetPlan(search, "F")?.generations, 4);
+  assert.equal(findTargetPlan(search, "G"), null);
+});
+
+test("规划器可以把符合等级限制的待捕捉帕鲁作为种源", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const inventory: InventoryPal[] = [{ id: "a", palId: "A", sex: "M", passives: ["甲"] }];
+  const withoutCapture = searchBreedingPlans(data, inventory, ["甲"], { maxGenerations: 4 });
+  const withCapture = searchBreedingPlans(data, inventory, ["甲"], { maxGenerations: 4, catchablePalIds: ["B"] });
+  assert.equal(findTargetPlan(withoutCapture, "C"), null);
+  const plan = findTargetPlan(withCapture, "C");
+  assert.ok(plan);
+  assert.deepEqual(plan.captures, [{ palId: "B", count: 1 }]);
+  assert.equal(plan.steps[0].parentB.source, "captured");
+});
+
 test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
   const data = JSON.parse(await readFile(new URL("../public/data/breeding-data.json", import.meta.url), "utf8")) as BreedingData;
   const inventory: InventoryPal[] = [
@@ -113,4 +142,19 @@ test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
       assert.ok(step.chance > 0 && step.chance <= 1);
     }
   }
+});
+
+test("全量 1.0 图谱只引入玩家等级加八以内的野外种源", async () => {
+  const data = JSON.parse(await readFile(new URL("../public/data/breeding-data.json", import.meta.url), "utf8")) as BreedingData;
+  const playerLevel = 12;
+  const catchablePalIds = data.pals
+    .filter((pal) => pal.habitat?.catchable && pal.habitat.minLevel != null && pal.habitat.minLevel <= playerLevel + 8)
+    .map((pal) => pal.id);
+  assert.ok(catchablePalIds.length > 0);
+  assert.ok(catchablePalIds.every((palId) => (data.pals.find((pal) => pal.id === palId)?.habitat?.minLevel ?? 999) <= 20));
+  const search = searchBreedingPlans(data, [], [], { maxGenerations: 4, catchablePalIds });
+  const recommendations = recommendTargets(data, search, "combat", 5);
+  assert.ok(recommendations.length > 0);
+  assert.ok(recommendations.every((result) => result.generations <= 4));
+  assert.ok(recommendations.flatMap((result) => result.captures).every((capture) => catchablePalIds.includes(capture.palId)));
 });
