@@ -37,6 +37,8 @@ export type Pal = {
     maxLevel: number | null;
     wildMinLevel?: number | null;
     wildMaxLevel?: number | null;
+    commonWildMinLevel?: number | null;
+    commonWildMaxLevel?: number | null;
     bossMinLevel?: number | null;
     bossMaxLevel?: number | null;
     dayCount: number;
@@ -91,6 +93,7 @@ type PlanNode = {
   duplicateParent?: boolean;
   potentials: Potentials;
   captureSources: CaptureSource[];
+  breedingStepIds: string[];
 };
 
 export type CaptureSource = {
@@ -105,8 +108,10 @@ export function selectCaptureSource(pal: Pal, levelLimit: number): CaptureSource
   const habitat = pal.habitat;
   if (!habitat?.catchable) return null;
   const candidates: CaptureSource[] = [];
-  if (habitat.wildMinLevel != null && habitat.wildMinLevel <= levelLimit) {
-    candidates.push({ palId: pal.id, level: habitat.wildMinLevel, maxLevel: Math.min(levelLimit, habitat.wildMaxLevel ?? habitat.wildMinLevel), kind: "wild", difficulty: habitat.wildMinLevel });
+  const commonWildMin = habitat.commonWildMinLevel ?? habitat.wildMinLevel;
+  const commonWildMax = habitat.commonWildMaxLevel ?? habitat.wildMaxLevel;
+  if (commonWildMin != null && commonWildMin <= levelLimit) {
+    candidates.push({ palId: pal.id, level: commonWildMin, maxLevel: Math.min(levelLimit, commonWildMax ?? commonWildMin), kind: "wild", difficulty: commonWildMin });
   }
   if (habitat.bossMinLevel != null && habitat.bossMinLevel <= levelLimit) {
     candidates.push({ palId: pal.id, level: habitat.bossMinLevel, maxLevel: Math.min(levelLimit, habitat.bossMaxLevel ?? habitat.bossMinLevel), kind: "alpha", difficulty: habitat.bossMinLevel + 18 });
@@ -172,6 +177,7 @@ type SearchResult = {
 
 export type SearchOptions = {
   maxGenerations?: number;
+  maxBreedingSteps?: number;
   catchablePalIds?: string[];
   captureSources?: CaptureSource[];
 };
@@ -307,7 +313,8 @@ export function searchBreedingPlans(
 ): SearchResult {
   const desiredPassives = unique(requestedPassives).slice(0, 4);
   const fullMask = desiredPassives.length ? (1 << desiredPassives.length) - 1 : 0;
-  const maxGenerations = Math.max(0, Math.min(4, options.maxGenerations ?? 4));
+  const maxBreedingSteps = Math.max(0, Math.min(12, options.maxBreedingSteps ?? 4));
+  const maxGenerations = Math.max(0, Math.min(12, options.maxGenerations ?? maxBreedingSteps));
   const recipesByParent = new Map<string, number[]>();
   data.combos.forEach((combo, index) => {
     for (const parentId of new Set([combo[1], combo[2]])) {
@@ -349,6 +356,7 @@ export function searchBreedingPlans(
       nickname: item.nickname,
       potentials: { hp: item.hp ?? null, attack: item.attack ?? null, defense: item.defense ?? null },
       captureSources: [],
+      breedingStepIds: [],
     });
   });
 
@@ -377,6 +385,7 @@ export function searchBreedingPlans(
       kind: "captured",
       potentials: { hp: null, attack: null, defense: null },
       captureSources: [source],
+      breedingStepIds: [],
     });
   });
 
@@ -404,8 +413,11 @@ export function searchBreedingPlans(
         const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
         const depth = Math.max(parentA.depth, parentB.depth) + 1;
         if (depth > maxGenerations) continue;
+        const nodeId = `bred:${generatedId++}`;
+        const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
+        if (breedingStepIds.length > maxBreedingSteps) continue;
         const node: PlanNode = {
-          nodeId: `bred:${generatedId++}`,
+          nodeId,
           palId: combo[0],
           sex: "A",
           mask,
@@ -424,6 +436,7 @@ export function searchBreedingPlans(
           duplicateParent,
           potentials,
           captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
+          breedingStepIds,
         };
         addState(node);
       }
@@ -507,7 +520,7 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     source: node.kind,
     steps,
     generations: node.depth,
-    breedingSteps: node.eggSteps,
+    breedingSteps: node.breedingStepIds.length,
     expectedEggs: node.totalExpectedEggs,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),

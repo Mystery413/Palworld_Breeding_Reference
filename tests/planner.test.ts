@@ -107,6 +107,26 @@ test("路线最多允许四代，五代目标不会被误报可达", () => {
   assert.equal(findTargetPlan(search, "G"), null);
 });
 
+test("默认限制页面实际显示为四个步骤，并允许手动放宽", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["D", "E", "F", "WILDCARD", "WILDCARD"],
+    ["G", "H", "I", "WILDCARD", "WILDCARD"],
+    ["J", "C", "D", "WILDCARD", "WILDCARD"],
+    ["K", "J", "G", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = ["A", "B", "E", "F", "H", "I"].map((palId, index) => ({
+    id: palId,
+    palId,
+    sex: index % 2 ? "F" : "M",
+    passives: [],
+  }));
+  assert.equal(findTargetPlan(searchBreedingPlans(data, inventory, []), "K"), null);
+  const expanded = findTargetPlan(searchBreedingPlans(data, inventory, [], { maxBreedingSteps: 5, maxGenerations: 5 }), "K");
+  assert.ok(expanded);
+  assert.equal(expanded.steps.length, 5);
+});
+
 test("规划器可以把符合等级限制的待捕捉帕鲁作为种源", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const inventory: InventoryPal[] = [{ id: "a", palId: "A", sex: "M", passives: ["甲"] }];
@@ -128,6 +148,8 @@ test("捕捉来源严格排除等级上限外目标，并区分普通野生与 A
     maxLevel: 40,
     wildMinLevel: 31,
     wildMaxLevel: 40,
+    commonWildMinLevel: 31,
+    commonWildMaxLevel: 33,
     bossMinLevel: 20,
     bossMaxLevel: 20,
     dayCount: 1,
@@ -142,6 +164,7 @@ test("捕捉来源严格排除等级上限外目标，并区分普通野生与 A
   assert.equal(selectCaptureSource(pal, 20)?.kind, "alpha");
   assert.equal(selectCaptureSource(pal, 20)?.level, 20);
   assert.equal(selectCaptureSource(pal, 31)?.kind, "wild");
+  assert.equal(selectCaptureSource(pal, 31)?.maxLevel, 31);
 });
 
 test("同一目标存在多条路线时优先普通低等级种源，避免高难度 Alpha", () => {
@@ -202,5 +225,6 @@ test("全量 1.0 图谱只引入玩家等级加八以内的野外种源", async 
   const recommendations = recommendTargets(data, search, "combat", 5);
   assert.ok(recommendations.length > 0);
   assert.ok(recommendations.every((result) => result.generations <= 4));
+  assert.ok(recommendations.every((result) => result.steps.length <= 4));
   assert.ok(recommendations.flatMap((result) => result.captures).every((capture) => capture.level <= 20 && capture.maxLevel <= 20));
 });

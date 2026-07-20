@@ -148,7 +148,8 @@ button { color: inherit; }
 .capture-toggle b { font-size: 11px; }
 .capture-toggle small { color: #8190a6; font-size: 9px; margin-top: 4px; }
 .generation-cap { align-items: center; border: 1px solid rgba(210,255,88,.3); border-radius: 12px; display: flex; gap: 9px; padding: 10px 14px; }
-.generation-cap > b { color: var(--lime); font-family: Georgia, serif; font-size: 32px; }
+.generation-cap select { appearance: none; background: transparent; border: 0; color: var(--lime); cursor: pointer; font-family: Georgia, serif; font-size: 32px; font-weight: 800; outline: none; padding: 0 18px 0 2px; }
+.generation-cap select option { color: var(--ink); }
 .generation-cap span { display: flex; flex-direction: column; font-size: 9px; white-space: nowrap; }
 .generation-cap small { color: #8190a6; font-size: 8px; margin-top: 3px; }
 .goal-builder { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 30px rgba(16,26,42,.04); margin-bottom: 34px; padding: 22px; }
@@ -348,6 +349,8 @@ button { color: inherit; }
 .map-tools { align-items: center; }
 .map-tools b { color: #526171; font-family: inherit; font-size: 8px; min-width: 30px; text-align: center; }
 .habitat-map { aspect-ratio: 1; background: #101a26; border: 1px solid #24364a; border-radius: 16px; box-shadow: inset 0 0 40px rgba(0,0,0,.35); max-height: 650px; overflow: auto; position: relative; width: 100%; }
+.habitat-map.draggable { cursor: grab; touch-action: none; user-select: none; }
+.habitat-map.dragging { cursor: grabbing; }
 .map-canvas { min-height: 100%; min-width: 100%; position: relative; }
 .map-canvas > img { display: block; height: 100%; object-fit: fill; width: 100%; }
 .map-points { inset: 0; position: absolute; }

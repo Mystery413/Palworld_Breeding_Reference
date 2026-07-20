@@ -75,6 +75,7 @@ type SavedState = {
   exactTargetId: string;
   playerLevel: number;
   allowCapture: boolean;
+  maxBreedingSteps: number;
 };
 
 type DraftPal = {
@@ -192,6 +193,7 @@ export default function PlannerApp() {
   const [exactTargetId, setExactTargetId] = useState("");
   const [playerLevel, setPlayerLevel] = useState(20);
   const [allowCapture, setAllowCapture] = useState(true);
+  const [maxBreedingSteps, setMaxBreedingSteps] = useState(4);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
   const [isInventoryOpen, setInventoryOpen] = useState(false);
@@ -240,6 +242,7 @@ export default function PlannerApp() {
           if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
           if (typeof parsed.playerLevel === "number") setPlayerLevel(Math.max(1, Math.min(80, parsed.playerLevel)));
           if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+          if (typeof parsed.maxBreedingSteps === "number") setMaxBreedingSteps(Math.max(1, Math.min(12, parsed.maxBreedingSteps)));
         }
       } catch {
         setNotice("本地存档无法读取，已使用空白库存。你可以重新录入或导入备份。");
@@ -251,9 +254,9 @@ export default function PlannerApp() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const saved: SavedState = { inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture };
+    const saved: SavedState = { inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }, [inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, isHydrated]);
+  }, [inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps, isHydrated]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)), [inventory]);
@@ -278,7 +281,7 @@ export default function PlannerApp() {
           setCalculating(false);
           return;
         }
-        const result = searchBreedingPlans(data, inventory, desiredPassives, { maxGenerations: 4, captureSources });
+        const result = searchBreedingPlans(data, inventory, desiredPassives, { maxGenerations: maxBreedingSteps, maxBreedingSteps, captureSources });
         if (!cancelled) {
           setSearch(result);
           setCalculating(false);
@@ -289,7 +292,7 @@ export default function PlannerApp() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [data, inventory, desiredPassives, captureSources]);
+  }, [data, inventory, desiredPassives, captureSources, maxBreedingSteps]);
 
   const recommendations = useMemo(() => {
     if (!data || !search) return [];
@@ -383,12 +386,13 @@ export default function PlannerApp() {
     setProfile("combat");
     setPlayerLevel(20);
     setAllowCapture(true);
+    setMaxBreedingSteps(4);
     setMode("recommend");
     setNotice("示例已载入：5 只前期帕鲁，各携带一个高阶词条。可以直接查看推荐路线。 ");
   };
 
   const exportJson = () => {
-    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 2, inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture }, null, 2), "application/json");
+    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 3, inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps }, null, 2), "application/json");
   };
 
   const exportCsv = () => {
@@ -410,6 +414,7 @@ export default function PlannerApp() {
         if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
         if (typeof parsed.playerLevel === "number") setPlayerLevel(parsed.playerLevel);
         if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+        if (typeof parsed.maxBreedingSteps === "number") setMaxBreedingSteps(Math.max(1, Math.min(12, parsed.maxBreedingSteps)));
       } else {
         const imported = parseInventoryCsv(text, data.pals);
         if (!imported.length) throw new Error("no rows");
@@ -448,14 +453,14 @@ export default function PlannerApp() {
           <a href="#steps">操作清单</a>
           <a href="#mechanics">机制说明</a>
         </nav>
-        <div className="data-badge"><i /> 1.0 数据 · 最多 4 代</div>
+        <div className="data-badge"><i /> 1.0 数据 · 默认 4 步</div>
       </header>
 
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow">BREED SMARTER, NOT HARDER</p>
           <h1>把散落的彩色词条，<br /><em>炼成你的终极帕鲁。</em></h1>
-          <p className="hero-lede">录入已有的低阶帕鲁、性别、词条与潜力，再告诉我你的等级。系统会综合库存和当前打得过的野外种源，在 44,486 条 1.0 配方中搜索最多四代路线。</p>
+          <p className="hero-lede">录入已有的低阶帕鲁、性别、词条与潜力，再告诉我你的等级。系统会综合库存和当前打得过的野外种源，在 44,486 条 1.0 配方中默认搜索最多四个实际配种步骤。</p>
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setInventoryOpen(true)}>+ 录入第一只帕鲁</button>
             <button className="ghost-button" onClick={loadExample}>用示例体验</button>
@@ -472,7 +477,7 @@ export default function PlannerApp() {
             <span>目标基因组</span>
             <div>{desiredPassives.length ? desiredPassives.map((passive, index) => <b key={passive} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>尚未设置目标词条</i>}</div>
           </div>
-          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? "正在搜索四代路线…" : "配种图谱已就绪"}</div>
+          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `正在搜索 ${maxBreedingSteps} 步路线…` : "配种图谱已就绪"}</div>
         </div>
       </section>
 
@@ -524,10 +529,10 @@ export default function PlannerApp() {
             <div className="level-control">
               <span>你的当前等级</span>
               <label><input type="number" min="1" max="80" value={playerLevel} onChange={(event) => setPlayerLevel(Math.max(1, Math.min(80, Number(event.target.value) || 1)))} /><b>级</b></label>
-              <small>严格排除所有最低可捕捉等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪，尽量避开 Alpha Boss。</small>
+              <small>严格排除常见野生等级或 Boss 等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪。</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
-            <div className="generation-cap"><b>4</b><span>最多繁殖代数<small>超过四代的路线自动排除</small></span></div>
+            <label className="generation-cap"><select value={maxBreedingSteps} onChange={(event) => setMaxBreedingSteps(Number(event.target.value))}>{[2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最多实际步骤<small>默认 4 步，也可手动放宽</small></span></label>
           </div>
 
           <div className="goal-builder">
@@ -573,7 +578,7 @@ export default function PlannerApp() {
               <span>◎</span><h3>暂时没有可用种源</h3><p>录入一只已有帕鲁，或打开“允许途中补抓帕鲁”后再计算路线。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>
           ) : !data || !search || isCalculating ? (
-            <div className="planner-empty"><span className="spinner">◌</span><h3>正在计算四代可达图谱</h3><p>正在合并库存、等级限制与 44,486 条配方，通常需要几秒。</p></div>
+            <div className="planner-empty"><span className="spinner">◌</span><h3>正在计算 {maxBreedingSteps} 步可达图谱</h3><p>正在合并库存、等级限制与 44,486 条配方，步数越多计算时间越长。</p></div>
           ) : mode === "recommend" ? (
             <div className="recommendations">
               <div className="result-title"><div><span>03</span><h2>当前最值得孵化</h2></div><small>综合强度 − 路线成本 − 缺失词条</small></div>
@@ -582,14 +587,14 @@ export default function PlannerApp() {
                   <span className="rank">#{index + 1}</span>
                   <img src={item.pal.image} alt="" />
                   <div className="recommend-name"><strong>{item.pal.nameZh}</strong><small>{item.pal.name} · No.{item.pal.dex}</small></div>
-                  <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.generations}</b>代</span><span><b>{item.captures.reduce((sum, capture) => sum + capture.count, 0)}</b>补抓</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
+                  <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.steps.length}</b>步</span><span><b>{item.captures.reduce((sum, capture) => sum + capture.count, 0)}</b>补抓</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
                   <div className="scorebar"><i style={{ width: `${Math.max(8, Math.min(100, item.score / 2.1))}%` }} /></div>
                 </button>)}
               </div> : <div className="no-route">没有找到满足当前性别条件的配种入口。补录另一性别个体，或先指定一个已有帕鲁作为目标。</div>}
             </div>
           ) : (
             <div className="exact-result">
-              {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示库存＋可捕捉种源范围内的四代最短路线。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前四代内不可达</strong><span>在等级限制和现有词条种源下没有找到路线。提高等级、补录库存，或调整目标词条后重试。</span></div> : <TargetOverview pal={activePal} result={exactPlan} desiredCount={desiredPassives.length} />}
+              {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示库存＋可捕捉种源范围内不超过 {maxBreedingSteps} 步的路线。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxBreedingSteps} 步内不可达</strong><span>可以提高步骤上限、等级、补录库存，或调整目标词条后重试。</span></div> : <TargetOverview pal={activePal} result={exactPlan} desiredCount={desiredPassives.length} />}
             </div>
           )}
 
@@ -603,7 +608,7 @@ export default function PlannerApp() {
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
           <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>四代内允许补抓</h3><p>野外种源最低等级必须不高于你的等级＋8；路线会先列出要抓谁，再逐代筛选词条、性别和潜力。</p></article>
+          <article><b>04</b><h3>默认最多四步</h3><p>限制的是页面实际展示的配种步骤，不是代数；需要时可手动放宽。野外种源常见等级仍必须不高于你的等级＋8。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
@@ -666,8 +671,8 @@ function TargetOverview({ pal, result, desiredCount }: { pal?: Pal; result: Plan
   if (!pal) return null;
   return <article className="target-overview">
     <img src={pal.image} alt="" />
-    <div><span>指定目标路线</span><h3>{pal.nameZh} <small>{pal.name}</small></h3><p>{result.generations ? `结合库存与可捕捉种源，需要 ${result.generations} 代。` : result.source === "captured" ? "当前等级允许直接捕捉。" : "你已经拥有这个目标。"}</p></div>
-    <div className="overview-metrics"><span><b>{result.generations}</b>代数</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>词条</span><span><b>{formatNumber(result.expectedEggs)}</b>预计蛋数</span></div>
+    <div><span>指定目标路线</span><h3>{pal.nameZh} <small>{pal.name}</small></h3><p>{result.steps.length ? `结合库存与可捕捉种源，需要 ${result.steps.length} 个配种步骤。` : result.source === "captured" ? "当前等级允许直接捕捉。" : "你已经拥有这个目标。"}</p></div>
+    <div className="overview-metrics"><span><b>{result.steps.length}</b>实际步骤</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>词条</span><span><b>{formatNumber(result.expectedEggs)}</b>预计蛋数</span></div>
   </article>;
 }
 
@@ -739,6 +744,9 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
   const [world, setWorld] = useState<"palpagos" | "worldTree">(worlds[0] ?? "palpagos");
   const [imageExpanded, setImageExpanded] = useState(false);
   const [mapZoom, setMapZoom] = useState(1);
+  const [mapDragging, setMapDragging] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
   const locations = habitat?.locations.filter((location) => location.world === world) ?? [];
   const bounds = MAP_BOUNDS[world];
   const pointStyle = (location: (typeof locations)[number]) => ({
@@ -747,8 +755,23 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
   });
   const workEntries = Object.entries(pal.work).sort((a, b) => b[1] - a[1]);
   const range = (min?: number | null, max?: number | null) => min == null ? "无记录" : max != null && max > min ? `Lv.${min}–${max}` : `Lv.${min}`;
-  const wildRange = range(habitat?.wildMinLevel, habitat?.wildMaxLevel);
+  const wildRange = range(habitat?.commonWildMinLevel ?? habitat?.wildMinLevel, habitat?.commonWildMaxLevel ?? habitat?.wildMaxLevel);
   const bossRange = range(habitat?.bossMinLevel, habitat?.bossMaxLevel);
+  const startMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (mapZoom <= 1 || !mapRef.current) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { x: event.clientX, y: event.clientY, left: mapRef.current.scrollLeft, top: mapRef.current.scrollTop };
+    setMapDragging(true);
+  };
+  const moveMap = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mapDragging || !mapRef.current) return;
+    mapRef.current.scrollLeft = dragRef.current.left - (event.clientX - dragRef.current.x);
+    mapRef.current.scrollTop = dragRef.current.top - (event.clientY - dragRef.current.y);
+  };
+  const stopMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    setMapDragging(false);
+  };
 
   return <div className="modal-backdrop detail-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="pal-detail-modal" role="dialog" aria-modal="true" aria-labelledby="pal-detail-title">
@@ -758,17 +781,17 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
       </header>
       <div className="detail-layout">
         <div className="habitat-map-panel">
-          <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
-          {locations.length ? <div className="habitat-map">
+          <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss · 放大后按住拖动</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
+          {locations.length ? <div ref={mapRef} className={`habitat-map ${mapZoom > 1 ? "draggable" : ""} ${mapDragging ? "dragging" : ""}`} onPointerDown={startMapDrag} onPointerMove={moveMap} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag}>
             <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={world === "palpagos" ? "/palpagos-map.webp" : "/world-tree-map.webp"} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
             <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div></div>
           </div> : <div className="no-habitat-map">当前 1.0 数据没有记录普通野外分布；它可能只能通过配种、事件、召唤或其他特殊方式获得。</div>}
-          <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>普通野生 <b>{wildRange}</b></span><span>Alpha Boss <b>{bossRange}</b></span></div>
+          <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>常见野生 <b>{wildRange}</b></span><span>Alpha Boss <b>{bossRange}</b></span></div>
         </div>
         <aside className="paldex-info">
           <div className="paldex-stats"><span><b>{pal.stats.hp ?? "—"}</b>生命</span><span><b>{pal.stats.attack ?? "—"}</b>攻击</span><span><b>{pal.stats.defense ?? "—"}</b>防御</span></div>
           <section><h3>图鉴说明</h3><p>{habitat?.summary || "暂无说明。"}</p></section>
-          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生</b><strong>{wildRange}</strong><small>优先作为补抓种源；相同等级通常比 Alpha 更容易处理。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高，规划时会额外增加难度惩罚。</small></span></div><p>路线会严格排除最低等级超过“你的等级＋8”的来源；若普通野怪和 Boss 都可选，会综合等级后优先低难度来源。</p></section>
+          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高，规划时会额外增加难度惩罚。</small></span></div><p>路线会用“常见野生等级”判断是否超过你的等级＋8，不再用极少见的最低等级或跨区域最高等级。</p></section>
           <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => { const copy = WORK_COPY[name] ?? { label: name, icon: "◆", color: "#687686" }; return <span key={name} style={{ "--work-color": copy.color } as React.CSSProperties}><i>{copy.icon}</i><b>{copy.label}</b><strong>Lv.{level}</strong></span>; }) : <small>无据点工作数据</small>}</div></section>
           <section className="source-note"><h3>1.0 数据说明</h3><p>点位与等级快照采集于 2026-07-20。野外等级会受世界设置、地下城和特殊事件影响。</p>{habitat?.mapSourceUrl && <a href={habitat.mapSourceUrl} target="_blank" rel="noreferrer">在 PalDB 核对原始分布 ↗</a>}</section>
         </aside>

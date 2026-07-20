@@ -14,6 +14,7 @@ import ssl
 import time
 import urllib.error
 import urllib.request
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -81,18 +82,21 @@ def in_bounds(point: dict[str, Any], bounds: tuple[float, float, float, float]) 
     return min_x <= float(point.get("X", 0)) <= max_x and min_y <= float(point.get("Y", 0)) <= max_y
 
 
-def compact_locations(distribution: dict[str, Any]) -> tuple[list[dict[str, Any]], list[int]]:
+def compact_locations(distribution: dict[str, Any]) -> tuple[list[dict[str, Any]], list[int], list[int]]:
     merged: dict[tuple[int, int], dict[str, Any]] = {}
     all_levels: list[int] = []
+    palpagos_levels: list[int] = []
     for phase, key in (("day", "dayTimeLocations"), ("night", "nightTimeLocations")):
         for raw in distribution.get(key, {}).get("Locations", []):
             if not isinstance(raw, dict) or "X" not in raw or "Y" not in raw:
                 continue
-            if isinstance(raw.get("lv"), (int, float)) and 0 < int(raw["lv"]) <= 100:
-                all_levels.append(int(raw["lv"]))
             world = "palpagos" if in_bounds(raw, PALPAGOS_BOUNDS) else "worldTree" if in_bounds(raw, WORLD_TREE_BOUNDS) else ""
             if not world:
                 continue
+            if isinstance(raw.get("lv"), (int, float)) and 0 < int(raw["lv"]) <= 100:
+                all_levels.append(int(raw["lv"]))
+                if world == "palpagos":
+                    palpagos_levels.append(int(raw["lv"]))
             identity = (round(float(raw["X"])), round(float(raw["Y"])))
             current = merged.setdefault(identity, {
                 "world": world,
@@ -113,7 +117,26 @@ def compact_locations(distribution: dict[str, Any]) -> tuple[list[dict[str, Any]
             step = len(points) / MAX_POINTS_PER_WORLD
             points = [points[min(len(points) - 1, int(index * step))] for index in range(MAX_POINTS_PER_WORLD)]
         sampled.extend(points)
-    return sampled, all_levels
+    return sampled, all_levels, palpagos_levels
+
+
+def common_level_range(levels: list[int]) -> tuple[int | None, int | None]:
+    """Return the earliest well-represented habitat cluster, excluding outliers."""
+    if not levels:
+        return None, None
+    counts = Counter(levels)
+    clusters: list[list[int]] = []
+    for level in sorted(counts):
+        if not clusters or level - clusters[-1][-1] > 3:
+            clusters.append([level])
+        else:
+            clusters[-1].append(level)
+    weighted = [(cluster, sum(counts[level] for level in cluster)) for cluster in clusters]
+    strongest = max(weight for _, weight in weighted)
+    minimum_weight = max(3, strongest * 0.12)
+    candidates = [cluster for cluster, weight in weighted if weight >= minimum_weight]
+    chosen = min(candidates, key=lambda cluster: cluster[0]) if candidates else max(weighted, key=lambda item: item[1])[0]
+    return min(chosen), max(chosen)
 
 
 def load_alpha_lookup() -> dict[str, list[dict[str, Any]]]:
@@ -186,6 +209,8 @@ def enrich_pal(pal: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         "maxLevel": None,
         "wildMinLevel": None,
         "wildMaxLevel": None,
+        "commonWildMinLevel": None,
+        "commonWildMaxLevel": None,
         "bossMinLevel": None,
         "bossMaxLevel": None,
         "dayCount": 0,
@@ -213,13 +238,14 @@ def enrich_pal(pal: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     alpha_locations, alpha_levels = alpha_habitat(pal_code, page_slug)
     try:
         distribution = json.loads(fetch_text(f"https://paldb.cc/paldex/{pal_code.lower()}.json?palworld=1.0"))
-        locations, coordinate_levels = compact_locations(distribution)
+        locations, coordinate_levels, palpagos_levels = compact_locations(distribution)
     except RuntimeError:
-        locations, coordinate_levels = [], []
+        locations, coordinate_levels, palpagos_levels = [], [], []
     locations.extend(alpha_locations)
     spawner_wild_levels, spawner_boss_levels = parse_spawner_levels(page)
     wild_levels = spawner_wild_levels + coordinate_levels
     boss_levels = spawner_boss_levels + alpha_levels
+    common_wild_min, common_wild_max = common_level_range(palpagos_levels or spawner_wild_levels)
     levels = wild_levels + boss_levels
     catchable = (day_count + night_count + tree_day_count + tree_night_count) > 0 or bool(alpha_locations)
     return pal["id"], {
@@ -228,6 +254,8 @@ def enrich_pal(pal: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         "maxLevel": max(levels) if levels else None,
         "wildMinLevel": min(wild_levels) if wild_levels else None,
         "wildMaxLevel": max(wild_levels) if wild_levels else None,
+        "commonWildMinLevel": common_wild_min,
+        "commonWildMaxLevel": common_wild_max,
         "bossMinLevel": min(boss_levels) if boss_levels else None,
         "bossMaxLevel": max(boss_levels) if boss_levels else None,
         "dayCount": day_count,
