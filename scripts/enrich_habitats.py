@@ -56,19 +56,24 @@ def map_counts(page: str, world: str) -> tuple[int, int]:
     return (int(day.group(1)) if day else 0, int(night.group(1)) if night else 0)
 
 
-def parse_spawner_levels(page: str) -> list[int]:
+def parse_spawner_levels(page: str) -> tuple[list[int], list[int]]:
     section = re.search(r">Spawner</h5>\s*<table[^>]*>(.*?)</table>", page, re.S | re.I)
     if not section:
-        return []
-    levels: list[int] = []
+        return [], []
+    wild_levels: list[int] = []
+    boss_levels: list[int] = []
     for row in re.findall(r"<tr>(.*?)(?=<tr>|$)", section.group(1), re.S | re.I):
         text = clean_text(row)
         if any(blocked in text for blocked in ("帕鲁中介", "Captured Cage", "帕鲁蛋")):
             continue
         match = re.search(r"Lv\.\s*(\d+)(?:\s*[–—-]\s*(\d+))?", text)
         if match:
-            levels.extend(int(value) for value in match.groups() if value and 0 < int(value) <= 100)
-    return levels
+            row_levels = [int(value) for value in match.groups() if value and 0 < int(value) <= 100]
+            if "palAlpha" in row or "border-danger" in row:
+                boss_levels.extend(row_levels)
+            else:
+                wild_levels.extend(row_levels)
+    return wild_levels, boss_levels
 
 
 def in_bounds(point: dict[str, Any], bounds: tuple[float, float, float, float]) -> bool:
@@ -166,12 +171,23 @@ def alpha_habitat(pal_code: str, page_slug: str) -> tuple[list[dict[str, Any]], 
     return locations, levels
 
 
+def load_passive_names() -> list[str]:
+    page = fetch_text("https://paldb.cc/cn/Passive_Skills?palworld=1.0")
+    section = page.split('<div id="帕鲁被动技能"', 1)[-1].split('</div></div id="帕鲁被动技能">', 1)[0]
+    names = [clean_text(value) for value in re.findall(r'<div class="passive-rank-?\d+[^>]*">(.*?)</div>', section, re.S)]
+    return list(dict.fromkeys(name for name in names if name))
+
+
 def enrich_pal(pal: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     source_url = pal.get("sourceUrl", "")
     empty = {
         "catchable": False,
         "minLevel": None,
         "maxLevel": None,
+        "wildMinLevel": None,
+        "wildMaxLevel": None,
+        "bossMinLevel": None,
+        "bossMaxLevel": None,
         "dayCount": 0,
         "nightCount": 0,
         "worldTreeDayCount": 0,
@@ -201,12 +217,19 @@ def enrich_pal(pal: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     except RuntimeError:
         locations, coordinate_levels = [], []
     locations.extend(alpha_locations)
-    levels = parse_spawner_levels(page) + coordinate_levels + alpha_levels
+    spawner_wild_levels, spawner_boss_levels = parse_spawner_levels(page)
+    wild_levels = spawner_wild_levels + coordinate_levels
+    boss_levels = spawner_boss_levels + alpha_levels
+    levels = wild_levels + boss_levels
     catchable = (day_count + night_count + tree_day_count + tree_night_count) > 0 or bool(alpha_locations)
     return pal["id"], {
         "catchable": catchable,
         "minLevel": min(levels) if levels else None,
         "maxLevel": max(levels) if levels else None,
+        "wildMinLevel": min(wild_levels) if wild_levels else None,
+        "wildMaxLevel": max(wild_levels) if wild_levels else None,
+        "bossMinLevel": min(boss_levels) if boss_levels else None,
+        "bossMaxLevel": max(boss_levels) if boss_levels else None,
         "dayCount": day_count,
         "nightCount": night_count,
         "worldTreeDayCount": tree_day_count,
@@ -239,10 +262,11 @@ def main() -> None:
     for pal in pals:
         if pal["id"] in results:
             pal["habitat"] = results[pal["id"]]
+    metadata["passives"] = load_passive_names()
     metadata["habitatSource"] = "https://paldb.cc/cn/Pals"
     metadata["habitatRetrievedAt"] = "2026-07-20"
     META_PATH.write_text(json.dumps(metadata, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"updated {META_PATH}: {len(results)}/{len(pals)} habitat records")
+    print(f"updated {META_PATH}: {len(results)}/{len(pals)} habitat records, {len(metadata['passives'])} passives")
 
 
 if __name__ == "__main__":

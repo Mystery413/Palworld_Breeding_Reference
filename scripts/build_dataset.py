@@ -43,6 +43,7 @@ def main() -> None:
             "metadata": metadata["source"],
         },
         "pals": metadata["pals"],
+        "passives": metadata.get("passives", []),
         "combos": compact_combos,
     }
 

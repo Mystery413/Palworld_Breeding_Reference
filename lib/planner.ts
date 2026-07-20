@@ -35,6 +35,10 @@ export type Pal = {
     catchable: boolean;
     minLevel: number | null;
     maxLevel: number | null;
+    wildMinLevel?: number | null;
+    wildMaxLevel?: number | null;
+    bossMinLevel?: number | null;
+    bossMaxLevel?: number | null;
     dayCount: number;
     nightCount: number;
     worldTreeDayCount: number;
@@ -65,6 +69,7 @@ export type BreedingData = {
   exportedAt: string;
   generatedAt: string;
   pals: Pal[];
+  passives?: string[];
   combos: ComboTuple[];
 };
 
@@ -85,7 +90,29 @@ type PlanNode = {
   stepChance?: number;
   duplicateParent?: boolean;
   potentials: Potentials;
+  captureSources: CaptureSource[];
 };
+
+export type CaptureSource = {
+  palId: string;
+  level: number;
+  maxLevel: number;
+  kind: "wild" | "alpha";
+  difficulty: number;
+};
+
+export function selectCaptureSource(pal: Pal, levelLimit: number): CaptureSource | null {
+  const habitat = pal.habitat;
+  if (!habitat?.catchable) return null;
+  const candidates: CaptureSource[] = [];
+  if (habitat.wildMinLevel != null && habitat.wildMinLevel <= levelLimit) {
+    candidates.push({ palId: pal.id, level: habitat.wildMinLevel, maxLevel: Math.min(levelLimit, habitat.wildMaxLevel ?? habitat.wildMinLevel), kind: "wild", difficulty: habitat.wildMinLevel });
+  }
+  if (habitat.bossMinLevel != null && habitat.bossMinLevel <= levelLimit) {
+    candidates.push({ palId: pal.id, level: habitat.bossMinLevel, maxLevel: Math.min(levelLimit, habitat.bossMaxLevel ?? habitat.bossMinLevel), kind: "alpha", difficulty: habitat.bossMinLevel + 18 });
+  }
+  return candidates.sort((a, b) => a.difficulty - b.difficulty || a.level - b.level)[0] ?? null;
+}
 
 export type PlanStep = {
   id: string;
@@ -112,6 +139,7 @@ export type PlanParent = {
   inventoryId?: string;
   nickname?: string;
   passives: string[];
+  captureSource?: CaptureSource;
 };
 
 export type PlanResult = {
@@ -123,7 +151,7 @@ export type PlanResult = {
   expectedEggs: number;
   coveredPassives: string[];
   missingPassives: string[];
-  captures: Array<{ palId: string; count: number }>;
+  captures: Array<CaptureSource & { count: number }>;
 };
 
 export type Recommendation = PlanResult & {
@@ -145,6 +173,7 @@ type SearchResult = {
 export type SearchOptions = {
   maxGenerations?: number;
   catchablePalIds?: string[];
+  captureSources?: CaptureSource[];
 };
 
 const INHERIT_ROLL: Record<number, number> = { 1: 0.4, 2: 0.3, 3: 0.2, 4: 0.1 };
@@ -201,8 +230,25 @@ function stateKey(node: Pick<PlanNode, "palId" | "mask" | "sex">): string {
   return `${node.palId}|${node.mask}|${node.sex}`;
 }
 
+function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): CaptureSource[] {
+  const sources = new Map<string, CaptureSource>();
+  for (const source of [...left, ...right]) {
+    const current = sources.get(source.palId);
+    if (!current || source.difficulty < current.difficulty) sources.set(source.palId, source);
+  }
+  return [...sources.values()];
+}
+
+function routeEffort(node: PlanNode): number {
+  const captureEffort = node.captureSources.reduce((sum, source) => sum + source.difficulty, 0);
+  return captureEffort + node.depth * 7 + Math.log2(Math.max(1, node.totalExpectedEggs)) * 2.5;
+}
+
 function isBetter(next: PlanNode, current?: PlanNode): boolean {
   if (!current) return true;
+  const nextEffort = routeEffort(next);
+  const currentEffort = routeEffort(current);
+  if (Math.abs(nextEffort - currentEffort) > 0.001) return nextEffort < currentEffort;
   if (next.depth !== current.depth) return next.depth < current.depth;
   if (next.eggSteps !== current.eggSteps) return next.eggSteps < current.eggSteps;
   if (Math.abs(next.totalExpectedEggs - current.totalExpectedEggs) > 0.001) {
@@ -302,10 +348,23 @@ export function searchBreedingPlans(
       inventoryId: item.id,
       nickname: item.nickname,
       potentials: { hp: item.hp ?? null, attack: item.attack ?? null, defense: item.defense ?? null },
+      captureSources: [],
     });
   });
 
-  unique(options.catchablePalIds ?? []).forEach((palId) => {
+  const legacySources = unique(options.catchablePalIds ?? []).map((palId) => ({
+    palId,
+    level: 1,
+    maxLevel: 1,
+    kind: "wild" as const,
+    difficulty: 1,
+  }));
+  const sourceByPal = new Map<string, CaptureSource>();
+  for (const source of [...legacySources, ...(options.captureSources ?? [])]) {
+    const current = sourceByPal.get(source.palId);
+    if (!current || source.difficulty < current.difficulty) sourceByPal.set(source.palId, source);
+  }
+  sourceByPal.forEach((source, palId) => {
     addState({
       nodeId: `captured:${palId}`,
       palId,
@@ -317,6 +376,7 @@ export function searchBreedingPlans(
       totalExpectedEggs: 0,
       kind: "captured",
       potentials: { hp: null, attack: null, defense: null },
+      captureSources: [source],
     });
   });
 
@@ -363,6 +423,7 @@ export function searchBreedingPlans(
           stepChance: chance,
           duplicateParent,
           potentials,
+          captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
         };
         addState(node);
       }
@@ -380,6 +441,7 @@ function parentSummary(node: PlanNode): PlanParent {
     inventoryId: node.inventoryId,
     nickname: node.nickname,
     passives: node.passives,
+    captureSource: node.kind === "captured" ? node.captureSources[0] : undefined,
   };
 }
 
@@ -449,7 +511,16 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     expectedEggs: node.totalExpectedEggs,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),
-    captures: [...captureCounts].map(([palId, count]) => ({ palId, count })),
+    captures: [...captureCounts].map(([palId, count]) => {
+      const source = node.captureSources.find((item) => item.palId === palId) ?? {
+        palId,
+        level: 1,
+        maxLevel: 1,
+        kind: "wild" as const,
+        difficulty: 1,
+      };
+      return { ...source, count };
+    }),
   };
 }
 
@@ -459,6 +530,8 @@ export function findTargetPlan(search: SearchResult, targetPalId: string): PlanR
   const sorted = [...candidates].sort((a, b) => {
     const coverage = popcount(b.mask) - popcount(a.mask);
     if (coverage) return coverage;
+    const effort = routeEffort(a) - routeEffort(b);
+    if (Math.abs(effort) > 0.001) return effort;
     if (a.depth !== b.depth) return a.depth - b.depth;
     if (a.eggSteps !== b.eggSteps) return a.eggSteps - b.eggSteps;
     return a.totalExpectedEggs - b.totalExpectedEggs;
@@ -500,7 +573,7 @@ export function recommendTargets(
       qualityScore +
       coverage * 24 -
       plan.missingPassives.length * 34 -
-      plan.captures.length * 2.5 -
+      plan.captures.reduce((sum, capture) => sum + capture.difficulty, 0) * 0.35 -
       plan.generations * 7 -
       Math.log2(Math.max(1, plan.expectedEggs)) * 2.5;
     results.push({ ...plan, pal, score, qualityScore, profile });

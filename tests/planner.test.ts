@@ -10,6 +10,7 @@ import {
   potentialInheritanceChance,
   recommendTargets,
   searchBreedingPlans,
+  selectCaptureSource,
   summarizeSearch,
 } from "../lib/planner.ts";
 
@@ -114,8 +115,52 @@ test("规划器可以把符合等级限制的待捕捉帕鲁作为种源", () =>
   assert.equal(findTargetPlan(withoutCapture, "C"), null);
   const plan = findTargetPlan(withCapture, "C");
   assert.ok(plan);
-  assert.deepEqual(plan.captures, [{ palId: "B", count: 1 }]);
+  assert.deepEqual(plan.captures, [{ palId: "B", level: 1, maxLevel: 1, kind: "wild", difficulty: 1, count: 1 }]);
   assert.equal(plan.steps[0].parentB.source, "captured");
+});
+
+test("捕捉来源严格排除等级上限外目标，并区分普通野生与 Alpha", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const pal = data.pals[0];
+  pal.habitat = {
+    catchable: true,
+    minLevel: 20,
+    maxLevel: 40,
+    wildMinLevel: 31,
+    wildMaxLevel: 40,
+    bossMinLevel: 20,
+    bossMaxLevel: 20,
+    dayCount: 1,
+    nightCount: 1,
+    worldTreeDayCount: 0,
+    worldTreeNightCount: 0,
+    summary: "",
+    locations: [],
+    mapSourceUrl: "",
+  };
+  assert.equal(selectCaptureSource(pal, 19), null);
+  assert.equal(selectCaptureSource(pal, 20)?.kind, "alpha");
+  assert.equal(selectCaptureSource(pal, 20)?.level, 20);
+  assert.equal(selectCaptureSource(pal, 31)?.kind, "wild");
+});
+
+test("同一目标存在多条路线时优先普通低等级种源，避免高难度 Alpha", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["C", "D", "E", "WILDCARD", "WILDCARD"],
+  ]);
+  const search = searchBreedingPlans(data, [], [], {
+    captureSources: [
+      { palId: "A", level: 10, maxLevel: 10, kind: "alpha", difficulty: 28 },
+      { palId: "B", level: 10, maxLevel: 10, kind: "wild", difficulty: 10 },
+      { palId: "D", level: 5, maxLevel: 8, kind: "wild", difficulty: 5 },
+      { palId: "E", level: 5, maxLevel: 8, kind: "wild", difficulty: 5 },
+    ],
+  });
+  const plan = findTargetPlan(search, "C");
+  assert.ok(plan);
+  assert.deepEqual(plan.captures.map((capture) => capture.palId).sort(), ["D", "E"]);
+  assert.ok(plan.captures.every((capture) => capture.kind === "wild"));
 });
 
 test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
@@ -147,14 +192,15 @@ test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
 test("全量 1.0 图谱只引入玩家等级加八以内的野外种源", async () => {
   const data = JSON.parse(await readFile(new URL("../public/data/breeding-data.json", import.meta.url), "utf8")) as BreedingData;
   const playerLevel = 12;
-  const catchablePalIds = data.pals
-    .filter((pal) => pal.habitat?.catchable && pal.habitat.minLevel != null && pal.habitat.minLevel <= playerLevel + 8)
-    .map((pal) => pal.id);
-  assert.ok(catchablePalIds.length > 0);
-  assert.ok(catchablePalIds.every((palId) => (data.pals.find((pal) => pal.id === palId)?.habitat?.minLevel ?? 999) <= 20));
-  const search = searchBreedingPlans(data, [], [], { maxGenerations: 4, catchablePalIds });
+  const captureSources = data.pals.flatMap((pal) => {
+    const source = selectCaptureSource(pal, playerLevel + 8);
+    return source ? [source] : [];
+  });
+  assert.ok(captureSources.length > 0);
+  assert.ok(captureSources.every((source) => source.level <= 20 && source.maxLevel <= 20));
+  const search = searchBreedingPlans(data, [], [], { maxGenerations: 4, captureSources });
   const recommendations = recommendTargets(data, search, "combat", 5);
   assert.ok(recommendations.length > 0);
   assert.ok(recommendations.every((result) => result.generations <= 4));
-  assert.ok(recommendations.flatMap((result) => result.captures).every((capture) => catchablePalIds.includes(capture.palId)));
+  assert.ok(recommendations.flatMap((result) => result.captures).every((capture) => capture.level <= 20 && capture.maxLevel <= 20));
 });

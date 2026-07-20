@@ -5,6 +5,7 @@
 import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BreedingData,
+  CaptureSource,
   findTargetPlan,
   InventoryPal,
   Pal,
@@ -12,6 +13,7 @@ import {
   Profile,
   Recommendation,
   recommendTargets,
+  selectCaptureSource,
   searchBreedingPlans,
   summarizeSearch,
 } from "@/lib/planner";
@@ -51,6 +53,21 @@ const PROFILE_COPY: Record<Profile, { label: string; short: string; icon: string
   balanced: { label: "全能培养", short: "兼顾战斗与据点价值", icon: "◈" },
 };
 
+const WORK_COPY: Record<string, { label: string; icon: string; color: string }> = {
+  Kindling: { label: "生火", icon: "🔥", color: "#db643f" },
+  Watering: { label: "浇水", icon: "💧", color: "#4b9bd8" },
+  Planting: { label: "播种", icon: "🌱", color: "#70a84b" },
+  Electricity: { label: "发电", icon: "⚡", color: "#d4a62e" },
+  Handiwork: { label: "手工作业", icon: "🛠", color: "#c28347" },
+  Gathering: { label: "采集", icon: "🌾", color: "#97a543" },
+  Lumbering: { label: "伐木", icon: "🪵", color: "#8f6546" },
+  Mining: { label: "采矿", icon: "⛏", color: "#687686" },
+  Production: { label: "制药", icon: "🧪", color: "#a06bb1" },
+  Cooling: { label: "冷却", icon: "❄", color: "#62aaca" },
+  Transporting: { label: "搬运", icon: "📦", color: "#a97954" },
+  Farming: { label: "牧场", icon: "🐾", color: "#d18a9d" },
+};
+
 type SavedState = {
   inventory: InventoryPal[];
   desiredPassives: string[];
@@ -82,6 +99,24 @@ const EMPTY_DRAFT: DraftPal = {
 
 function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function normalizedSearch(value: string): string {
+  return value.trim().toLocaleLowerCase("zh-CN").replaceAll(/\s+/g, "");
+}
+
+function fuzzyMatches(value: string, query: string): boolean {
+  const haystack = normalizedSearch(value);
+  const needle = normalizedSearch(query);
+  if (!needle || haystack.includes(needle)) return true;
+  let cursor = 0;
+  for (const char of haystack) if (char === needle[cursor]) cursor += 1;
+  return cursor === needle.length;
+}
+
+function captureRangeLabel(source: Pick<CaptureSource, "level" | "maxLevel" | "kind">): string {
+  const range = source.maxLevel > source.level ? `Lv.${source.level}–${source.maxLevel}` : `Lv.${source.level}`;
+  return source.kind === "alpha" ? `Alpha Boss ${range}` : `普通野生 ${range}`;
 }
 
 function formatNumber(value: number): string {
@@ -164,11 +199,24 @@ export default function PlannerApp() {
   const [palSearch, setPalSearch] = useState("");
   const [passiveInput, setPassiveInput] = useState("");
   const [desiredInput, setDesiredInput] = useState("");
+  const [targetSearch, setTargetSearch] = useState("");
+  const [targetPickerOpen, setTargetPickerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [isHydrated, setHydrated] = useState(false);
   const [search, setSearch] = useState<ReturnType<typeof searchBreedingPlans> | null>(null);
   const [isCalculating, setCalculating] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (detailPalId) setDetailPalId("");
+      else if (isInventoryOpen) setInventoryOpen(false);
+      else setTargetPickerOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [detailPalId, isInventoryOpen]);
 
   useEffect(() => {
     fetch("/data/breeding-data.json")
@@ -210,12 +258,14 @@ export default function PlannerApp() {
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)), [inventory]);
   const catchLevelLimit = Math.min(80, playerLevel + 8);
-  const catchablePalIds = useMemo(() => {
+  const captureSources = useMemo(() => {
     if (!data || !allowCapture) return [];
-    return data.pals
-      .filter((pal) => pal.habitat?.catchable && pal.habitat.minLevel != null && pal.habitat.minLevel <= catchLevelLimit)
-      .map((pal) => pal.id);
+    return data.pals.flatMap((pal) => {
+      const source = selectCaptureSource(pal, catchLevelLimit);
+      return source ? [source] : [];
+    });
   }, [data, allowCapture, catchLevelLimit]);
+  const catchablePalIds = useMemo(() => captureSources.map((source) => source.palId), [captureSources]);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,11 +274,11 @@ export default function PlannerApp() {
       setSearch(null);
       window.requestAnimationFrame(() => {
         if (cancelled) return;
-        if (!data || (!inventory.length && !catchablePalIds.length)) {
+        if (!data || (!inventory.length && !captureSources.length)) {
           setCalculating(false);
           return;
         }
-        const result = searchBreedingPlans(data, inventory, desiredPassives, { maxGenerations: 4, catchablePalIds });
+        const result = searchBreedingPlans(data, inventory, desiredPassives, { maxGenerations: 4, captureSources });
         if (!cancelled) {
           setSearch(result);
           setCalculating(false);
@@ -239,7 +289,7 @@ export default function PlannerApp() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [data, inventory, desiredPassives, catchablePalIds]);
+  }, [data, inventory, desiredPassives, captureSources]);
 
   const recommendations = useMemo(() => {
     if (!data || !search) return [];
@@ -262,12 +312,28 @@ export default function PlannerApp() {
 
   const filteredPals = useMemo(() => {
     if (!data) return [];
-    const query = palSearch.trim().toLowerCase();
+    const query = normalizedSearch(palSearch);
     return data.pals
-      .filter((pal) => !query || `${pal.dex} ${pal.name} ${pal.nameZh}`.toLowerCase().includes(query))
+      .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
       .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }))
       .slice(0, 80);
   }, [data, palSearch]);
+
+  const targetOptions = useMemo(() => {
+    if (!data) return [];
+    const query = normalizedSearch(targetSearch);
+    return data.pals
+      .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
+      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }))
+      .slice(0, 40);
+  }, [data, targetSearch]);
+
+  const passiveSuggestions = (query: string, selected: string[]) => {
+    const normalized = normalizedSearch(query);
+    return unique([...availablePassives, ...(data?.passives ?? []), ...PASSIVE_PRESETS])
+      .filter((passive) => !selected.includes(passive) && fuzzyMatches(passive, normalized))
+      .slice(0, 12);
+  };
 
   const addDraftPassive = (passive: string) => {
     if (!passive.trim()) return;
@@ -458,7 +524,7 @@ export default function PlannerApp() {
             <div className="level-control">
               <span>你的当前等级</span>
               <label><input type="number" min="1" max="80" value={playerLevel} onChange={(event) => setPlayerLevel(Math.max(1, Math.min(80, Number(event.target.value) || 1)))} /><b>级</b></label>
-              <small>只推荐最低出没等级不超过 <strong>{catchLevelLimit}</strong> 级的野外种源（当前等级＋8）。</small>
+              <small>严格排除所有最低可捕捉等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪，尽量避开 Alpha Boss。</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
             <div className="generation-cap"><b>4</b><span>最多繁殖代数<small>超过四代的路线自动排除</small></span></div>
@@ -469,8 +535,9 @@ export default function PlannerApp() {
               <label>目标词条 <small>{desiredPassives.length}/4</small></label>
               <div className="tag-input">
                 {desiredPassives.map((passive) => <span key={passive}>{passive}<button onClick={() => setDesiredPassives((current) => current.filter((item) => item !== passive))}>×</button></span>)}
-                {desiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={desiredPassives.length ? "继续添加…" : "输入词条，回车添加"} list="passive-presets" />}
+                {desiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={desiredPassives.length ? "搜索并继续添加…" : "搜索词条，支持模糊匹配"} />}
               </div>
+              {desiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, desiredPassives)} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
               <div className="quick-passives">
                 {availablePassives.filter((passive) => !desiredPassives.includes(passive)).slice(0, 8).map((passive) => <button key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}</button>)}
                 {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
@@ -485,11 +552,18 @@ export default function PlannerApp() {
               </div>
             ) : (
               <div className="exact-target">
-                <label htmlFor="target-pal">想要孵化的帕鲁</label>
-                <select id="target-pal" value={exactTargetId} onChange={(event) => setExactTargetId(event.target.value)}>
-                  <option value="">选择目标帕鲁…</option>
-                  {data?.pals.slice().sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true })).map((pal) => <option value={pal.id} key={pal.id}>No.{pal.dex} {pal.nameZh} · {pal.name}</option>)}
-                </select>
+                <label htmlFor="target-pal-search">想要孵化的帕鲁</label>
+                <div className="target-combobox">
+                  {exactTargetId && palById.get(exactTargetId) && !targetPickerOpen ? <button className="selected-target" onClick={() => { setTargetPickerOpen(true); setTargetSearch(""); }}>
+                    <img src={palById.get(exactTargetId)?.image} alt="" /><span><strong>{palById.get(exactTargetId)?.nameZh}</strong><small>No.{palById.get(exactTargetId)?.dex} · {palById.get(exactTargetId)?.name}</small></span><i>更换</i>
+                  </button> : <>
+                    <input id="target-pal-search" value={targetSearch} onChange={(event) => { setTargetSearch(event.target.value); setTargetPickerOpen(true); }} onFocus={() => setTargetPickerOpen(true)} placeholder="搜索中文名、英文名或图鉴编号" autoComplete="off" />
+                    {targetPickerOpen && <div className="target-options" role="listbox">
+                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
+                      {!targetOptions.length && <small>没有找到匹配的帕鲁</small>}
+                    </div>}
+                  </>}
+                </div>
               </div>
             )}
           </div>
@@ -508,7 +582,7 @@ export default function PlannerApp() {
                   <span className="rank">#{index + 1}</span>
                   <img src={item.pal.image} alt="" />
                   <div className="recommend-name"><strong>{item.pal.nameZh}</strong><small>{item.pal.name} · No.{item.pal.dex}</small></div>
-                  <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.generations}</b>代</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
+                  <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.generations}</b>代</span><span><b>{item.captures.reduce((sum, capture) => sum + capture.count, 0)}</b>补抓</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
                   <div className="scorebar"><i style={{ width: `${Math.max(8, Math.min(100, item.score / 2.1))}%` }} /></div>
                 </button>)}
               </div> : <div className="no-route">没有找到满足当前性别条件的配种入口。补录另一性别个体，或先指定一个已有帕鲁作为目标。</div>}
@@ -534,9 +608,7 @@ export default function PlannerApp() {
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
 
-      <footer><span>帕鲁育种实验室 · 非官方玩家工具</span><span>数据快照 2026-07-16 · 结果请以游戏 1.0 当前版本为准</span></footer>
-
-      <datalist id="passive-presets">{PASSIVE_PRESETS.map((passive) => <option value={passive} key={passive} />)}</datalist>
+      <footer><span>帕鲁育种实验室 · 非官方玩家工具</span><span>等级与分布快照 2026-07-20 · 结果请以游戏 1.0 当前版本为准</span></footer>
 
       {isInventoryOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setInventoryOpen(false)}>
         <section className="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="add-pal-title">
@@ -564,9 +636,9 @@ export default function PlannerApp() {
                 <label>已有词条 <small>请把杂词条也录入</small></label>
                 <div className="tag-input draft-tags">
                   {draft.passives.map((passive) => <span key={passive}>{passive}<button onClick={() => setDraft((current) => ({ ...current, passives: current.passives.filter((item) => item !== passive) }))}>×</button></span>)}
-                  <input value={passiveInput} onChange={(event) => setPassiveInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "draft")} placeholder="输入词条后回车" list="passive-presets" />
+                  <input value={passiveInput} onChange={(event) => setPassiveInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "draft")} placeholder="搜索词条或输入自定义词条" />
                 </div>
-                <div className="preset-row">{PASSIVE_PRESETS.slice(0, 10).filter((passive) => !draft.passives.includes(passive)).map((passive) => <button key={passive} onClick={() => addDraftPassive(passive)}>+ {passive}</button>)}</div>
+                <SearchSuggestions items={passiveSuggestions(passiveInput, draft.passives)} query={passiveInput} onSelect={addDraftPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />
               </div>
               <div className="field-row">
                 <label>潜力值 <small>没有能力眼镜可以留空</small></label>
@@ -581,6 +653,13 @@ export default function PlannerApp() {
       {detailPal && <PalDetailModal pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );
+}
+
+function SearchSuggestions({ items, query, onSelect, emptyText }: { items: string[]; query: string; onSelect: (value: string) => void; emptyText: string }) {
+  return <div className="search-suggestions" aria-label="匹配选项">
+    {items.map((item) => <button key={item} onClick={() => onSelect(item)}><span>{item}</span><small>添加</small></button>)}
+    {query.trim() && !items.length && <p>{emptyText}</p>}
+  </div>;
 }
 
 function TargetOverview({ pal, result, desiredCount }: { pal?: Pal; result: PlanResult; desiredCount: number }) {
@@ -603,9 +682,9 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
       <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>下面的帕鲁均已通过“当前等级＋8”限制。点击查看图鉴可打开内置栖息地图。</p></div>
       <div className="capture-cards">{result.captures.map((requirement) => {
         const capturePal = palById.get(requirement.palId);
-        return <article key={requirement.palId}>
+        return <article key={requirement.palId} className={requirement.kind === "alpha" ? "alpha-capture" : ""}>
           {capturePal?.image && <img src={capturePal.image} alt="" />}
-          <div><strong>{capturePal?.nameZh ?? requirement.palId}</strong><small>最低约 Lv.{capturePal?.habitat?.minLevel ?? "?"} · 需要 {requirement.count} 只{requirement.count > 1 ? "异性个体" : ""}</small></div>
+          <div><strong>{capturePal?.nameZh ?? requirement.palId}</strong><small>{captureRangeLabel(requirement)} · 需要 {requirement.count} 只{requirement.count > 1 ? "异性个体" : ""}</small></div>
           <button onClick={() => onOpenPal(requirement.palId)}>查看图鉴与地图</button>
         </article>;
       })}</div>
@@ -644,9 +723,9 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
   </section>;
 }
 
-function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[] }; gender: string; onOpenPal: (id: string) => void }) {
+function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <div className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {genderLabel(gender)}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.source === "captured" ? `约 Lv.${pal?.habitat?.minLevel ?? "?"} 起` : "优先高潜力")}</em>{parent.source === "captured" && pal && <button onClick={() => onOpenPal(pal.id)}>查看图鉴</button>}</span></div>;
+  return <div className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {genderLabel(gender)}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em>{parent.source === "captured" && pal && <button onClick={() => onOpenPal(pal.id)}>查看图鉴</button>}</span></div>;
 }
 
 const MAP_BOUNDS = {
@@ -658,6 +737,8 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
   const habitat = pal.habitat;
   const worlds = (["palpagos", "worldTree"] as const).filter((world) => habitat?.locations.some((location) => location.world === world));
   const [world, setWorld] = useState<"palpagos" | "worldTree">(worlds[0] ?? "palpagos");
+  const [imageExpanded, setImageExpanded] = useState(false);
+  const [mapZoom, setMapZoom] = useState(1);
   const locations = habitat?.locations.filter((location) => location.world === world) ?? [];
   const bounds = MAP_BOUNDS[world];
   const pointStyle = (location: (typeof locations)[number]) => ({
@@ -665,29 +746,34 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
     top: `${Math.max(0, Math.min(100, (1 - (location.x - bounds.minX) / (bounds.maxX - bounds.minX)) * 100))}%`,
   });
   const workEntries = Object.entries(pal.work).sort((a, b) => b[1] - a[1]);
+  const range = (min?: number | null, max?: number | null) => min == null ? "无记录" : max != null && max > min ? `Lv.${min}–${max}` : `Lv.${min}`;
+  const wildRange = range(habitat?.wildMinLevel, habitat?.wildMaxLevel);
+  const bossRange = range(habitat?.bossMinLevel, habitat?.bossMaxLevel);
 
   return <div className="modal-backdrop detail-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="pal-detail-modal" role="dialog" aria-modal="true" aria-labelledby="pal-detail-title">
       <header>
-        <div className="detail-identity">{pal.image && <img src={pal.image} alt="" />}<div><span>PALDECK · No.{pal.dex}</span><h2 id="pal-detail-title">{pal.nameZh} <small>{pal.name}</small></h2><p>{pal.elements.join(" · ") || "特殊条目"}</p></div></div>
+        <div className="detail-identity">{pal.image && <button className="portrait-button" onClick={() => setImageExpanded(true)} aria-label="放大帕鲁图片"><img src={pal.image} alt={pal.nameZh} /><i>放大</i></button>}<div><span>PALDECK · No.{pal.dex}</span><h2 id="pal-detail-title">{pal.nameZh} <small>{pal.name}</small></h2><p>{pal.elements.join(" · ") || "特殊条目"}</p></div></div>
         <button onClick={onClose} aria-label="关闭图鉴">×</button>
       </header>
       <div className="detail-layout">
         <div className="habitat-map-panel">
-          <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss</small></div>{worlds.length > 1 && <div>{worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => setWorld(item)} key={item}>{item === "palpagos" ? "帕洛斯群岛" : "世界树"}</button>)}</div>}</div>
+          <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
           {locations.length ? <div className="habitat-map">
-            <img src={world === "palpagos" ? "/palpagos-map.webp" : "/world-tree-map.webp"} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
-            <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div>
+            <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={world === "palpagos" ? "/palpagos-map.webp" : "/world-tree-map.webp"} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
+            <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div></div>
           </div> : <div className="no-habitat-map">当前 1.0 数据没有记录普通野外分布；它可能只能通过配种、事件、召唤或其他特殊方式获得。</div>}
-          <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>推荐挑战 <b>{habitat?.minLevel != null ? `Lv.${habitat.minLevel}–${habitat.maxLevel ?? habitat.minLevel}` : "无记录"}</b></span></div>
+          <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>普通野生 <b>{wildRange}</b></span><span>Alpha Boss <b>{bossRange}</b></span></div>
         </div>
         <aside className="paldex-info">
           <div className="paldex-stats"><span><b>{pal.stats.hp ?? "—"}</b>生命</span><span><b>{pal.stats.attack ?? "—"}</b>攻击</span><span><b>{pal.stats.defense ?? "—"}</b>防御</span></div>
           <section><h3>图鉴说明</h3><p>{habitat?.summary || "暂无说明。"}</p></section>
-          <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => <span key={name}>{name} Lv.{level}</span>) : <small>无据点工作数据</small>}</div></section>
+          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生</b><strong>{wildRange}</strong><small>优先作为补抓种源；相同等级通常比 Alpha 更容易处理。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高，规划时会额外增加难度惩罚。</small></span></div><p>路线会严格排除最低等级超过“你的等级＋8”的来源；若普通野怪和 Boss 都可选，会综合等级后优先低难度来源。</p></section>
+          <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => { const copy = WORK_COPY[name] ?? { label: name, icon: "◆", color: "#687686" }; return <span key={name} style={{ "--work-color": copy.color } as React.CSSProperties}><i>{copy.icon}</i><b>{copy.label}</b><strong>Lv.{level}</strong></span>; }) : <small>无据点工作数据</small>}</div></section>
           <section className="source-note"><h3>1.0 数据说明</h3><p>点位与等级快照采集于 2026-07-20。野外等级会受世界设置、地下城和特殊事件影响。</p>{habitat?.mapSourceUrl && <a href={habitat.mapSourceUrl} target="_blank" rel="noreferrer">在 PalDB 核对原始分布 ↗</a>}</section>
         </aside>
       </div>
+      {imageExpanded && <button className="image-lightbox" onClick={() => setImageExpanded(false)} aria-label="关闭大图"><img src={pal.image} alt={pal.nameZh} /><span>点击任意位置关闭</span></button>}
     </section>
   </div>;
 }
