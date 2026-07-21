@@ -378,6 +378,27 @@ button { color: inherit; }
 .save-dropzone > strong { font-size: 13px; margin-top: 8px; }
 .save-dropzone > span { color: var(--muted); font-size: 9px; margin-top: 5px; }
 .save-dropzone.loading > b { animation: spin 1s linear infinite; }
+.save-default-path { color: var(--muted); display: block; font-size: 8px; line-height: 1.5; margin-top: 8px; overflow-wrap: anywhere; }
+.save-default-path code { color: #44505e; user-select: all; }
+.save-monitor-unsupported { color: #805e31; display: block; font-size: 8px; margin-top: 7px; }
+.save-monitor { background: #f2f5ed; border: 1px solid #c7d3b8; border-radius: 11px; margin-top: 11px; padding: 10px; transition: background .25s, border-color .25s, box-shadow .25s; }
+.save-monitor.updated { background: #ebf8d6; border-color: #9fbe65; box-shadow: 0 0 0 3px rgba(166, 202, 91, .16); }
+.save-monitor.handle-lost { background: #fff2e9; border-color: #e3b99c; }
+.save-monitor-summary { align-items: center; display: grid; gap: 8px; grid-template-columns: 9px minmax(0, 1fr) auto; }
+.save-monitor-summary > span:nth-child(2) { min-width: 0; }
+.save-monitor-summary b { display: block; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.save-monitor-summary small { color: var(--muted); display: block; font-size: 8px; margin-top: 2px; }
+.save-monitor-summary em { color: #577b20; font-size: 8px; font-style: normal; font-weight: 900; }
+.save-monitor-dot { background: #6f9f25; border-radius: 50%; height: 8px; width: 8px; }
+.save-monitor.monitoring .save-monitor-dot { animation: save-monitor-pulse 1.8s ease-out infinite; }
+.save-monitor.paused .save-monitor-dot { background: #ad8a50; }
+.save-monitor.handle-lost .save-monitor-dot { background: #b44f2f; }
+.save-monitor > p { color: #8b5636; font-size: 8px; margin: 7px 0 0 17px; }
+.save-monitor-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 9px; }
+.save-monitor-actions button { background: white; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 8px; min-height: 28px; padding: 0 9px; }
+.save-monitor-actions button:hover:not(:disabled) { border-color: var(--ink); }
+.save-monitor-actions button:disabled { cursor: default; opacity: .45; }
+@keyframes save-monitor-pulse { 0% { box-shadow: 0 0 0 0 rgba(111,159,37,.45); } 65%, 100% { box-shadow: 0 0 0 6px rgba(111,159,37,0); } }
 .save-error, .save-warning { background: #fff2e9; border: 1px solid #e3b99c; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding: 12px; }
 .save-error strong { color: #9c3f20; font-size: 11px; }
 .save-error span, .save-error small, .save-warning { font-size: 9px; line-height: 1.5; }

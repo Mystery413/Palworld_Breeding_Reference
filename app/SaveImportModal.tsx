@@ -2,11 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InventoryPal, Pal } from "@/lib/planner";
 import { filterSaveImportedPals } from "@/lib/save-import";
 import type { SaveImportedPal } from "@/lib/save-import";
 import { loadSaveImportIndex } from "@/lib/supabase-data";
+import { useSaveFileMonitor } from "@/app/useSaveFileMonitor";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -43,43 +44,90 @@ export function SaveImportModal({ pals, onClose, onImport }: {
   const selectedAll = ownerGroups.find(([uid]) => uid === ownerUid)?.[1] ?? [];
   const selected = filterSaveImportedPals(selectedAll, eliteOnly);
 
-  const parseFile = async (file?: File) => {
+  const parseBuffer = useCallback(async (buffer: ArrayBuffer, file: File) => {
+    if (!/\.(sav|json)$/i.test(file.name)) {
+      throw new Error("请选择 Level.sav，或存档工具转换出的 Level.sav.json。");
+    }
+    workerRef.current?.terminate();
+    setFileName(file.name); setStatus("正在准备存档…"); setError("");
+    try {
+      let index;
+      try {
+        index = await loadSaveImportIndex();
+      } catch (loadError) {
+        console.error("Save import index load failed", loadError);
+        throw new Error("无法从数据库读取存档映射，请稍后重试。");
+      }
+      const worker = new Worker(`${BASE_PATH}/pal-save-worker.js`, { type: "module" });
+      workerRef.current = worker;
+      await new Promise<void>((resolve, reject) => {
+        const finish = () => {
+          worker.terminate();
+          if (workerRef.current === worker) workerRef.current = null;
+        };
+        worker.onmessage = (event) => {
+          if (event.data.type === "progress") setStatus(event.data.message);
+          if (event.data.type === "error") {
+            finish();
+            reject(new Error(event.data.message));
+          }
+          if (event.data.type === "result") {
+            const next = event.data.result as ParseResult;
+            setResult(next);
+            const counts = new Map<string, number>();
+            next.pals.forEach((pal) => counts.set(pal.ownerUid, (counts.get(pal.ownerUid) ?? 0) + 1));
+            setOwnerUid([...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "");
+            finish();
+            resolve();
+          }
+        };
+        worker.onerror = () => {
+          finish();
+          reject(new Error("存档读取器启动失败，请刷新页面后重试。"));
+        };
+        worker.postMessage({ fileName: file.name, buffer, index }, [buffer]);
+      });
+    } finally {
+      setStatus("");
+    }
+  }, []);
+
+  const monitor = useSaveFileMonitor(parseBuffer);
+  const [monitorFlash, setMonitorFlash] = useState(false);
+  const previousRefreshCount = useRef(0);
+
+  useEffect(() => {
+    if (monitor.refreshCount <= previousRefreshCount.current) return;
+    const isUpdate = previousRefreshCount.current > 0;
+    previousRefreshCount.current = monitor.refreshCount;
+    if (!isUpdate) return;
+    setMonitorFlash(true);
+    const timer = window.setTimeout(() => setMonitorFlash(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [monitor.refreshCount]);
+
+  const parseFallbackFile = async (file?: File) => {
     if (!file) return;
     if (!/\.(sav|json)$/i.test(file.name)) {
       setError("请选择 Level.sav，或存档工具转换出的 Level.sav.json。");
       return;
     }
-    workerRef.current?.terminate();
-    setFileName(file.name); setStatus("正在准备存档…"); setError(""); setResult(null);
+    setResult(null);
     try {
-      const [buffer, index] = await Promise.all([file.arrayBuffer(), loadSaveImportIndex()]);
-      const worker = new Worker(`${BASE_PATH}/pal-save-worker.js`, { type: "module" });
-      workerRef.current = worker;
-      worker.onmessage = (event) => {
-        if (event.data.type === "progress") setStatus(event.data.message);
-        if (event.data.type === "error") { setStatus(""); setError(event.data.message); worker.terminate(); }
-        if (event.data.type === "result") {
-          const next = event.data.result as ParseResult;
-          setResult(next); setStatus("");
-          const counts = new Map<string, number>();
-          next.pals.forEach((pal) => counts.set(pal.ownerUid, (counts.get(pal.ownerUid) ?? 0) + 1));
-          setOwnerUid([...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "");
-          worker.terminate();
-        }
-      };
-      worker.onerror = () => { setStatus(""); setError("存档读取器启动失败，请刷新页面后重试。"); };
-      worker.postMessage({ fileName: file.name, buffer, index }, [buffer]);
-    } catch (loadError) {
-      console.error("Save import index load failed", loadError);
-      setStatus("");
-      setError("无法从数据库读取存档映射，请稍后重试。");
+      await parseBuffer(await file.arrayBuffer(), file);
+    } catch (parseError) {
+      setError(parseError instanceof Error ? parseError.message : "无法读取存档，请稍后重试。");
     }
   };
 
   const drop = (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    void parseFile(event.dataTransfer.files[0]);
+    void parseFallbackFile(event.dataTransfer.files[0]);
   };
+
+  const formatTime = (value: Date | null) => value?.toLocaleTimeString("zh-CN", { hour12: false }) ?? "尚未刷新";
+  const monitorVisible = monitor.isSupported === true && Boolean(monitor.fileName);
+  const busy = Boolean(status) || monitor.parsing;
 
   return <div className="modal-backdrop save-import-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="save-import-modal" role="dialog" aria-modal="true" aria-labelledby="save-import-title">
@@ -96,10 +144,25 @@ export function SaveImportModal({ pals, onClose, onImport }: {
           <small>建议先在游戏主菜单退出世界，确保最新进度已写入磁盘。</small>
         </aside>
         <div className="save-import-main">
-          <input ref={inputRef} type="file" accept=".sav,.json" onChange={(event: ChangeEvent<HTMLInputElement>) => void parseFile(event.target.files?.[0])} hidden />
-          <button className={`save-dropzone ${status ? "loading" : ""}`} onClick={() => inputRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={drop} disabled={Boolean(status)}>
-            <b>{status ? "◌" : "⇧"}</b><strong>{status || (fileName ? "重新选择存档" : "选择或拖入 Level.sav")}</strong><span>{fileName || "支持 Steam 的 PlZ / PlM 存档，也支持 Level.sav.json"}</span>
+          <input ref={inputRef} type="file" accept=".sav,.json" onChange={(event: ChangeEvent<HTMLInputElement>) => void parseFallbackFile(event.target.files?.[0])} hidden />
+          <button className={`save-dropzone ${busy ? "loading" : ""}`} onClick={() => monitor.isSupported ? void monitor.pickFile() : inputRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={drop} disabled={busy}>
+            <b>{busy ? "◌" : "⇧"}</b><strong>{status || (fileName ? "重新选择存档" : "选择或拖入 Level.sav")}</strong><span>{fileName || "支持 Steam 的 PlZ / PlM 存档，也支持 Level.sav.json"}</span>
           </button>
+          <small className="save-default-path">默认路径：<code>%LocalAppData%\Pal\Saved\SaveGames\&lt;SteamID&gt;\&lt;世界ID&gt;\Level.sav</code></small>
+          {monitor.isSupported === false && <small className="save-monitor-unsupported">当前浏览器不支持自动监控，仍可正常手动选择存档。</small>}
+          {monitorVisible && <div className={`save-monitor ${monitor.status} ${monitorFlash ? "updated" : ""}`}>
+            <div className="save-monitor-summary">
+              <span className="save-monitor-dot" aria-hidden="true" />
+              <span><b>{monitor.fileName}</b><small>{monitor.status === "handle-lost" ? "句柄已失效" : monitor.status === "paused" ? "自动刷新已暂停" : "每 30 秒自动刷新"} · 上次刷新 {formatTime(monitor.lastRefreshTime)}</small></span>
+              {monitorFlash && <em>存档已更新</em>}
+            </div>
+            {monitor.lastError && <p>{monitor.lastError}</p>}
+            <div className="save-monitor-actions">
+              <button onClick={monitor.status === "paused" ? monitor.resume : monitor.pause} disabled={monitor.status === "handle-lost"}>{monitor.status === "paused" ? "恢复" : "暂停"}</button>
+              <button onClick={() => void monitor.refresh()} disabled={monitor.parsing || monitor.status === "handle-lost"}>{monitor.parsing ? "读取中…" : "立即刷新"}</button>
+              <button onClick={() => void monitor.pickFile()} disabled={monitor.parsing}>重新选择</button>
+            </div>
+          </div>}
           {error && <div className="save-error"><strong>读取失败</strong><span>{error}</span><small>确认文件名是 Level.sav；如果游戏更新导致格式变化，可先用 PalworldSaveTools 转成 JSON 再选择。</small></div>}
           {result && <div className="save-preview">
             <div className="save-preview-metrics"><span><b>{result.pals.length}</b>已识别个体</span><span><b>{ownerGroups.length}</b>名玩家</span><span><b>{result.unknownSpecies.length}</b>未知物种</span></div>
