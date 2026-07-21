@@ -7,6 +7,7 @@ import {
   type InventoryPal,
   findTargetPlan,
   findTargetPlans,
+  groupTargetPlans,
   isWorldTreeOnlyPal,
   passiveInheritanceChance,
   potentialInheritanceChance,
@@ -170,6 +171,31 @@ test("目标词条留空时仍可查询库存起点路线，并返回多个库�
   const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true, requireFullPassives: true }, 4);
   assert.equal(plans.length, 2);
   assert.deepEqual(plans.map((plan) => plan.ownedInventoryIds[0]).sort(), ["owned-a", "owned-d"]);
+});
+
+test("仅替换同一位置帕鲁的路线合并为一种方法", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["C", "D", "E", "WILDCARD", "WILDCARD"],
+    ["F", "A", "B", "WILDCARD", "WILDCARD"],
+    ["C", "F", "G", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "owned-a", palId: "A", sex: "M", passives: [] },
+    { id: "owned-d", palId: "D", sex: "M", passives: [] },
+  ];
+  const plans = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { maxGenerations: 2, maxBreedingSteps: 12, catchablePalIds: ["B", "E", "G"] }),
+    "C",
+    { requireOwnedAncestry: true },
+  );
+  const groups = groupTargetPlans(plans);
+  const directGroup = groups.find((group) => group.plans[0]?.breedingSteps === 1);
+  const chainedGroup = groups.find((group) => group.plans[0]?.breedingSteps === 2);
+  assert.ok(directGroup);
+  assert.equal(directGroup.plans.length, 2);
+  assert.ok(chainedGroup);
+  assert.ok(groups.length >= 2);
 });
 
 test("全部目标路线优先普通捕捉，含 Boss 的路线排列在后", () => {

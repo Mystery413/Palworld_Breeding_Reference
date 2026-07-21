@@ -178,6 +178,12 @@ export type Recommendation = PlanResult & {
   profile: Profile;
 };
 
+export type TargetPlanGroup = {
+  key: string;
+  plans: PlanResult[];
+  planIndexes: number[];
+};
+
 export type Profile = "combat" | "attack" | "worker" | "balanced";
 
 type SearchResult = {
@@ -699,6 +705,33 @@ export function findTargetPlans(
   }
   results.sort(compareTargetPlans);
   return results.slice(0, Math.max(1, limit));
+}
+
+function targetPlanShapeKey(plan: PlanResult): string {
+  const stepIndexes = new Map(plan.steps.map((step, index) => [step.id, index + 1]));
+  const parentShape = (parent: PlanParent, gender: string) => {
+    const source = parent.source === "bred" ? `step-${stepIndexes.get(parent.nodeId) ?? "prior"}` : parent.source;
+    return `${source}:${gender}`;
+  };
+  return plan.steps
+    .map((step) => {
+      const parents = [parentShape(step.parentA, step.genderA), parentShape(step.parentB, step.genderB)].sort();
+      return `${parents.join("+")}=>${step.duplicateAction ?? "single"}`;
+    })
+    .join(">");
+}
+
+/** Groups routes that share the same dependency/order structure but swap pal species. */
+export function groupTargetPlans(plans: PlanResult[]): TargetPlanGroup[] {
+  const groups = new Map<string, TargetPlanGroup>();
+  plans.forEach((plan, index) => {
+    const key = targetPlanShapeKey(plan) || `source:${plan.source}`;
+    const group = groups.get(key) ?? { key, plans: [], planIndexes: [] };
+    group.plans.push(plan);
+    group.planIndexes.push(index);
+    groups.set(key, group);
+  });
+  return [...groups.values()];
 }
 
 export function findTargetPlan(

@@ -7,6 +7,7 @@ import {
   BreedingData,
   CaptureSource,
   findTargetPlans,
+  groupTargetPlans,
   InventoryPal,
   isWorldTreeOnlyPal,
   Pal,
@@ -17,13 +18,14 @@ import {
   selectCaptureSource,
   searchBreedingPlans,
   summarizeSearch,
+  TargetPlanGroup,
 } from "@/lib/planner";
 import { loadBreedingData } from "@/lib/supabase-data";
 import { SaveImportModal } from "./SaveImportModal";
 
 const STORAGE_KEY = "palworld-breeding-lab-v1";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const ROUTES_PER_PAGE = 6;
+const METHODS_PER_BATCH = 6;
 
 const PASSIVE_PRESETS = [
   "破坏神",
@@ -250,7 +252,7 @@ export default function PlannerApp() {
   const [excludeBossCaptures, setExcludeBossCaptures] = useState(false);
   const [maxGenerations, setMaxGenerations] = useState(4);
   const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
-  const [exactPlanPage, setExactPlanPage] = useState(0);
+  const [visibleMethodCount, setVisibleMethodCount] = useState(METHODS_PER_BATCH);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
   const [isPaldexOpen, setPaldexOpen] = useState(false);
@@ -326,7 +328,10 @@ export default function PlannerApp() {
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const passiveRanks = data?.passiveRanks ?? {};
-  const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)), [inventory]);
+  const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)).sort((left, right) => {
+    const ranks = data?.passiveRanks ?? {};
+    return (ranks[right] ?? -99) - (ranks[left] ?? -99) || left.localeCompare(right, "zh-CN");
+  }), [inventory, data]);
   const catchLevelLimit = Math.min(80, playerLevel + 8);
   const captureSources = useMemo(() => {
     if (!data || !allowCapture) return [];
@@ -376,9 +381,8 @@ export default function PlannerApp() {
   }, [search, exactTargetId, inventory.length]);
   const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
   const exactPlan = exactPlans[exactPlanIndex] ?? null;
-  const exactPlanPageCount = Math.max(1, Math.ceil(exactPlans.length / ROUTES_PER_PAGE));
-  const exactPlanPageIndex = Math.min(exactPlanPage, exactPlanPageCount - 1);
-  const visibleExactPlans = exactPlans.slice(exactPlanPageIndex * ROUTES_PER_PAGE, (exactPlanPageIndex + 1) * ROUTES_PER_PAGE);
+  const exactPlanGroups = useMemo(() => groupTargetPlans(exactPlans), [exactPlans]);
+  const visibleExactPlanGroups = exactPlanGroups.slice(0, visibleMethodCount);
 
   const activeResult: (Recommendation | PlanResult) | null = useMemo(() => {
     if (mode === "exact") return exactPlan;
@@ -416,10 +420,15 @@ export default function PlannerApp() {
       .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }));
   }, [data, paldexSearch]);
 
-  const passiveSuggestions = (query: string, selected: string[]) => {
+  const passiveSuggestions = (query: string, selected: string[], ownedFirst = false) => {
     const normalized = normalizedSearch(query);
-    return unique([...availablePassives, ...(data?.passives ?? []), ...PASSIVE_PRESETS])
+    const owned = new Set(availablePassives);
+    const pool = ownedFirst && !normalized
+      ? availablePassives
+      : unique([...availablePassives, ...(data?.passives ?? []), ...PASSIVE_PRESETS]);
+    return pool
       .filter((passive) => !selected.includes(passive) && fuzzyMatches(passive, normalized))
+      .sort((left, right) => Number(owned.has(right)) - Number(owned.has(left)) || (passiveRanks[right] ?? -99) - (passiveRanks[left] ?? -99) || left.localeCompare(right, "zh-CN"))
       .slice(0, 12);
   };
 
@@ -435,7 +444,7 @@ export default function PlannerApp() {
     if (mode === "exact") {
       setExactTargetPassives((current) => [...current, value]);
       setSelectedExactPlanIndex(0);
-      setExactPlanPage(0);
+      setVisibleMethodCount(METHODS_PER_BATCH);
     }
     else setDesiredPassives((current) => [...current, value]);
     setDesiredInput("");
@@ -645,7 +654,7 @@ export default function PlannerApp() {
               <small>{restrictCaptureByLevel ? <>已严格排除高于推荐上限 <strong>{catchLevelLimit}</strong> 的捕捉种源。</> : <>已允许高等级种源；高于推荐上限 <strong>{catchLevelLimit}</strong> 的来源有 {overLevelCaptureCount} 种。</>}</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
-            <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); setExactPlanPage(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
+            <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
             <div className="capture-filters">
               <label><input type="checkbox" checked={restrictCaptureByLevel} disabled={!allowCapture} onChange={(event) => setRestrictCaptureByLevel(event.target.checked)} /><span><b>仅使用当前等级＋8以内种源</b><small>关闭后可查看包含高等级捕捉的最短路线</small></span></label>
               <label><input type="checkbox" checked={excludeWorldTreeOnly} disabled={!allowCapture} onChange={(event) => setExcludeWorldTreeOnly(event.target.checked)} /><span><b>不选择仅在世界树内的帕鲁</b><small>仍允许同时分布在帕洛斯群岛的帕鲁</small></span></label>
@@ -657,14 +666,15 @@ export default function PlannerApp() {
             <div className="goal-block">
               <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "目标词条"} <small>{activeDesiredPassives.length}/4</small></label>
               <div className="tag-input">
-                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setExactPlanPage(0); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
                 {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
               </div>
-              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives)} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
-              <div className="quick-passives">
+              {mode === "exact" && <small className="passive-library-note">默认仅显示仓库已有词条，并按品质从高到低排列；输入名称可搜索完整词条库。</small>}
+              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
+              {mode !== "exact" && <div className="quick-passives">
                 {availablePassives.filter((passive) => !activeDesiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRanks[passive]); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}<small>{tier.label}</small></button>; })}
                 {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
-              </div>
+              </div>}
               {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
             </div>
 
@@ -683,7 +693,7 @@ export default function PlannerApp() {
                   </button> : <>
                     <input id="target-pal-search" value={targetSearch} onChange={(event) => { setTargetSearch(event.target.value); setTargetPickerOpen(true); }} onFocus={() => setTargetPickerOpen(true)} placeholder="搜索中文名、英文名或图鉴编号" autoComplete="off" />
                     {targetPickerOpen && <div className="target-options" role="listbox">
-                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setExactPlanPage(0); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
+                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
                       {!targetOptions.length && <small>没有找到匹配的帕鲁</small>}
                     </div>}
                   </>}
@@ -718,23 +728,17 @@ export default function PlannerApp() {
           ) : (
             <div className="exact-result">
               {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示从已录入帕鲁出发、不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>路线必须包含你的库存起点并完整继承所选词条。可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
-                {exactPlans.length > 1 && <section className="route-browser" aria-label="全部繁殖方案">
-                  <header><div><strong>全部可行路径</strong><small>共 {exactPlans.length} 条 · 步骤最少、补抓更少；同条件下 Boss 后置</small></div><span>第 {exactPlanPageIndex + 1}/{exactPlanPageCount} 页</span></header>
-                  <div className="route-options">
-                  {visibleExactPlans.map((plan, pageIndex) => {
-                    const index = exactPlanPageIndex * ROUTES_PER_PAGE + pageIndex;
-                    const roots = plan.ownedInventoryIds.map((id) => inventory.find((item) => item.id === id)).filter(Boolean) as InventoryPal[];
-                    const rootNames = roots.map((item) => item.nickname || palById.get(item.palId)?.nameZh || item.palId).join("＋");
-                    return <button key={`${index}-${plan.steps.map((step) => step.id).join("-")}`} className={index === exactPlanIndex ? "active" : ""} onClick={() => setSelectedExactPlanIndex(index)}>
-                      <span className="route-card-title"><b>#{index + 1}</b>{plan.bossCaptureCount ? <em>含 Boss</em> : <i>普通捕捉</i>}</span>
-                      <span className="route-card-metrics"><b>{plan.generations}代</b><b>{plan.breedingSteps}步</b><b>{plan.newCaptureCount}补抓</b><b>难度 {Math.round(plan.captureDifficulty)}</b></span>
-                      <small title={rootNames}>起点：{rootNames || "已录入帕鲁"}</small>
-                    </button>;
-                  })}
-                  </div>
-                  {exactPlanPageCount > 1 && <nav className="route-pagination" aria-label="繁殖方案分页"><button disabled={exactPlanPageIndex === 0} onClick={() => { const page = Math.max(0, exactPlanPageIndex - 1); setExactPlanPage(page); setSelectedExactPlanIndex(page * ROUTES_PER_PAGE); }}>← 上一页</button><span>{exactPlanPageIndex + 1} / {exactPlanPageCount}</span><button disabled={exactPlanPageIndex >= exactPlanPageCount - 1} onClick={() => { const page = Math.min(exactPlanPageCount - 1, exactPlanPageIndex + 1); setExactPlanPage(page); setSelectedExactPlanIndex(page * ROUTES_PER_PAGE); }}>下一页 →</button></nav>}
-                </section>}
-                <TargetOverview pal={activePal} result={exactPlan} desiredCount={exactTargetPassives.length} />
+                <RouteMethodBrowser
+                  groups={visibleExactPlanGroups}
+                  totalGroups={exactPlanGroups.length}
+                  totalPlans={exactPlans.length}
+                  selectedPlanIndex={exactPlanIndex}
+                  inventory={inventory}
+                  palById={palById}
+                  onSelectPlan={setSelectedExactPlanIndex}
+                  onOpenPal={setDetailPalId}
+                  onShowMore={() => setVisibleMethodCount((current) => current + METHODS_PER_BATCH)}
+                />
               </>}
             </div>
           )}
@@ -840,31 +844,101 @@ function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items
   </div>;
 }
 
-function TargetOverview({ pal, result, desiredCount }: { pal?: Pal; result: PlanResult; desiredCount: number }) {
-  if (!pal) return null;
-  return <article className="target-overview">
-    <img src={pal.image} alt="" />
-    <div><span>指定目标路线</span><h3>{pal.nameZh} <small>{pal.name}</small></h3><p>{result.steps.length ? `结合库存与可捕捉种源，需要 ${result.steps.length} 个配种步骤。` : result.source === "captured" ? "可以直接捕捉这个目标。" : "你已经拥有这个目标。"}</p></div>
-    <div className="overview-metrics"><span><b>{result.steps.length}</b>实际步骤</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>词条</span><span><b>{formatNumber(result.expectedEggs)}</b>预计蛋数</span></div>
-  </article>;
+function RouteMethodBrowser({ groups, totalGroups, totalPlans, selectedPlanIndex, inventory, palById, onSelectPlan, onOpenPal, onShowMore }: {
+  groups: TargetPlanGroup[];
+  totalGroups: number;
+  totalPlans: number;
+  selectedPlanIndex: number;
+  inventory: InventoryPal[];
+  palById: Map<string, Pal>;
+  onSelectPlan: (index: number) => void;
+  onOpenPal: (id: string) => void;
+  onShowMore: () => void;
+}) {
+  const inventoryById = new Map(inventory.map((item) => [item.id, item]));
+  return <section className="method-browser" aria-label="可行繁殖方法">
+    <header className="method-browser-title">
+      <div><span>03</span><div><h2>按推荐顺序选择方法</h2><p>{totalPlans.toLocaleString("zh-CN")} 条原始路径已合并为 {totalGroups} 种步骤逻辑；从前往后看即可。</p></div></div>
+      <small>同位置可替换的帕鲁收在同一方法内</small>
+    </header>
+    <div className="method-list">
+      {groups.map((group, groupIndex) => {
+        const selectedOffset = group.planIndexes.indexOf(selectedPlanIndex);
+        const active = selectedOffset >= 0;
+        const plan = active ? group.plans[selectedOffset] : group.plans[0];
+        const variantOffsets = group.plans.slice(0, 4).map((_, index) => index);
+        if (active && !variantOffsets.includes(selectedOffset)) variantOffsets.push(selectedOffset);
+        return <article className={`method-card ${active ? "active" : ""}`} key={group.key}>
+          <header>
+            <div className="method-identity"><b>方法 {String(groupIndex + 1).padStart(2, "0")}</b>{groupIndex === 0 && <i>优先推荐</i>}{active && <em>下方正在查看</em>}</div>
+            <div className="method-metrics"><span><b>{plan.generations}</b>代</span><span><b>{plan.breedingSteps}</b>步</span><span><b>{plan.newCaptureCount}</b>补抓</span><span><b>{Math.round(plan.captureDifficulty)}</b>难度</span></div>
+          </header>
+          {plan.steps.length > 0 ? <div className="method-flow">
+            {plan.steps.slice(0, 3).map((step) => <div className="method-flow-step" key={step.id}>
+              <span className="method-step-number">STEP {String(step.index).padStart(2, "0")}</span>
+              <RoutePalButton pal={palById.get(step.parentA.palId)} source={step.parentA.source} captureSource={step.parentA.captureSource} onOpenPal={onOpenPal} />
+              <i>＋</i>
+              <RoutePalButton pal={palById.get(step.parentB.palId)} source={step.parentB.source} captureSource={step.parentB.captureSource} onOpenPal={onOpenPal} />
+              <i>→</i>
+              <RoutePalButton pal={palById.get(step.childId)} source="result" onOpenPal={onOpenPal} />
+            </div>)}
+            {plan.steps.length > 3 && <div className="method-more-steps">还有 {plan.steps.length - 3} 步，选择后可在下方查看完整流程</div>}
+          </div> : <div className="method-direct">目标已经在库存中，无需继续配种。</div>}
+          <div className="method-variants">
+            <div className="variant-heading"><b>{group.plans.length > 1 ? `${group.plans.length} 种可替换组合` : "唯一组合"}</b><small>每一行都是完整可执行组合，点击即可查看详细步骤</small></div>
+            <div className="variant-list">
+              {variantOffsets.map((offset) => {
+                const variant = group.plans[offset];
+                const planIndex = group.planIndexes[offset];
+                const roots = variant.ownedInventoryIds.map((id) => inventoryById.get(id)).filter(Boolean) as InventoryPal[];
+                const rootNames = roots.map((item) => item.nickname || palById.get(item.palId)?.nameZh || item.palId);
+                const captures = variant.captures.map((item) => `${palById.get(item.palId)?.nameZh ?? item.palId}${item.count > 1 ? `×${item.count}` : ""}`);
+                return <button className={planIndex === selectedPlanIndex ? "active" : ""} key={planIndex} onClick={() => onSelectPlan(planIndex)}>
+                  <span><i>仓库</i><b>{rootNames.join("＋") || "已有种源"}</b></span>
+                  <span className={captures.length ? "needs-capture" : "owned-only"}><i>{captures.length ? "补抓" : "无需补抓"}</i><b>{captures.join("＋") || "全部已有"}</b></span>
+                  <small>{variant.bossCaptureCount ? "含 Boss · " : ""}难度 {Math.round(variant.captureDifficulty)}</small>
+                  <em>{planIndex === selectedPlanIndex ? "已选择 ✓" : "查看详情"}</em>
+                </button>;
+              })}
+            </div>
+            {group.plans.length > variantOffsets.length && <small className="variant-remainder">另有 {(group.plans.length - variantOffsets.length).toLocaleString("zh-CN")} 种同结构替换，已按捕捉成本排序。</small>}
+          </div>
+        </article>;
+      })}
+    </div>
+    {groups.length < totalGroups && <button className="show-more-methods" onClick={onShowMore}>继续查看后面的 {Math.min(METHODS_PER_BATCH, totalGroups - groups.length)} 种方法 ↓</button>}
+  </section>;
+}
+
+function RoutePalButton({ pal, source, captureSource, onOpenPal }: {
+  pal?: Pal;
+  source: "owned" | "captured" | "bred" | "result";
+  captureSource?: CaptureSource;
+  onOpenPal: (id: string) => void;
+}) {
+  const sourceLabel = source === "owned" ? "库存已有" : source === "captured" ? `补抓 · 难度 ${Math.round(captureSource?.difficulty ?? 0)}` : source === "bred" ? "前序子代" : "本步产出";
+  return <button className={`route-pal ${source}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>
+    {pal?.image && <img src={pal.image} alt="" />}
+    <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong></span>
+  </button>;
 }
 
 function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }: { result: PlanResult; pal: Pal; palById: Map<string, Pal>; desiredCount: number; palLabel: (id: string) => string; onOpenPal: (id: string) => void }) {
   return <section className="plan-details" id="steps">
     <div className="plan-summary">
-      <div className="plan-target"><img src={pal.image} alt="" /><div><span>已选路线</span><h2>{pal.nameZh}</h2><small>{pal.name} · No.{pal.dex}</small></div></div>
+      <button className="plan-target" onClick={() => onOpenPal(pal.id)} aria-label={`查看${pal.nameZh}图鉴`}><img src={pal.image} alt="" /><div><span>已选路线</span><h2>{pal.nameZh}</h2><small>{pal.name} · No.{pal.dex}</small></div></button>
       <div className="plan-numbers"><span><b>{result.generations}</b>最短代数</span><span><b>{result.steps.length}</b>实际步骤</span><span><b>{formatNumber(result.expectedEggs)}</b>预计总蛋数</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>目标词条</span></div>
     </div>
     {result.missingPassives.length > 0 && <div className="warning-box"><b>还有词条种源缺口</b><span>{result.missingPassives.join("、")} 未在当前库存的可达链中。路线会先给出最接近结果；若想稳定遗传，请先抓到携带这些词条的帕鲁。</span></div>}
     {result.captures.length > 0 && <div className="capture-checklist">
-      <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击查看图鉴可打开内置栖息地图。</p></div>
+      <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击任意卡片可打开内置栖息地图。</p></div>
       <div className="capture-cards">{result.captures.map((requirement) => {
         const capturePal = palById.get(requirement.palId);
-        return <article key={requirement.palId} className={requirement.kind === "alpha" ? "alpha-capture" : ""}>
+        return <button key={requirement.palId} className={requirement.kind === "alpha" ? "alpha-capture" : ""} onClick={() => onOpenPal(requirement.palId)} aria-label={`查看${capturePal?.nameZh ?? requirement.palId}图鉴与地图`}>
           {capturePal?.image && <img src={capturePal.image} alt="" />}
           <div><strong>{capturePal?.nameZh ?? requirement.palId}</strong><small>{captureRangeLabel(requirement)} · 需要 {requirement.count} 只{requirement.count > 1 ? "异性个体" : ""}</small></div>
-          <button onClick={() => onOpenPal(requirement.palId)}>查看图鉴与地图</button>
-        </article>;
+          <i>↗</i>
+        </button>;
       })}</div>
     </div>}
     {!result.steps.length ? <div className="owned-result">{result.source === "captured" ? <><b>无需配种：</b>直接按上方图鉴位置捕捉 {pal.nameZh} 即可。<button onClick={() => onOpenPal(pal.id)}>打开栖息地图</button></> : "✓ 目标已经在你的库存中，不需要额外配种。"}</div> : <div className="step-list">
@@ -880,7 +954,7 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
               <span className="breed-plus">＋</span>
               <ParentChip pal={b} parent={step.parentB} gender={step.genderB} onOpenPal={onOpenPal} />
               <span className="breed-arrow">→</span>
-              <div className="child-chip">{child?.image && <img src={child.image} alt="" />}<span><small>筛选子代</small><strong>{child?.nameZh ?? step.childId}</strong></span></div>
+              <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>筛选子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong></span></button>
             </div>
             <div className="step-instructions">
               <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后只保留<strong>{step.inheritedPassives.length ? `带有 ${step.inheritedPassives.join("、")}` : "性别正确"}{potentialTargetLabel(step.potentialTargets) ? `，且 ${potentialTargetLabel(step.potentialTargets)}` : ""}</strong>的 {child?.nameZh}。</p>
@@ -903,7 +977,7 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
 
 function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <div className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {genderLabel(gender)}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em>{parent.source === "captured" && pal && <button onClick={() => onOpenPal(pal.id)}>查看图鉴</button>}</span></div>;
+  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {genderLabel(gender)} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em></span></button>;
 }
 
 const MAP_BOUNDS = {
