@@ -237,8 +237,21 @@ function comboCompatible(a: PlanNode, b: PlanNode, combo: ComboTuple): boolean {
   return sexMatches(a.sex, genderA as "MALE" | "FEMALE") && sexMatches(b.sex, genderB as "MALE" | "FEMALE");
 }
 
-function stateKey(node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId">): string {
-  return `${node.palId}|${node.mask}|${node.sex}|${node.ownedRootId ?? "capture-only"}`;
+function stateKey(
+  node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds">,
+): string {
+  // A directly captured parent and a bred parent of the same species are not
+  // interchangeable routes. Preserve acquisition type and route length so a
+  // deeper search cannot overwrite a shorter route discovered earlier.
+  return [
+    node.palId,
+    node.mask,
+    node.sex,
+    node.ownedRootId ?? "capture-only",
+    node.kind,
+    `g${node.depth}`,
+    `s${node.breedingStepIds.length}`,
+  ].join("|");
 }
 
 function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): CaptureSource[] {
@@ -395,58 +408,82 @@ export function searchBreedingPlans(
     });
   });
 
-  let cursor = 0;
-  const maxQueuedStates = Math.max(25_000, data.pals.length * Math.max(1, 1 << desiredPassives.length) * 5);
-  while (cursor < queue.length && queue.length < maxQueuedStates) {
-    const changed = queue[cursor++];
-    if (states.get(stateKey(changed)) !== changed) continue;
-    for (const comboIndex of recipesByParent.get(changed.palId) ?? []) {
-      const combo = data.combos[comboIndex];
-      const changedIsA = combo[1] === changed.palId;
-      const otherPalId = changedIsA ? combo[2] : combo[1];
-      for (const other of statesByPal.get(otherPalId) ?? []) {
-        const parentA = changedIsA ? changed : other;
-        const parentB = changedIsA ? other : changed;
-        if (!comboCompatible(parentA, parentB, combo)) continue;
-        const mask = parentA.mask | parentB.mask;
-        const inheritedPassives = passivesForMask(mask, desiredPassives);
-        const parentPool = unique([...parentA.passives, ...parentB.passives]);
-        const chance = passiveInheritanceChance(parentPool.length, inheritedPassives.length);
-        const potentials = potentialTargets(parentA.potentials, parentB.potentials);
-        const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
-        const combinedChance = chance * ivChance;
-        const duplicateParent = parentA.nodeId === parentB.nodeId;
-        const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
-        const depth = Math.max(parentA.depth, parentB.depth) + 1;
-        if (depth > maxGenerations) continue;
-        const nodeId = `bred:${generatedId++}`;
-        const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
-        if (breedingStepIds.length > maxBreedingSteps) continue;
-        const node: PlanNode = {
-          nodeId,
-          palId: combo[0],
-          sex: "A",
-          mask,
-          passives: inheritedPassives,
-          depth,
-          eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
-          totalExpectedEggs:
-            parentA.totalExpectedEggs +
-            parentB.totalExpectedEggs +
-            (combinedChance > 0 ? 1 / combinedChance : 9999) +
-            (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
-          kind: "bred",
-          parents: [parentA, parentB],
-          combo,
-          stepChance: chance,
-          duplicateParent,
-          potentials,
-          captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
-          breedingStepIds,
-          ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
-        };
-        addState(node);
+  // Finalize one complete generation at a time. The previous queue limit could
+  // stop halfway through a generation, making results depend on the requested
+  // maximum depth. Layered finalization makes every shorter generation stable.
+  let frontier = queue.splice(0);
+  const maxCandidateEvaluationsPerGeneration = Math.max(
+    100_000,
+    data.pals.length * Math.max(1, 1 << desiredPassives.length) * 20,
+  );
+  for (let generation = 1; generation <= maxGenerations && frontier.length; generation += 1) {
+    const nextStates = new Map<string, PlanNode>();
+    let evaluatedCandidates = 0;
+    const addNextState = (node: PlanNode) => {
+      const key = stateKey(node);
+      if (isBetter(node, nextStates.get(key))) nextStates.set(key, node);
+    };
+
+    generationSearch:
+    for (const changed of frontier) {
+      for (const comboIndex of recipesByParent.get(changed.palId) ?? []) {
+        const combo = data.combos[comboIndex];
+        const changedIsA = combo[1] === changed.palId;
+        const otherPalId = changedIsA ? combo[2] : combo[1];
+        for (const other of statesByPal.get(otherPalId) ?? []) {
+          const parentA = changedIsA ? changed : other;
+          const parentB = changedIsA ? other : changed;
+          if (!comboCompatible(parentA, parentB, combo)) continue;
+          const depth = Math.max(parentA.depth, parentB.depth) + 1;
+          if (depth !== generation) continue;
+          evaluatedCandidates += 1;
+          const mask = parentA.mask | parentB.mask;
+          const inheritedPassives = passivesForMask(mask, desiredPassives);
+          const parentPool = unique([...parentA.passives, ...parentB.passives]);
+          const chance = passiveInheritanceChance(parentPool.length, inheritedPassives.length);
+          const potentials = potentialTargets(parentA.potentials, parentB.potentials);
+          const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
+          const combinedChance = chance * ivChance;
+          const duplicateParent = parentA.nodeId === parentB.nodeId;
+          const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
+          const nodeId = `bred:${generatedId++}`;
+          const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
+          if (breedingStepIds.length > maxBreedingSteps) continue;
+          addNextState({
+            nodeId,
+            palId: combo[0],
+            sex: "A",
+            mask,
+            passives: inheritedPassives,
+            depth,
+            eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
+            totalExpectedEggs:
+              parentA.totalExpectedEggs +
+              parentB.totalExpectedEggs +
+              (combinedChance > 0 ? 1 / combinedChance : 9999) +
+              (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
+            kind: "bred",
+            parents: [parentA, parentB],
+            combo,
+            stepChance: chance,
+            duplicateParent,
+            potentials,
+            captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
+            breedingStepIds,
+            ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
+          });
+          if (evaluatedCandidates >= maxCandidateEvaluationsPerGeneration) break generationSearch;
+        }
       }
+    }
+
+    frontier = [...nextStates.values()];
+    for (const node of frontier) {
+      const key = stateKey(node);
+      states.set(key, node);
+      const list = statesByPal.get(node.palId) ?? [];
+      list.push(node);
+      statesByPal.set(node.palId, list);
     }
   }
 

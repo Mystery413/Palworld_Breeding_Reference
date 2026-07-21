@@ -355,6 +355,61 @@ test("一代搜索保留姬小兔加燧火鸟直达云海鹿的最短路径", as
   assert.ok(direct);
   assert.equal(direct.breedingSteps, 1);
   assert.equal(direct.newCaptureCount, 1);
+
+  const expandedPlans = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { maxGenerations: 3, maxBreedingSteps: 12, captureSources }),
+    "83:0",
+    { requireOwnedAncestry: true, requireFullPassives: true },
+  );
+  const signature = (plan: (typeof plans)[number]) =>
+    plan.steps.map((step) => `${step.childId}:${step.parentA.source}:${step.parentA.palId}+${step.parentB.source}:${step.parentB.palId}`).join(">");
+  assert.deepEqual(
+    expandedPlans.filter((plan) => plan.breedingSteps === 1).map(signature).sort(),
+    plans.map(signature).sort(),
+  );
+});
+
+test("放宽最大代数不会覆盖原有的一步直达路线", () => {
+  const data = fixture([
+    ["Q", "X", "Y", "WILDCARD", "WILDCARD"],
+    ["P", "Q", "Z", "WILDCARD", "WILDCARD"],
+    ["T", "A", "P", "WILDCARD", "WILDCARD"],
+    ["T", "A", "Q", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [{ id: "owned-a", palId: "A", sex: "M", passives: [] }];
+  const captureSources = ["X", "Y", "Z"].map((palId) => ({
+    palId,
+    level: 1,
+    maxLevel: 1,
+    kind: "wild" as const,
+    difficulty: 1,
+  }));
+  captureSources.push({ palId: "P", level: 80, maxLevel: 80, kind: "wild", difficulty: 80 });
+
+  const oneGeneration = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { maxGenerations: 1, maxBreedingSteps: 12, captureSources }),
+    "T",
+    { requireOwnedAncestry: true },
+  );
+  const threeGenerations = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { maxGenerations: 3, maxBreedingSteps: 12, captureSources }),
+    "T",
+    { requireOwnedAncestry: true },
+  );
+  const directSignature = (plan: (typeof oneGeneration)[number]) =>
+    plan.breedingSteps === 1 && plan.steps[0]?.parentA.palId === "A" && plan.steps[0]?.parentB.palId === "P";
+
+  assert.equal(oneGeneration.filter(directSignature).length, 1);
+  assert.equal(threeGenerations.filter(directSignature).length, 1);
+  const shortSignature = (plan: (typeof oneGeneration)[number]) =>
+    plan.steps.map((step) => `${step.childId}:${step.parentA.source}:${step.parentA.palId}+${step.parentB.source}:${step.parentB.palId}`).join(">");
+  const atMostTwo = (plans: typeof oneGeneration) => plans.filter((plan) => plan.breedingSteps <= 2).map(shortSignature).sort();
+  const twoGenerations = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { maxGenerations: 2, maxBreedingSteps: 12, captureSources }),
+    "T",
+    { requireOwnedAncestry: true },
+  );
+  assert.deepEqual(atMostTwo(threeGenerations), atMostTwo(twoGenerations));
 });
 
 test("全量 1.0 图谱只引入玩家等级加八以内的野外种源", async () => {
