@@ -106,7 +106,9 @@ export type CaptureSource = {
   difficulty: number;
 };
 
-export function selectCaptureSource(pal: Pal, levelLimit: number): CaptureSource | null {
+export const EGG_DIFFICULTY_WEIGHT = 30;
+
+export function selectCaptureSource(pal: Pal, levelLimit: number, recommendedLevelLimit = levelLimit): CaptureSource | null {
   const habitat = pal.habitat;
   if (!habitat?.catchable) return null;
   const candidates: CaptureSource[] = [];
@@ -116,9 +118,10 @@ export function selectCaptureSource(pal: Pal, levelLimit: number): CaptureSource
     candidates.push({ palId: pal.id, level: commonWildMin, maxLevel: Math.min(levelLimit, commonWildMax ?? commonWildMin), kind: "wild", difficulty: commonWildMin });
   }
   if (habitat.bossMinLevel != null && habitat.bossMinLevel <= levelLimit) {
-    candidates.push({ palId: pal.id, level: habitat.bossMinLevel, maxLevel: Math.min(levelLimit, habitat.bossMaxLevel ?? habitat.bossMinLevel), kind: "alpha", difficulty: habitat.bossMinLevel + 18 });
+    const bossPenalty = habitat.bossMinLevel <= recommendedLevelLimit ? 10 : 18;
+    candidates.push({ palId: pal.id, level: habitat.bossMinLevel, maxLevel: Math.min(levelLimit, habitat.bossMaxLevel ?? habitat.bossMinLevel), kind: "alpha", difficulty: habitat.bossMinLevel + bossPenalty });
   }
-  return candidates.sort((a, b) => a.difficulty - b.difficulty || a.level - b.level)[0] ?? null;
+  return candidates.sort((a, b) => Number(a.kind === "alpha") - Number(b.kind === "alpha") || a.difficulty - b.difficulty || a.level - b.level)[0] ?? null;
 }
 
 export function isWorldTreeOnlyPal(pal: Pal): boolean {
@@ -140,6 +143,8 @@ export type PlanStep = {
   combinedChance: number;
   potentialTargets: Potentials;
   expectedEggs: number;
+  sexRequirement: "M" | "F" | "BOTH" | null;
+  sexChance: number;
   duplicateParent: boolean;
   duplicateAction: "catch" | "breed" | null;
 };
@@ -166,6 +171,8 @@ export type PlanResult = {
   captures: Array<CaptureSource & { count: number }>;
   ownedInventoryIds: string[];
   captureDifficulty: number;
+  eggDifficulty: number;
+  difficultyScore: number;
   bossCaptureCount: number;
   newCaptureCount: number;
   routePriority: number;
@@ -183,6 +190,8 @@ export type TargetPlanGroup = {
   plans: PlanResult[];
   planIndexes: number[];
 };
+
+export type TargetPlanSortMode = "recommended" | "difficulty";
 
 export type Profile = "combat" | "attack" | "worker" | "balanced";
 
@@ -271,7 +280,7 @@ function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): Cap
 
 function routeEffort(node: PlanNode): number {
   const captureEffort = node.captureSources.reduce((sum, source) => sum + source.difficulty, 0);
-  return captureEffort + node.depth * 7 + Math.log2(Math.max(1, node.totalExpectedEggs)) * 2.5;
+  return captureEffort + node.totalExpectedEggs * EGG_DIFFICULTY_WEIGHT + node.depth / 100;
 }
 
 function isBetter(next: PlanNode, current?: PlanNode): boolean {
@@ -508,14 +517,16 @@ function parentSummary(node: PlanNode): PlanParent {
   };
 }
 
-function flattenSteps(node: PlanNode): PlanStep[] {
+function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
   const steps: PlanStep[] = [];
+  const nodesById = new Map<string, PlanNode>();
   const seen = new Set<string>();
   const visit = (current: PlanNode) => {
     if (current.kind !== "bred" || !current.parents || !current.combo || seen.has(current.nodeId)) return;
     visit(current.parents[0]);
     visit(current.parents[1]);
     seen.add(current.nodeId);
+    nodesById.set(current.nodeId, current);
     steps.push({
       id: current.nodeId,
       index: steps.length + 1,
@@ -538,6 +549,8 @@ function flattenSteps(node: PlanNode): PlanStep[] {
           (current.stepChance ?? 1) *
             potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
         ),
+      sexRequirement: null,
+      sexChance: 1,
       duplicateParent: Boolean(current.duplicateParent),
       duplicateAction: current.duplicateParent
         ? current.parents[0].kind === "captured"
@@ -547,11 +560,76 @@ function flattenSteps(node: PlanNode): PlanStep[] {
     });
   };
   visit(node);
-  return steps.map((step, index) => ({ ...step, index: index + 1 }));
+  const stepById = new Map(steps.map((step) => [step.id, step]));
+  const requirements = new Map<string, Set<"M" | "F">>();
+  const palById = new Map(data.pals.map((pal) => [pal.id, pal]));
+  const maleChance = (palId: string) => Math.max(0, Math.min(1, (palById.get(palId)?.stats.maleRate ?? 50) / 100));
+  const requireSex = (parent: PlanNode, sex: "M" | "F") => {
+    if (parent.kind !== "bred") return;
+    const current = requirements.get(parent.nodeId) ?? new Set<"M" | "F">();
+    current.add(sex);
+    requirements.set(parent.nodeId, current);
+  };
+
+  for (const current of nodesById.values()) {
+    if (!current.parents || !current.combo) continue;
+    const [parentA, parentB] = current.parents;
+    const [genderA, genderB] = [current.combo[3], current.combo[4]];
+    if (genderA !== "WILDCARD") requireSex(parentA, genderA === "MALE" ? "M" : "F");
+    if (genderB !== "WILDCARD") requireSex(parentB, genderB === "MALE" ? "M" : "F");
+    if (genderA !== "WILDCARD" || genderB !== "WILDCARD") continue;
+
+    if (parentA.kind === "bred" && parentB.kind === "bred") {
+      if (parentA.nodeId === parentB.nodeId) {
+        requireSex(parentA, "M");
+        requireSex(parentA, "F");
+      } else {
+        const stepA = stepById.get(parentA.nodeId);
+        const stepB = stepById.get(parentB.nodeId);
+        const maleA = maleChance(parentA.palId);
+        const maleB = maleChance(parentB.palId);
+        const baseA = stepA?.expectedEggs ?? 1;
+        const baseB = stepB?.expectedEggs ?? 1;
+        const maleFemaleCost = baseA / Math.max(0.0001, maleA) + baseB / Math.max(0.0001, 1 - maleB);
+        const femaleMaleCost = baseA / Math.max(0.0001, 1 - maleA) + baseB / Math.max(0.0001, maleB);
+        if (maleFemaleCost <= femaleMaleCost) {
+          requireSex(parentA, "M");
+          requireSex(parentB, "F");
+        } else {
+          requireSex(parentA, "F");
+          requireSex(parentB, "M");
+        }
+      }
+    } else if (parentA.kind === "bred" && (parentB.sex === "M" || parentB.sex === "F")) {
+      requireSex(parentA, parentB.sex === "M" ? "F" : "M");
+    } else if (parentB.kind === "bred" && (parentA.sex === "M" || parentA.sex === "F")) {
+      requireSex(parentB, parentA.sex === "M" ? "F" : "M");
+    }
+  }
+
+  return steps.map((step, index) => {
+    const required = requirements.get(step.id);
+    if (!required?.size) return { ...step, index: index + 1 };
+    const male = maleChance(step.childId);
+    const needsBoth = required.size === 2;
+    const requiredSex = needsBoth ? "BOTH" : [...required][0];
+    const multiplier = needsBoth
+      ? male > 0 && male < 1
+        ? 1 / male + 1 / (1 - male) - 1
+        : 9999
+      : 1 / Math.max(0.0001, requiredSex === "M" ? male : 1 - male);
+    return {
+      ...step,
+      index: index + 1,
+      sexRequirement: requiredSex,
+      sexChance: 1 / multiplier,
+      expectedEggs: step.expectedEggs * multiplier,
+    };
+  });
 }
 
-function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: number): PlanResult {
-  const steps = flattenSteps(node);
+function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: number, data: BreedingData): PlanResult {
+  const steps = flattenSteps(node, data);
   const captureCounts = new Map<string, number>();
   if (node.kind === "captured") captureCounts.set(node.palId, 1);
   for (const step of steps) {
@@ -578,20 +656,17 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
   const captureDifficulty = captures.reduce((sum, capture) => sum + capture.difficulty * capture.count, 0);
   const bossCaptureCount = captures.reduce((sum, capture) => sum + (capture.kind === "alpha" ? capture.count : 0), 0);
   const newCaptureCount = captures.reduce((sum, capture) => sum + capture.count, 0);
-  const routePriority =
-    bossCaptureCount * 100_000 +
-    newCaptureCount * 10_000 +
-    captureDifficulty * 12 +
-    node.depth * 24 +
-    node.breedingStepIds.length * 18 +
-    Math.log2(Math.max(1, node.totalExpectedEggs)) * 3;
+  const expectedEggs = steps.reduce((sum, step) => sum + step.expectedEggs, 0);
+  const eggDifficulty = expectedEggs * EGG_DIFFICULTY_WEIGHT;
+  const difficultyScore = captureDifficulty + eggDifficulty;
+  const routePriority = difficultyScore + node.depth / 100;
   return {
     node,
     source: node.kind,
     steps,
     generations: node.depth,
     breedingSteps: node.breedingStepIds.length,
-    expectedEggs: node.totalExpectedEggs,
+    expectedEggs,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),
     captures,
@@ -601,6 +676,8 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
         .filter(Boolean),
     ),
     captureDifficulty,
+    eggDifficulty,
+    difficultyScore,
     bossCaptureCount,
     newCaptureCount,
     routePriority,
@@ -617,8 +694,8 @@ function compareTargetPlans(a: PlanResult, b: PlanResult): number {
   if (coverage) return coverage;
   if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;
   if (a.newCaptureCount !== b.newCaptureCount) return a.newCaptureCount - b.newCaptureCount;
+  if (Math.abs(a.difficultyScore - b.difficultyScore) > 0.001) return a.difficultyScore - b.difficultyScore;
   if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
-  if (Math.abs(a.routePriority - b.routePriority) > 0.001) return a.routePriority - b.routePriority;
   if (a.generations !== b.generations) return a.generations - b.generations;
   return a.expectedEggs - b.expectedEggs;
 }
@@ -694,7 +771,7 @@ export function findTargetPlans(
   const seen = new Set<string>();
   const results: PlanResult[] = [];
   for (const node of candidates) {
-    const plan = toPlanResult(node, search.desiredPassives, search.fullMask);
+    const plan = toPlanResult(node, search.desiredPassives, search.fullMask, search.data);
     const signature = plan.steps
       .map((step) => `${step.childId}:${step.parentA.source}:${step.parentA.palId}+${step.parentB.source}:${step.parentB.palId}`)
       .join(">");
@@ -707,31 +784,37 @@ export function findTargetPlans(
   return results.slice(0, Math.max(1, limit));
 }
 
-function targetPlanShapeKey(plan: PlanResult): string {
-  const stepIndexes = new Map(plan.steps.map((step, index) => [step.id, index + 1]));
-  const parentShape = (parent: PlanParent, gender: string) => {
-    const source = parent.source === "bred" ? `step-${stepIndexes.get(parent.nodeId) ?? "prior"}` : parent.source;
-    return `${source}:${gender}`;
-  };
-  return plan.steps
-    .map((step) => {
-      const parents = [parentShape(step.parentA, step.genderA), parentShape(step.parentB, step.genderB)].sort();
-      return `${parents.join("+")}=>${step.duplicateAction ?? "single"}`;
-    })
-    .join(">");
+/** Groups routes by the two costs users act on first: breeding operations and new captures. */
+export function groupTargetPlans(plans: PlanResult[], sortMode: TargetPlanSortMode = "recommended"): TargetPlanGroup[] {
+  const entriesByKey = new Map<string, Array<{ plan: PlanResult; index: number }>>();
+  plans.forEach((plan, index) => {
+    const key = `${plan.breedingSteps}|${plan.newCaptureCount}`;
+    const entries = entriesByKey.get(key) ?? [];
+    entries.push({ plan, index });
+    entriesByKey.set(key, entries);
+  });
+  const groups = [...entriesByKey].map(([key, entries]) => {
+    entries.sort((left, right) => left.plan.difficultyScore - right.plan.difficultyScore || left.index - right.index);
+    return { key, plans: entries.map((entry) => entry.plan), planIndexes: entries.map((entry) => entry.index) };
+  });
+  return groups.sort((left, right) => {
+    const leftPlan = left.plans[0];
+    const rightPlan = right.plans[0];
+    if (sortMode === "difficulty" && Math.abs(leftPlan.difficultyScore - rightPlan.difficultyScore) > 0.001) {
+      return leftPlan.difficultyScore - rightPlan.difficultyScore;
+    }
+    return leftPlan.breedingSteps - rightPlan.breedingSteps || leftPlan.newCaptureCount - rightPlan.newCaptureCount || leftPlan.difficultyScore - rightPlan.difficultyScore;
+  });
 }
 
-/** Groups routes that share the same dependency/order structure but swap pal species. */
-export function groupTargetPlans(plans: PlanResult[]): TargetPlanGroup[] {
-  const groups = new Map<string, TargetPlanGroup>();
-  plans.forEach((plan, index) => {
-    const key = targetPlanShapeKey(plan) || `source:${plan.source}`;
-    const group = groups.get(key) ?? { key, plans: [], planIndexes: [] };
-    group.plans.push(plan);
-    group.planIndexes.push(index);
-    groups.set(key, group);
-  });
-  return [...groups.values()];
+export function hasComplexityDifficultyTradeoff(groups: TargetPlanGroup[]): boolean {
+  return groups.some((current, currentIndex) => groups.slice(0, currentIndex).some((earlier) => {
+    const currentPlan = current.plans[0];
+    const earlierPlan = earlier.plans[0];
+    const noSimpler = currentPlan.breedingSteps >= earlierPlan.breedingSteps && currentPlan.newCaptureCount >= earlierPlan.newCaptureCount;
+    const strictlyMoreComplex = currentPlan.breedingSteps > earlierPlan.breedingSteps || currentPlan.newCaptureCount > earlierPlan.newCaptureCount;
+    return noSimpler && strictlyMoreComplex && currentPlan.difficultyScore + 0.001 < earlierPlan.difficultyScore;
+  }));
 }
 
 export function findTargetPlan(
@@ -741,7 +824,7 @@ export function findTargetPlan(
 ): PlanResult | null {
   const plans = (search.statesByPal.get(targetPalId) ?? [])
     .filter((node) => matchesTargetOptions(node, search, options))
-    .map((node) => toPlanResult(node, search.desiredPassives, search.fullMask))
+    .map((node) => toPlanResult(node, search.desiredPassives, search.fullMask, search.data))
     .sort(compareTargetPlans);
   return plans[0] ?? null;
 }
@@ -781,9 +864,7 @@ export function recommendTargets(
       qualityScore +
       coverage * 24 -
       plan.missingPassives.length * 34 -
-      plan.captures.reduce((sum, capture) => sum + capture.difficulty, 0) * 0.35 -
-      plan.generations * 7 -
-      Math.log2(Math.max(1, plan.expectedEggs)) * 2.5;
+      plan.difficultyScore * 0.35;
     results.push({ ...plan, pal, score, qualityScore, profile });
   }
   return results.sort((a, b) => b.score - a.score).slice(0, limit);

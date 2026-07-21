@@ -8,6 +8,7 @@ import {
   findTargetPlan,
   findTargetPlans,
   groupTargetPlans,
+  hasComplexityDifficultyTradeoff,
   isWorldTreeOnlyPal,
   passiveInheritanceChance,
   potentialInheritanceChance,
@@ -142,6 +143,63 @@ test("规划器可以把符合等级限制的待捕捉帕鲁作为种源", () =>
   assert.equal(plan.steps[0].parentB.source, "captured");
 });
 
+test("综合难度按一枚蛋等价 30 级普通捕捉计算", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const inventory: InventoryPal[] = [{ id: "owned-a", palId: "A", sex: "M", passives: [] }];
+  const plan = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], {
+      captureSources: [{ palId: "B", level: 10, maxLevel: 10, kind: "wild", difficulty: 10 }],
+    }),
+    "C",
+    { requireOwnedAncestry: true },
+  )[0];
+  assert.ok(plan);
+  assert.equal(plan.expectedEggs, 1);
+  assert.equal(plan.captureDifficulty, 10);
+  assert.equal(plan.eggDifficulty, 30);
+  assert.equal(plan.difficultyScore, 40);
+});
+
+test("中间亲代所需性别会增加预计蛋数与综合难度", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["T", "C", "D", "WILDCARD", "WILDCARD"],
+  ]);
+  const intermediate = data.pals.find((pal) => pal.id === "C");
+  assert.ok(intermediate);
+  intermediate.stats.maleRate = 80;
+  const inventory: InventoryPal[] = [
+    { id: "owned-a", palId: "A", sex: "M", passives: [] },
+    { id: "owned-d", palId: "D", sex: "M", passives: [] },
+  ];
+  const plan = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], { catchablePalIds: ["B"] }),
+    "T",
+    { requireOwnedAncestry: true },
+  ).find((candidate) => candidate.breedingSteps === 2);
+  assert.ok(plan);
+  assert.equal(plan.steps[0].sexRequirement, "F");
+  assert.ok(Math.abs(plan.steps[0].sexChance - 0.2) < 1e-12);
+  assert.ok(Math.abs(plan.steps[0].expectedEggs - 5) < 1e-12);
+  assert.ok(Math.abs(plan.expectedEggs - 6) < 1e-12);
+  assert.ok(Math.abs(plan.difficultyScore - 181) < 1e-12);
+});
+
+test("仓库帕鲁携带的无用词条会降低遗传效率", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const route = (passives: string[]) => findTargetPlans(
+    searchBreedingPlans(data, [{ id: "owned-a", palId: "A", sex: "M", passives }], ["目标词条"], { catchablePalIds: ["B"] }),
+    "C",
+    { requireOwnedAncestry: true, requireFullPassives: true },
+  )[0];
+  const clean = route(["目标词条"]);
+  const polluted = route(["目标词条", "无用词条一", "负面词条"]);
+  assert.ok(clean && polluted);
+  assert.equal(clean.expectedEggs, 2.5);
+  assert.ok(Math.abs(polluted.expectedEggs - 18.75) < 1e-12);
+  assert.ok(polluted.difficultyScore > clean.difficultyScore);
+});
+
 test("指定目标路线强制从库存帕鲁出发，并完整满足目标词条", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const inventory: InventoryPal[] = [{ id: "owned-a", palId: "A", sex: "M", passives: ["甲"] }];
@@ -196,9 +254,21 @@ test("仅替换同一位置帕鲁的路线合并为一种方法", () => {
   assert.equal(directGroup.plans.length, 2);
   assert.ok(chainedGroup);
   assert.ok(groups.length >= 2);
+
+  const recommended = groupTargetPlans([
+    { ...directGroup.plans[0], difficultyScore: 200 },
+    { ...chainedGroup.plans[0], difficultyScore: 100 },
+  ], "recommended");
+  const byDifficulty = groupTargetPlans([
+    { ...directGroup.plans[0], difficultyScore: 200 },
+    { ...chainedGroup.plans[0], difficultyScore: 100 },
+  ], "difficulty");
+  assert.equal(recommended[0].plans[0].breedingSteps, 1);
+  assert.equal(byDifficulty[0].plans[0].breedingSteps, 2);
+  assert.equal(hasComplexityDifficultyTradeoff(recommended), true);
 });
 
-test("全部目标路线优先普通捕捉，含 Boss 的路线排列在后", () => {
+test("综合难度相同时优先普通捕捉，避免不必要的 Boss", () => {
   const data = fixture([
     ["C", "A", "B", "WILDCARD", "WILDCARD"],
     ["C", "D", "E", "WILDCARD", "WILDCARD"],
@@ -210,14 +280,14 @@ test("全部目标路线优先普通捕捉，含 Boss 的路线排列在后", ()
   const search = searchBreedingPlans(data, inventory, [], {
     captureSources: [
       { palId: "B", level: 20, maxLevel: 20, kind: "wild", difficulty: 20 },
-      { palId: "E", level: 1, maxLevel: 1, kind: "alpha", difficulty: 1 },
+      { palId: "E", level: 10, maxLevel: 10, kind: "alpha", difficulty: 20 },
     ],
   });
   const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true });
   assert.equal(plans.length, 2);
   assert.equal(plans[0].bossCaptureCount, 0);
   assert.equal(plans[1].bossCaptureCount, 1);
-  assert.ok(plans[0].routePriority < plans[1].routePriority);
+  assert.equal(plans[0].difficultyScore, plans[1].difficultyScore);
 });
 
 test("无 Boss 路线中优先需要新捕捉帕鲁更少的方案", () => {
@@ -309,8 +379,11 @@ test("捕捉来源严格排除等级上限外目标，并区分普通野生与 A
   assert.equal(selectCaptureSource(pal, 19), null);
   assert.equal(selectCaptureSource(pal, 20)?.kind, "alpha");
   assert.equal(selectCaptureSource(pal, 20)?.level, 20);
+  assert.equal(selectCaptureSource(pal, 20, 28)?.difficulty, 30);
   assert.equal(selectCaptureSource(pal, 31)?.kind, "wild");
   assert.equal(selectCaptureSource(pal, 31)?.maxLevel, 31);
+  const highBoss = { ...pal, habitat: { ...pal.habitat, commonWildMinLevel: null, wildMinLevel: null, bossMinLevel: 40, bossMaxLevel: 40 } };
+  assert.equal(selectCaptureSource(highBoss, 80, 28)?.difficulty, 58);
 });
 
 test("同一目标存在多条路线时优先普通低等级种源，避免高难度 Alpha", () => {

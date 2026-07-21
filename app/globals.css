@@ -256,9 +256,14 @@ button { color: inherit; }
 .plan-target span { color: var(--teal); font-size: 9px; font-weight: 900; letter-spacing: .15em; }
 .plan-target h2 { font-family: Georgia, "Songti SC", serif; font-size: 28px; margin: 2px 0; }
 .plan-target small { color: var(--muted); }
-.plan-numbers { display: grid; gap: 20px; grid-template-columns: repeat(4, 1fr); }
+.plan-numbers { display: grid; gap: 14px; grid-template-columns: repeat(5, 1fr); }
 .plan-numbers span { color: var(--muted); font-size: 9px; white-space: nowrap; }
-.plan-numbers b { color: var(--ink); display: block; font-family: Georgia, serif; font-size: 24px; }
+.plan-numbers b { color: var(--ink); display: block; font-family: Georgia, serif; font-size: 22px; }
+.difficulty-breakdown { align-items: center; background: #f4f1e9; border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; padding: 8px 11px; }
+.difficulty-breakdown span, .difficulty-breakdown small { color: var(--muted); font-size: 8px; }
+.difficulty-breakdown span b { color: var(--ink); font-size: 11px; }
+.difficulty-breakdown i { color: var(--coral); font-style: normal; }
+.difficulty-breakdown small { border-left: 1px solid var(--line); padding-left: 8px; }
 .warning-box { background: #fff1d9; border-left: 4px solid #ed9c28; border-radius: 8px; display: flex; flex-direction: column; font-size: 11px; gap: 5px; line-height: 1.6; margin: 24px 0; padding: 14px 16px; }
 .warning-box span { color: #775a2f; }
 .capture-checklist { background: #e8f6f2; border: 1px solid #b8ddd5; border-radius: 16px; margin: 24px 0; padding: 18px; }
@@ -597,19 +602,26 @@ button { color: inherit; }
 .method-browser-title > div > span { align-items: center; background: var(--coral); border-radius: 50%; color: white; display: flex; font-family: Georgia, serif; font-size: 12px; font-style: italic; height: 32px; justify-content: center; width: 32px; }
 .method-browser-title h2 { font-family: Georgia, "Songti SC", serif; font-size: 25px; letter-spacing: -.03em; margin: 0; }
 .method-browser-title p { color: var(--muted); font-size: 10px; margin: 3px 0 0; }
-.method-browser-title > small { color: var(--muted); font-size: 9px; }
+.route-sort-toggle { background: #e8e4db; border-radius: 9px; display: flex; flex: 0 0 auto; gap: 2px !important; padding: 3px; }
+.route-sort-toggle button { background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: 9px; font-weight: 800; padding: 8px 11px; }
+.route-sort-toggle button.active { background: white; box-shadow: 0 3px 10px rgba(16,26,42,.09); color: var(--teal); }
+.difficulty-rule { color: var(--muted); font-size: 8px; margin: -7px 0 12px 44px; }
+.difficulty-rule b { color: var(--ink); }
+.tradeoff-note { background: #fff4d9; border: 1px solid #e9cc86; border-radius: 10px; color: #7e5d23; font-size: 9px; line-height: 1.5; margin-bottom: 12px; padding: 9px 11px; }
 .method-list { display: flex; flex-direction: column; gap: 14px; }
 .method-card { background: rgba(255,255,255,.58); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; padding: 16px; transition: .2s; }
 .method-card.active { background: #fff; border-color: var(--teal); box-shadow: 0 10px 30px rgba(11,141,132,.09); }
 .method-card > header { align-items: center; display: flex; gap: 18px; justify-content: space-between; }
 .method-identity { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
 .method-identity > b { font-family: Georgia, "Songti SC", serif; font-size: 18px; }
+.method-identity > strong { color: var(--teal); font-size: 9px; }
 .method-identity i, .method-identity em { border-radius: 999px; font-size: 7px; font-style: normal; font-weight: 900; padding: 4px 7px; }
 .method-identity i { background: var(--lime); color: #32410f; }
 .method-identity em { background: #dff4f0; color: var(--teal); }
 .method-metrics { display: grid; gap: 14px; grid-template-columns: repeat(4, auto); }
 .method-metrics span { color: var(--muted); font-size: 8px; }
 .method-metrics b { color: var(--ink); font-family: Georgia, serif; font-size: 17px; margin-right: 2px; }
+.method-metrics span:nth-child(3) b { color: var(--coral); font-size: 20px; }
 .method-flow { border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; margin-top: 13px; padding-top: 12px; }
 .method-flow-step { align-items: center; display: grid; gap: 7px; grid-template-columns: 48px minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); }
 .method-step-number { color: var(--muted); font-size: 7px; font-weight: 900; letter-spacing: .08em; }
@@ -637,15 +649,18 @@ button { color: inherit; }
 .variant-list > button > span i { background: #e3f2e6; border-radius: 4px; color: #39744c; flex: 0 0 auto; font-size: 6px; font-style: normal; font-weight: 900; padding: 2px 4px; }
 .variant-list > button > span.needs-capture i { background: #fff0cf; color: #9c6517; }
 .variant-list > button > span b { font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.variant-list > button > small { color: var(--muted); font-size: 7px; grid-column: 2; grid-row: 1; white-space: nowrap; }
+.variant-list > button > small { color: var(--muted); font-size: 8px; grid-column: 2; grid-row: 1; white-space: nowrap; }
+.variant-list > button > small b { color: var(--coral); font-family: Georgia, serif; font-size: 13px; }
 .variant-list > button > em { color: var(--teal); font-size: 7px; font-style: normal; font-weight: 900; grid-column: 2; grid-row: 2; white-space: nowrap; }
 .variant-remainder { color: var(--muted); display: block; font-size: 8px; margin-top: 7px; text-align: right; }
 .show-more-methods { background: transparent; border: 1px dashed #aaa89f; border-radius: 11px; color: var(--ink-soft); cursor: pointer; font-size: 10px; font-weight: 800; margin-top: 12px; min-height: 42px; width: 100%; }
 .show-more-methods:hover { background: white; border-color: var(--teal); color: var(--teal); }
 
 @media (max-width: 760px) {
-  .method-browser-title { align-items: flex-start; }
-  .method-browser-title > small { display: none; }
+  .method-browser-title { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .route-sort-toggle { width: 100%; }
+  .route-sort-toggle button { flex: 1; }
+  .difficulty-rule { margin-left: 0; }
   .method-card > header { align-items: flex-start; flex-direction: column; gap: 9px; }
   .method-metrics { justify-content: space-between; width: 100%; }
   .method-flow-step { grid-template-columns: 42px minmax(0,1fr) auto minmax(0,1fr); }
