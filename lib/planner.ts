@@ -95,6 +95,7 @@ type PlanNode = {
   potentials: Potentials;
   captureSources: CaptureSource[];
   breedingStepIds: string[];
+  ownedRootId?: string;
 };
 
 export type CaptureSource = {
@@ -158,6 +159,7 @@ export type PlanResult = {
   coveredPassives: string[];
   missingPassives: string[];
   captures: Array<CaptureSource & { count: number }>;
+  ownedInventoryIds: string[];
 };
 
 export type Recommendation = PlanResult & {
@@ -233,8 +235,8 @@ function comboCompatible(a: PlanNode, b: PlanNode, combo: ComboTuple): boolean {
   return sexMatches(a.sex, genderA as "MALE" | "FEMALE") && sexMatches(b.sex, genderB as "MALE" | "FEMALE");
 }
 
-function stateKey(node: Pick<PlanNode, "palId" | "mask" | "sex">): string {
-  return `${node.palId}|${node.mask}|${node.sex}`;
+function stateKey(node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId">): string {
+  return `${node.palId}|${node.mask}|${node.sex}|${node.ownedRootId ?? "capture-only"}`;
 }
 
 function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): CaptureSource[] {
@@ -358,6 +360,7 @@ export function searchBreedingPlans(
       potentials: { hp: item.hp ?? null, attack: item.attack ?? null, defense: item.defense ?? null },
       captureSources: [],
       breedingStepIds: [],
+      ownedRootId: item.id,
     });
   });
 
@@ -438,6 +441,7 @@ export function searchBreedingPlans(
           potentials,
           captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
           breedingStepIds,
+          ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
         };
         addState(node);
       }
@@ -535,12 +539,31 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
       };
       return { ...source, count };
     }),
+    ownedInventoryIds: unique(
+      [node, ...steps.flatMap((step) => [step.parentA, step.parentB])]
+        .map((item) => item.inventoryId ?? "")
+        .filter(Boolean),
+    ),
   };
 }
 
-export function findTargetPlan(search: SearchResult, targetPalId: string): PlanResult | null {
-  const candidates = search.statesByPal.get(targetPalId) ?? [];
-  if (!candidates.length) return null;
+export type TargetPlanOptions = {
+  requireOwnedAncestry?: boolean;
+  requireFullPassives?: boolean;
+};
+
+export function findTargetPlans(
+  search: SearchResult,
+  targetPalId: string,
+  options: TargetPlanOptions = {},
+  limit = 4,
+): PlanResult[] {
+  const candidates = (search.statesByPal.get(targetPalId) ?? []).filter((node) => {
+    if (options.requireOwnedAncestry && !node.ownedRootId) return false;
+    if (options.requireFullPassives && node.mask !== search.fullMask) return false;
+    return true;
+  });
+  if (!candidates.length) return [];
   const sorted = [...candidates].sort((a, b) => {
     const coverage = popcount(b.mask) - popcount(a.mask);
     if (coverage) return coverage;
@@ -550,7 +573,28 @@ export function findTargetPlan(search: SearchResult, targetPalId: string): PlanR
     if (a.eggSteps !== b.eggSteps) return a.eggSteps - b.eggSteps;
     return a.totalExpectedEggs - b.totalExpectedEggs;
   });
-  return toPlanResult(sorted[0], search.desiredPassives, search.fullMask);
+  const seen = new Set<string>();
+  const results: PlanResult[] = [];
+  for (const node of sorted) {
+    const plan = toPlanResult(node, search.desiredPassives, search.fullMask);
+    const signature = plan.steps
+      .map((step) => `${step.childId}:${step.parentA.palId}+${step.parentB.palId}`)
+      .join(">");
+    const key = `${plan.ownedInventoryIds.join(",")}|${signature || `source:${plan.source}`}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    results.push(plan);
+    if (results.length >= Math.max(1, limit)) break;
+  }
+  return results;
+}
+
+export function findTargetPlan(
+  search: SearchResult,
+  targetPalId: string,
+  options: TargetPlanOptions = {},
+): PlanResult | null {
+  return findTargetPlans(search, targetPalId, options, 1)[0] ?? null;
 }
 
 export function palQualityScore(pal: Pal, profile: Profile): number {
@@ -575,11 +619,12 @@ export function recommendTargets(
   search: SearchResult,
   profile: Profile,
   limit = 8,
+  targetOptions: TargetPlanOptions = {},
 ): Recommendation[] {
   const results: Recommendation[] = [];
   for (const pal of data.pals) {
     if (pal.stats.hp == null && profile !== "worker") continue;
-    const plan = findTargetPlan(search, pal.id);
+    const plan = findTargetPlan(search, pal.id, targetOptions);
     if (!plan) continue;
     const coverage = plan.coveredPassives.length;
     const qualityScore = palQualityScore(pal, profile);

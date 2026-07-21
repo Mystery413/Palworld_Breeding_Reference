@@ -6,6 +6,7 @@ import {
   type BreedingData,
   type InventoryPal,
   findTargetPlan,
+  findTargetPlans,
   passiveInheritanceChance,
   potentialInheritanceChance,
   recommendTargets,
@@ -137,6 +138,37 @@ test("规划器可以把符合等级限制的待捕捉帕鲁作为种源", () =>
   assert.ok(plan);
   assert.deepEqual(plan.captures, [{ palId: "B", level: 1, maxLevel: 1, kind: "wild", difficulty: 1, count: 1 }]);
   assert.equal(plan.steps[0].parentB.source, "captured");
+});
+
+test("指定目标路线强制从库存帕鲁出发，并完整满足目标词条", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const inventory: InventoryPal[] = [{ id: "owned-a", palId: "A", sex: "M", passives: ["甲"] }];
+  const search = searchBreedingPlans(data, inventory, ["甲"], {
+    captureSources: [
+      { palId: "B", level: 1, maxLevel: 1, kind: "wild", difficulty: 1 },
+      { palId: "C", level: 1, maxLevel: 1, kind: "wild", difficulty: 1 },
+    ],
+  });
+  const plan = findTargetPlan(search, "C", { requireOwnedAncestry: true, requireFullPassives: true });
+  assert.ok(plan);
+  assert.equal(plan.source, "bred");
+  assert.deepEqual(plan.coveredPassives, ["甲"]);
+  assert.deepEqual(plan.ownedInventoryIds, ["owned-a"]);
+});
+
+test("目标词条留空时仍可查询库存起点路线，并返回多个库存方案", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["C", "D", "E", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "owned-a", palId: "A", sex: "M", passives: [] },
+    { id: "owned-d", palId: "D", sex: "M", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, [], { catchablePalIds: ["B", "E", "C"] });
+  const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true, requireFullPassives: true }, 4);
+  assert.equal(plans.length, 2);
+  assert.deepEqual(plans.map((plan) => plan.ownedInventoryIds[0]).sort(), ["owned-a", "owned-d"]);
 });
 
 test("捕捉来源严格排除等级上限外目标，并区分普通野生与 Alpha", () => {

@@ -6,7 +6,7 @@ import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from
 import {
   BreedingData,
   CaptureSource,
-  findTargetPlan,
+  findTargetPlans,
   InventoryPal,
   Pal,
   PlanResult,
@@ -74,11 +74,13 @@ const WORK_COPY: Record<string, { label: string; icon: string; color: string }> 
 type SavedState = {
   inventory: InventoryPal[];
   desiredPassives: string[];
+  exactTargetPassives: string[];
   profile: Profile;
   exactTargetId: string;
   playerLevel: number;
   allowCapture: boolean;
-  maxBreedingSteps: number;
+  maxGenerations: number;
+  maxBreedingSteps?: number;
 };
 
 type DraftPal = {
@@ -232,12 +234,14 @@ export default function PlannerApp() {
   const [data, setData] = useState<BreedingData | null>(null);
   const [inventory, setInventory] = useState<InventoryPal[]>([]);
   const [desiredPassives, setDesiredPassives] = useState<string[]>([]);
+  const [exactTargetPassives, setExactTargetPassives] = useState<string[]>([]);
   const [profile, setProfile] = useState<Profile>("combat");
   const [mode, setMode] = useState<"recommend" | "exact">("recommend");
   const [exactTargetId, setExactTargetId] = useState("");
   const [playerLevel, setPlayerLevel] = useState(20);
   const [allowCapture, setAllowCapture] = useState(true);
-  const [maxBreedingSteps, setMaxBreedingSteps] = useState(4);
+  const [maxGenerations, setMaxGenerations] = useState(4);
+  const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
   const [isPaldexOpen, setPaldexOpen] = useState(false);
@@ -286,11 +290,13 @@ export default function PlannerApp() {
           const parsed = JSON.parse(saved) as Partial<SavedState>;
           if (Array.isArray(parsed.inventory)) setInventory(parsed.inventory);
           if (Array.isArray(parsed.desiredPassives)) setDesiredPassives(parsed.desiredPassives.slice(0, 4));
+          if (Array.isArray(parsed.exactTargetPassives)) setExactTargetPassives(parsed.exactTargetPassives.slice(0, 4));
           if (parsed.profile) setProfile(parsed.profile);
           if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
           if (typeof parsed.playerLevel === "number") setPlayerLevel(Math.max(1, Math.min(80, parsed.playerLevel)));
           if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
-          if (typeof parsed.maxBreedingSteps === "number") setMaxBreedingSteps(Math.max(1, Math.min(12, parsed.maxBreedingSteps)));
+          const savedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
+          if (typeof savedGenerations === "number") setMaxGenerations(Math.max(1, Math.min(12, savedGenerations)));
         }
       } catch {
         setNotice("本地存档无法读取，已使用空白库存。你可以重新录入或导入备份。");
@@ -302,9 +308,9 @@ export default function PlannerApp() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const saved: SavedState = { inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps };
+    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }, [inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps, isHydrated]);
+  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations, isHydrated]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const passiveRanks = data?.passiveRanks ?? {};
@@ -318,6 +324,7 @@ export default function PlannerApp() {
     });
   }, [data, allowCapture, catchLevelLimit]);
   const catchablePalIds = useMemo(() => captureSources.map((source) => source.palId), [captureSources]);
+  const activeDesiredPassives = mode === "exact" ? exactTargetPassives : desiredPassives;
 
   useEffect(() => {
     let cancelled = false;
@@ -330,7 +337,7 @@ export default function PlannerApp() {
           setCalculating(false);
           return;
         }
-        const result = searchBreedingPlans(data, inventory, desiredPassives, { maxGenerations: maxBreedingSteps, maxBreedingSteps, captureSources });
+        const result = searchBreedingPlans(data, inventory, activeDesiredPassives, { maxGenerations, maxBreedingSteps: 12, captureSources });
         if (!cancelled) {
           setSearch(result);
           setCalculating(false);
@@ -341,17 +348,19 @@ export default function PlannerApp() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [data, inventory, desiredPassives, captureSources, maxBreedingSteps]);
+  }, [data, inventory, activeDesiredPassives, captureSources, maxGenerations]);
 
   const recommendations = useMemo(() => {
     if (!data || !search) return [];
-    return recommendTargets(data, search, profile, 10);
-  }, [data, search, profile]);
+    return recommendTargets(data, search, profile, 10, { requireOwnedAncestry: inventory.length > 0, requireFullPassives: desiredPassives.length > 0 });
+  }, [data, search, profile, inventory.length, desiredPassives.length]);
 
-  const exactPlan = useMemo(() => {
-    if (!search || !exactTargetId) return null;
-    return findTargetPlan(search, exactTargetId);
-  }, [search, exactTargetId]);
+  const exactPlans = useMemo(() => {
+    if (!search || !exactTargetId || !inventory.length) return [];
+    return findTargetPlans(search, exactTargetId, { requireOwnedAncestry: true, requireFullPassives: true }, 4);
+  }, [search, exactTargetId, inventory.length]);
+  const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
+  const exactPlan = exactPlans[exactPlanIndex] ?? null;
 
   const activeResult: (Recommendation | PlanResult) | null = useMemo(() => {
     if (mode === "exact") return exactPlan;
@@ -403,8 +412,13 @@ export default function PlannerApp() {
   };
 
   const addDesiredPassive = (passive: string) => {
-    if (!passive.trim() || desiredPassives.includes(passive) || desiredPassives.length >= 4) return;
-    setDesiredPassives((current) => [...current, passive.trim()]);
+    const value = passive.trim();
+    if (!value || activeDesiredPassives.includes(value) || activeDesiredPassives.length >= 4) return;
+    if (mode === "exact") {
+      setExactTargetPassives((current) => [...current, value]);
+      setSelectedExactPlanIndex(0);
+    }
+    else setDesiredPassives((current) => [...current, value]);
     setDesiredInput("");
   };
 
@@ -444,13 +458,13 @@ export default function PlannerApp() {
     setProfile("combat");
     setPlayerLevel(20);
     setAllowCapture(true);
-    setMaxBreedingSteps(4);
+    setMaxGenerations(4);
     setMode("recommend");
     setNotice("示例已载入：5 只前期帕鲁，各携带一个高阶词条。可以直接查看推荐路线。 ");
   };
 
   const exportJson = () => {
-    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 3, inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps }, null, 2), "application/json");
+    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 4, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations }, null, 2), "application/json");
   };
 
   const exportCsv = () => {
@@ -468,11 +482,13 @@ export default function PlannerApp() {
         if (!Array.isArray(parsed.inventory)) throw new Error("missing inventory");
         setInventory(parsed.inventory);
         if (Array.isArray(parsed.desiredPassives)) setDesiredPassives(parsed.desiredPassives.slice(0, 4));
+        if (Array.isArray(parsed.exactTargetPassives)) setExactTargetPassives(parsed.exactTargetPassives.slice(0, 4));
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
         if (typeof parsed.playerLevel === "number") setPlayerLevel(parsed.playerLevel);
         if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
-        if (typeof parsed.maxBreedingSteps === "number") setMaxBreedingSteps(Math.max(1, Math.min(12, parsed.maxBreedingSteps)));
+        const importedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
+        if (typeof importedGenerations === "number") setMaxGenerations(Math.max(1, Math.min(12, importedGenerations)));
       } else {
         const imported = parseInventoryCsv(text, data.pals);
         if (!imported.length) throw new Error("no rows");
@@ -523,14 +539,14 @@ export default function PlannerApp() {
           <a href="#steps">操作清单</a>
           <a href="#mechanics">机制说明</a>
         </nav>
-        <div className="data-badge"><i /> 1.0 数据 · 默认 4 步</div>
+        <div className="data-badge"><i /> 1.0 数据 · 默认 4 代</div>
       </header>
 
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow">BREED SMARTER, NOT HARDER</p>
           <h1>把散落的彩色词条，<br /><em>炼成你的终极帕鲁。</em></h1>
-          <p className="hero-lede">录入已有的低阶帕鲁、性别、词条与潜力，再告诉我你的等级。系统会综合库存和当前打得过的野外种源，在 44,486 条 1.0 配方中默认搜索最多四个实际配种步骤。</p>
+          <p className="hero-lede">录入已有的低阶帕鲁、性别、词条与潜力，再告诉我你的等级。系统会从你的库存个体出发，综合当前打得过的野外种源，在 44,486 条 1.0 配方中按你选择的繁殖代数规划路线。</p>
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setInventoryOpen(true)}>+ 录入第一只帕鲁</button>
             <button className="ghost-button" onClick={loadExample}>用示例体验</button>
@@ -546,9 +562,9 @@ export default function PlannerApp() {
           </div>
           <div className="gene-track">
             <span>目标基因组</span>
-            <div>{desiredPassives.length ? desiredPassives.map((passive, index) => <b key={passive} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>尚未设置目标词条</i>}</div>
+            <div>{activeDesiredPassives.length ? activeDesiredPassives.map((passive, index) => <b key={passive} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>未指定词条（仅匹配目标物种）</i>}</div>
           </div>
-          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `正在搜索 ${maxBreedingSteps} 步路线…` : "配种图谱已就绪"}</div>
+          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `正在搜索 ${maxGenerations} 代路线…` : "配种图谱已就绪"}</div>
         </div>
       </section>
 
@@ -604,21 +620,22 @@ export default function PlannerApp() {
               <small>严格排除常见野生等级或 Boss 等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪。</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
-            <label className="generation-cap"><select value={maxBreedingSteps} onChange={(event) => setMaxBreedingSteps(Number(event.target.value))}>{[2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最多实际步骤<small>默认 4 步，也可手动放宽</small></span></label>
+            <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
           </div>
 
           <div className="goal-builder">
             <div className="goal-block">
-              <label>目标词条 <small>{desiredPassives.length}/4</small></label>
+              <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "目标词条"} <small>{activeDesiredPassives.length}/4</small></label>
               <div className="tag-input">
-                {desiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => setDesiredPassives((current) => current.filter((item) => item !== passive))} />)}
-                {desiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={desiredPassives.length ? "搜索并继续添加…" : "搜索词条，支持模糊匹配"} />}
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
+                {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
               </div>
-              {desiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, desiredPassives)} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
+              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives)} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
               <div className="quick-passives">
-                {availablePassives.filter((passive) => !desiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRanks[passive]); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}<small>{tier.label}</small></button>; })}
+                {availablePassives.filter((passive) => !activeDesiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRanks[passive]); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}<small>{tier.label}</small></button>; })}
                 {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
               </div>
+              {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
             </div>
 
             {mode === "recommend" ? (
@@ -636,7 +653,7 @@ export default function PlannerApp() {
                   </button> : <>
                     <input id="target-pal-search" value={targetSearch} onChange={(event) => { setTargetSearch(event.target.value); setTargetPickerOpen(true); }} onFocus={() => setTargetPickerOpen(true)} placeholder="搜索中文名、英文名或图鉴编号" autoComplete="off" />
                     {targetPickerOpen && <div className="target-options" role="listbox">
-                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
+                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
                       {!targetOptions.length && <small>没有找到匹配的帕鲁</small>}
                     </div>}
                   </>}
@@ -645,12 +662,16 @@ export default function PlannerApp() {
             )}
           </div>
 
-          {!inventory.length && !catchablePalIds.length ? (
+          {mode === "exact" && !inventory.length ? (
+            <div className="planner-empty">
+              <span>◎</span><h3>请先录入至少一只帕鲁</h3><p>指定目标路线必须从你的已录入帕鲁开始，途中可以按设置补抓其他亲代。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
+            </div>
+          ) : !inventory.length && !catchablePalIds.length ? (
             <div className="planner-empty">
               <span>◎</span><h3>暂时没有可用种源</h3><p>录入一只已有帕鲁，或打开“允许途中补抓帕鲁”后再计算路线。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>
           ) : !data || !search || isCalculating ? (
-            <div className="planner-empty"><span className="spinner">◌</span><h3>正在计算 {maxBreedingSteps} 步可达图谱</h3><p>正在合并库存、等级限制与 44,486 条配方，步数越多计算时间越长。</p></div>
+            <div className="planner-empty"><span className="spinner">◌</span><h3>正在计算 {maxGenerations} 代可达图谱</h3><p>正在合并库存、等级限制与 44,486 条配方，代数越多计算时间越长。</p></div>
           ) : mode === "recommend" ? (
             <div className="recommendations">
               <div className="result-title"><div><span>03</span><h2>当前最值得孵化</h2></div><small>综合强度 − 路线成本 − 缺失词条</small></div>
@@ -666,11 +687,20 @@ export default function PlannerApp() {
             </div>
           ) : (
             <div className="exact-result">
-              {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示库存＋可捕捉种源范围内不超过 {maxBreedingSteps} 步的路线。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxBreedingSteps} 步内不可达</strong><span>可以提高步骤上限、等级、补录库存，或调整目标词条后重试。</span></div> : <TargetOverview pal={activePal} result={exactPlan} desiredCount={desiredPassives.length} />}
+              {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示从已录入帕鲁出发、不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>路线必须包含你的库存起点并完整继承所选词条。可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
+                {exactPlans.length > 1 && <div className="route-options" aria-label="可选繁殖方案">
+                  {exactPlans.map((plan, index) => {
+                    const roots = plan.ownedInventoryIds.map((id) => inventory.find((item) => item.id === id)).filter(Boolean) as InventoryPal[];
+                    const rootNames = roots.map((item) => item.nickname || palById.get(item.palId)?.nameZh || item.palId).join("＋");
+                    return <button key={`${index}-${plan.steps.map((step) => step.id).join("-")}`} className={index === exactPlanIndex ? "active" : ""} onClick={() => setSelectedExactPlanIndex(index)}><b>方案 {index + 1}</b><span>{plan.generations} 代 · {plan.breedingSteps} 步</span><small>库存起点：{rootNames || "已录入帕鲁"}</small></button>;
+                  })}
+                </div>}
+                <TargetOverview pal={activePal} result={exactPlan} desiredCount={exactTargetPassives.length} />
+              </>}
             </div>
           )}
 
-          {activeResult && activePal && <PlanDetails result={activeResult} pal={activePal} palById={palById} desiredCount={desiredPassives.length} palLabel={palLabel} onOpenPal={setDetailPalId} />}
+          {activeResult && activePal && <PlanDetails result={activeResult} pal={activePal} palById={palById} desiredCount={activeDesiredPassives.length} palLabel={palLabel} onOpenPal={setDetailPalId} />}
         </div>
       </section>
 
@@ -680,7 +710,7 @@ export default function PlannerApp() {
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
           <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>默认最多四步</h3><p>限制的是页面实际展示的配种步骤，不是代数；需要时可手动放宽。野外种源常见等级仍必须不高于你的等级＋8。</p></article>
+          <article><b>04</b><h3>繁殖代数可选</h3><p>代数按目标到最远库存祖先的亲代链计算；指定目标路线始终从你的库存个体开始，途中补抓仍受等级＋8 限制。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
