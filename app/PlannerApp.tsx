@@ -8,7 +8,6 @@ import {
   calculateOffspring,
   CaptureSource,
   compactInventoryForPlanning,
-  findTargetPlans,
   findBreedingPartners,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
@@ -18,13 +17,11 @@ import {
   PlanResult,
   Profile,
   Recommendation,
-  recommendTargets,
   selectCaptureSource,
-  searchBreedingPlans,
-  summarizeSearch,
   TargetPlanGroup,
   TargetPlanSortMode,
 } from "@/lib/planner";
+import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
 import { loadBreedingData } from "@/lib/supabase-data";
 import {
   listSharedSaveUsers,
@@ -286,13 +283,21 @@ export default function PlannerApp() {
   const [targetPickerOpen, setTargetPickerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [isHydrated, setHydrated] = useState(false);
-  const [search, setSearch] = useState<ReturnType<typeof searchBreedingPlans> | null>(null);
   const [isCalculating, setCalculating] = useState(false);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [exactPlans, setExactPlans] = useState<PlanResult[]>([]);
+  const [calculationSummary, setCalculationSummary] = useState({ reachablePals: 0, fullTraitPals: 0 });
+  const [calculatedInputKey, setCalculatedInputKey] = useState("");
+  const [calculationDurationMs, setCalculationDurationMs] = useState(0);
   const [saveUsers, setSaveUsers] = useState<SharedSaveUser[]>([]);
   const [activeUserId, setActiveUserId] = useState("");
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const skipNextCloudSync = useRef(false);
+  const plannerWorkerRef = useRef<Worker | null>(null);
+  const plannerWorkerHasData = useRef(false);
+  const plannerRequestId = useRef(0);
+  const pendingCalculationKey = useRef("");
 
   useEffect(() => {
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
@@ -306,6 +311,35 @@ export default function PlannerApp() {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [detailPalId, isPaldexOpen, isSaveImportOpen, isInventoryOpen]);
+
+  useEffect(() => {
+    const worker = new Worker(new URL("./planner.worker.ts", import.meta.url), { type: "module" });
+    plannerWorkerRef.current = worker;
+    worker.onmessage = (event: MessageEvent<PlannerWorkerResponse>) => {
+      const response = event.data;
+      if (response.requestId !== plannerRequestId.current) return;
+      setCalculating(false);
+      if (response.error) {
+        setNotice(`计算失败：${response.error}`);
+        return;
+      }
+      setRecommendations(response.recommendations);
+      setExactPlans(response.exactPlans);
+      setCalculationSummary(response.summary);
+      setCalculationDurationMs(response.durationMs);
+      setCalculatedInputKey(pendingCalculationKey.current);
+      setSelectedExactPlanIndex(0);
+      setVisibleMethodCount(METHODS_PER_BATCH);
+    };
+    worker.onerror = () => {
+      setCalculating(false);
+      setNotice("计算线程启动失败，请刷新页面重试。");
+    };
+    return () => {
+      worker.terminate();
+      plannerWorkerRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     loadBreedingData()
@@ -409,40 +443,52 @@ export default function PlannerApp() {
     () => compactInventoryForPlanning(inventory, activeDesiredPassives),
     [inventory, activeDesiredPassives],
   );
+  const calculationInputKey = useMemo(() => JSON.stringify({
+    mode,
+    profile: mode === "recommend" ? profile : "",
+    target: mode === "exact" ? exactTargetId : "",
+    desired: activeDesiredPassives,
+    maxGenerations,
+    playerLevel,
+    allowCapture,
+    restrictCaptureByLevel,
+    excludeWorldTreeOnly,
+    excludeBossCaptures,
+    inventory: planningInventory.map((item) => [item.id, item.palId, item.sex, item.passives, item.hp, item.attack, item.defense]),
+  }), [mode, profile, exactTargetId, activeDesiredPassives, maxGenerations, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, planningInventory]);
+  const calculationIsDirty = calculatedInputKey !== calculationInputKey;
 
-  useEffect(() => {
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      setCalculating(true);
-      setSearch(null);
-      window.requestAnimationFrame(() => {
-        if (cancelled) return;
-        if (!data || (!planningInventory.length && !captureSources.length)) {
-          setCalculating(false);
-          return;
-        }
-        const result = searchBreedingPlans(data, planningInventory, activeDesiredPassives, { maxGenerations, maxBreedingSteps: 12, captureSources });
-        if (!cancelled) {
-          setSearch(result);
-          setCalculating(false);
-        }
-      });
-    }, 20);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+  const calculateRoutes = () => {
+    if (!data || !plannerWorkerRef.current) {
+      setNotice("配种数据仍在加载，请稍后再计算。");
+      return;
+    }
+    if (mode === "exact" && !exactTargetId) {
+      setNotice("请先选择目标帕鲁，再开始计算。");
+      return;
+    }
+    if (!planningInventory.length && !captureSources.length) {
+      setNotice("请先录入库存，或允许途中补抓帕鲁。");
+      return;
+    }
+    const requestId = plannerRequestId.current + 1;
+    plannerRequestId.current = requestId;
+    pendingCalculationKey.current = calculationInputKey;
+    setCalculating(true);
+    const request: PlannerWorkerRequest = {
+      requestId,
+      ...(plannerWorkerHasData.current ? {} : { data }),
+      inventory: planningInventory,
+      desiredPassives: activeDesiredPassives,
+      captureSources,
+      maxGenerations,
+      mode,
+      profile,
+      targetPalId: exactTargetId,
     };
-  }, [data, planningInventory, activeDesiredPassives, captureSources, maxGenerations]);
-
-  const recommendations = useMemo(() => {
-    if (!data || !search) return [];
-    return recommendTargets(data, search, profile, 10, { requireOwnedAncestry: inventory.length > 0, requireFullPassives: desiredPassives.length > 0 });
-  }, [data, search, profile, inventory.length, desiredPassives.length]);
-
-  const exactPlans = useMemo(() => {
-    if (!search || !exactTargetId || !inventory.length) return [];
-    return findTargetPlans(search, exactTargetId, { requireOwnedAncestry: true, requireFullPassives: true });
-  }, [search, exactTargetId, inventory.length]);
+    plannerWorkerRef.current.postMessage(request);
+    plannerWorkerHasData.current = true;
+  };
   const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
   const exactPlan = exactPlans[exactPlanIndex] ?? null;
   const recommendedPlanGroups = useMemo(() => groupTargetPlans(exactPlans, "recommended"), [exactPlans]);
@@ -457,7 +503,7 @@ export default function PlannerApp() {
   }, [mode, exactPlan, recommendations, selectedPalId]);
 
   const activePal = mode === "exact" ? palById.get(exactTargetId) : (activeResult as Recommendation | null)?.pal;
-  const summary = search ? summarizeSearch(search) : { reachablePals: inventory.length ? new Set(inventory.map((item) => item.palId)).size : 0, fullTraitPals: 0 };
+  const summary = calculatedInputKey ? calculationSummary : { reachablePals: inventory.length ? new Set(inventory.map((item) => item.palId)).size : 0, fullTraitPals: 0 };
   const detailPal = detailPalId ? palById.get(detailPalId) : undefined;
 
   const filteredPals = useMemo(() => {
@@ -732,7 +778,7 @@ export default function PlannerApp() {
             <span>目标基因组</span>
             <div>{activeDesiredPassives.length ? activeDesiredPassives.map((passive, index) => <b key={passive} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>未指定词条（仅匹配目标物种）</i>}</div>
           </div>
-          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `正在搜索 ${maxGenerations} 代路线…` : "配种图谱已就绪"}</div>
+          <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `后台搜索 ${maxGenerations} 代路线…` : calculationIsDirty ? "条件已更新 · 点击开始计算" : `计算完成 · ${calculationDurationMs}ms`}</div>
         </div>
       </section>
 
@@ -837,6 +883,11 @@ export default function PlannerApp() {
             )}
           </div>
 
+          <div className={`calculate-action ${calculationIsDirty ? "dirty" : "ready"}`}>
+            <div><strong>{calculationIsDirty ? "条件尚未计算" : "当前结果已是最新"}</strong><small>{calculationIsDirty ? "选完用户、词条、目标和代数后，再统一开始计算。" : `上次计算耗时 ${calculationDurationMs}ms；修改任意条件后需再次点击。`}</small></div>
+            <button className="primary-button" onClick={calculateRoutes} disabled={!data || isCalculating}>{isCalculating ? "后台计算中…" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
+          </div>
+
           {mode === "exact" && !inventory.length ? (
             <div className="planner-empty">
               <span>◎</span><h3>请先录入至少一只帕鲁</h3><p>指定目标路线必须从你的已录入帕鲁开始，途中可以按设置补抓其他亲代。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
@@ -845,8 +896,10 @@ export default function PlannerApp() {
             <div className="planner-empty">
               <span>◎</span><h3>暂时没有可用种源</h3><p>录入一只已有帕鲁，或打开“允许途中补抓帕鲁”后再计算路线。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>
-          ) : !data || !search || isCalculating ? (
-            <div className="planner-empty"><span className="spinner">◌</span><h3>正在计算 {maxGenerations} 代可达图谱</h3><p>正在合并库存、等级限制与 44,486 条配方，代数越多计算时间越长。</p></div>
+          ) : isCalculating ? (
+            <div className="planner-empty"><span className="spinner">◌</span><h3>正在后台计算 {maxGenerations} 代可达图谱</h3><p>计算已移到独立线程，期间仍可正常滚动和操作页面；修改条件不会自动重新触发。</p></div>
+          ) : !calculatedInputKey || calculationIsDirty ? (
+            <div className="planner-empty"><span>▶</span><h3>{calculatedInputKey ? "条件已经改变" : "准备好后再开始计算"}</h3><p>系统不会在选择过程中自动搜索。确认用户、目标词条、目标帕鲁和最大代数后，点击上方按钮。</p><button className="primary-button" onClick={calculateRoutes}>{calculatedInputKey ? "按新条件重新计算" : "开始计算"}</button></div>
           ) : mode === "recommend" ? (
             <div className="recommendations">
               <div className="result-title"><div><span>03</span><h2>当前最值得孵化</h2></div><small>综合强度 − 路线成本 − 缺失词条</small></div>
