@@ -41,3 +41,6 @@ next-env.d.ts
 /outputs/
 /work/
 *.tsbuildinfo
+
+# generated Supabase workbook inspection dump (very large, not used at runtime)
+/supabase/*.inspect.ndjson

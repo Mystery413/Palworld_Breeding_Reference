@@ -17,6 +17,8 @@ import {
   searchBreedingPlans,
   summarizeSearch,
 } from "@/lib/planner";
+import { loadBreedingData } from "@/lib/supabase-data";
+import { SaveImportModal } from "./SaveImportModal";
 
 const STORAGE_KEY = "palworld-breeding-lab-v1";
 
@@ -199,6 +201,7 @@ export default function PlannerApp() {
   const [isPaldexOpen, setPaldexOpen] = useState(false);
   const [paldexSearch, setPaldexSearch] = useState("");
   const [isInventoryOpen, setInventoryOpen] = useState(false);
+  const [isSaveImportOpen, setSaveImportOpen] = useState(false);
   const [draft, setDraft] = useState<DraftPal>(EMPTY_DRAFT);
   const [palSearch, setPalSearch] = useState("");
   const [passiveInput, setPassiveInput] = useState("");
@@ -216,21 +219,21 @@ export default function PlannerApp() {
       if (event.key !== "Escape") return;
       if (detailPalId) setDetailPalId("");
       else if (isPaldexOpen) setPaldexOpen(false);
+      else if (isSaveImportOpen) setSaveImportOpen(false);
       else if (isInventoryOpen) setInventoryOpen(false);
       else setTargetPickerOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [detailPalId, isPaldexOpen, isInventoryOpen]);
+  }, [detailPalId, isPaldexOpen, isSaveImportOpen, isInventoryOpen]);
 
   useEffect(() => {
-    fetch("/data/breeding-data.json")
-      .then((response) => {
-        if (!response.ok) throw new Error("数据加载失败");
-        return response.json() as Promise<BreedingData>;
-      })
+    loadBreedingData()
       .then(setData)
-      .catch(() => setNotice("无法加载 1.0 配种数据，请刷新页面重试。"));
+      .catch((error) => {
+        console.error("Supabase reference data load failed", error);
+        setNotice("无法从数据库加载配种数据，请刷新页面重试。");
+      });
   }, []);
 
   useEffect(() => {
@@ -439,6 +442,17 @@ export default function PlannerApp() {
     }
   };
 
+  const importGameSave = (items: InventoryPal[], importMode: "merge" | "replace") => {
+    if (importMode === "replace") setInventory(items);
+    else setInventory((current) => {
+      const byId = new Map(current.map((item) => [item.id, item]));
+      items.forEach((item) => byId.set(item.id, item));
+      return [...byId.values()];
+    });
+    setSaveImportOpen(false);
+    setNotice(`已从 Level.sav ${importMode === "replace" ? "读取" : "合并"} ${items.length} 只帕鲁，性别、词条和潜力值已加入路线计算。`);
+  };
+
   const palLabel = (palId: string) => {
     const pal = palById.get(palId);
     return pal ? `${pal.nameZh} · ${pal.name}` : palId;
@@ -502,7 +516,8 @@ export default function PlannerApp() {
             <div><span>01</span><h2>我的帕鲁</h2></div>
             <button className="small-add" onClick={() => setInventoryOpen(true)}>＋ 添加</button>
           </div>
-          <p className="panel-help">每个个体都要单独记录；性别和杂词条会影响路线。</p>
+          <p className="panel-help">可直接读取 Windows 的 Level.sav；文件只在本机浏览器解析。</p>
+          <button className="save-import-launch" onClick={() => setSaveImportOpen(true)}><span>▣</span><b>读取游戏存档</b><small>自动导入物种、性别、词条与潜力值</small><i>→</i></button>
           <div className="inventory-list">
             {!inventory.length ? (
               <button className="empty-inventory" onClick={() => setInventoryOpen(true)}><b>＋</b><span>还没有库存</span><small>先录入钓鱼或抓到的帕鲁</small></button>
@@ -521,7 +536,7 @@ export default function PlannerApp() {
           </div>
           <div className="inventory-tools">
             <input ref={importRef} type="file" accept=".json,.csv" onChange={importInventory} hidden />
-            <button onClick={() => importRef.current?.click()}>导入</button>
+            <button onClick={() => importRef.current?.click()}>导入备份</button>
             <button onClick={exportJson} disabled={!inventory.length}>备份 JSON</button>
             <button onClick={exportCsv} disabled={!inventory.length}>导出 CSV</button>
           </div>
@@ -669,6 +684,7 @@ export default function PlannerApp() {
       </div>}
 
       {isPaldexOpen && <PaldexBrowserModal pals={paldexOptions} total={data?.pals.length ?? 0} query={paldexSearch} onQueryChange={setPaldexSearch} onOpenPal={setDetailPalId} onClose={() => setPaldexOpen(false)} />}
+      {isSaveImportOpen && <SaveImportModal pals={data?.pals ?? []} onClose={() => setSaveImportOpen(false)} onImport={importGameSave} />}
       {detailPal && <PalDetailModal pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );

@@ -1,0 +1,300 @@
+pal_id,catchable,min_level,max_level,wild_min_level,wild_max_level,common_wild_min_level,common_wild_max_level,boss_min_level,boss_max_level,day_count,night_count,world_tree_day_count,world_tree_night_count,summary,map_source_url
+64:0,true,13,63,13,63,30,30,36,38,545,545,0,0,据说用烽歌龙的外骨骼制成的笛子， 所奏的笛声可越遍千山万水， 因此在古代战事中通常会被用来发出攻击信号。,https://paldb.cc/cn/Palpagos_Islands?pal=BirdDragon&t=dayTimeLocations
+65:0,true,20,66,20,66,63,63,27,29,121,121,0,0,它会在黑暗中袭击猎物，用斗篷般的翅膀将其包裹起来。 至于翅膀内侧到底发生了什么，以及为什么会沾染上红色， 这类问题还是不要深究为妙。,https://paldb.cc/cn/Palpagos_Islands?pal=CatVampire&t=dayTimeLocations
+41:0,true,11,80,11,80,35,35,40,40,212,212,0,0,它的白色飘带遇到不纯之水就会变黑。 由于它的这种特质可以用于鉴毒，曾致使人类对其疯狂猎捕， 导致它至今仍对人类抱有戒心。,https://paldb.cc/cn/Palpagos_Islands?pal=BlueDragon&t=dayTimeLocations
+162:0,true,13,69,13,65,64,64,65,69,32,32,0,0,它在旧画籍上被描绘的体型要比现在娇小得多。 不知为何，近年来该物种的各方面体长数据都观察到急速上升。 照目前增长速度，预计100年后体长会达到现在的10倍。,https://paldb.cc/cn/Palpagos_Islands?pal=LongCat&t=dayTimeLocations
+87:0,true,24,80,24,80,26,26,38,38,485,485,0,0,这种帕鲁背部的植被因个体而异。 有段时间曾被视为观赏帕鲁而受人喜爱 甚至曾经出现过森猛犸的专业修剪师。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassMammoth&t=dayTimeLocations
+113:0,true,34,80,34,80,34,34,,,10,10,0,0,它全身包裹着超强力装甲， 拥有难以比拟的强度和耐热性。 即使是凝固汽油弹也拿它毫无办法。,https://paldb.cc/cn/Palpagos_Islands?pal=HerculesBeetle&t=dayTimeLocations
+178:0,true,75,77,75,77,75,77,,,0,0,26,26,一遇到不明白的事情，就会和脑袋上的蛇一起开会。 但由于所有的蛇本质上都是它自己， 因此它唯一能弄明白的是，自己什么都不明白。,https://paldb.cc/cn/Palpagos_Islands?pal=SnakeGirl&t=dayTimeLocations
+36:0,true,8,40,8,40,25,25,11,19,100,100,0,0,由于它拥有相当丰厚的体毛， 因此在冬眠期间会有大量的毛掸儿躲在它的体毛里。 过去的最高记录竟然高达101只。,https://paldb.cc/cn/Palpagos_Islands?pal=MopKing&t=dayTimeLocations
+118:1,true,23,77,23,77,47,47,51,52,188,188,1,1,散布的大量孢子可以轻易遮挡阳光。 偶尔会见到它呆站着一动不动， 它这不是在模仿蘑菇， 而是被自己的孢子遮住，什么都看不见。,https://paldb.cc/cn/Palpagos_Islands?pal=MushroomDragon_Dark&t=dayTimeLocations
+180:0,true,75,77,75,77,75,77,,,0,0,42,42,闪烁着妖异光芒的提灯，映照出世界的真实样貌。 若是感到提灯的光芒刺眼， 那想必是做了亏心事吧。,https://paldb.cc/cn/Palpagos_Islands?pal=LanternButler&t=dayTimeLocations
+151:0,true,36,80,36,80,50,50,55,55,188,8,0,0,它在睡着时会被其他帕鲁误将其当作浮冰，并在它身上休息。 因为性格温柔，即便醒过来也不会强行赶走它们。 但是由于私人空间被侵犯，心中会积攒压力。,https://paldb.cc/cn/Palpagos_Islands?pal=IceNarwhal&t=dayTimeLocations
+134:1,true,38,80,42,80,53,53,38,38,84,84,0,0,研究者为了揭开它的内部结构，而将它身上的草都剃光。 结果只剩下满地杂草， 仿佛从最开始这团草里面就空无一物。,https://paldb.cc/cn/Palpagos_Islands?pal=Yeti_Grass&t=dayTimeLocations
+123:0,true,31,49,31,48,31,31,47,49,405,405,0,0,行一步，断迷茫。 行两步，舍忧虑。 行三步，离怯懦。 敌虽魍魉，吾亦往。,https://paldb.cc/cn/Palpagos_Islands?pal=FeatherOstrich&t=dayTimeLocations
+83:0,true,25,80,45,80,45,45,25,38,12,12,0,0,在遥远的过去，它因美丽的外观而常被选作绘画题材， 是人们相当熟悉的存在。 随着时代变迁，它那美丽的皮毛和角成为了艺术品的材料， 使这种帕鲁更广为人知。,https://paldb.cc/cn/Palpagos_Islands?pal=FengyunDeeper&t=dayTimeLocations
+118:0,true,35,77,35,77,47,47,47,49,59,59,1,1,吸入了大量菇咚的孢子会陷入一种神志不清的状态。 偶尔会见到它呆站着一动不动， 它这不是在模仿蘑菇， 而是吸自己的孢子吸嗨了。,https://paldb.cc/cn/Palpagos_Islands?pal=MushroomDragon&t=dayTimeLocations
+66:0,true,20,57,20,57,20,20,27,27,13,33,0,0,城堡里开满了国王最喜欢的花朵。 但大型战争爆发，战火即将波及城堡。 这时，一只花朵精灵凭空出现了。 ──摘自童话《国王的花朵》。,https://paldb.cc/cn/Palpagos_Islands?pal=VioletFairy&t=dayTimeLocations
+128:0,true,10,66,10,66,30,30,,,137,137,0,0,有着将骨骼和身躯暂时分离，用骨骼斩断敌人的疯狂生态。 如若不赶快收回体内，自己也会力竭倒下。 有传言在年轻的个体间流行着比赛身体分离时长的危险游戏，但真假未知。,https://paldb.cc/cn/Palpagos_Islands?pal=SwordCutlassfish&t=dayTimeLocations
+116:0,true,36,45,36,43,36,36,40,45,49,49,0,0,它喜欢下雨天气，每当下雨， 它总会站在原地不动享受雨水。 火绒狐会常常跑来躲雨。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteMoth&t=dayTimeLocations
+101:0,true,32,80,32,80,32,32,42,45,64,64,0,0,它碧蓝通透的尖角闪耀着绝对零度的光芒。 如果用手直接碰触，全身会立即冻结， 连同性命一起崩解四散。,https://paldb.cc/cn/Palpagos_Islands?pal=IceDeer&t=dayTimeLocations
+94:0,true,10,80,10,80,30,30,,,38,38,0,0,虽然看起来无精打采，但实际上相当凶猛。 它将眼中所见之物全部视为食物， 并不惜一切代价捕食。,https://paldb.cc/cn/Palpagos_Islands?pal=LazyDragon&t=dayTimeLocations
+129:0,true,23,50,23,48,46,46,36,50,23,23,0,0,它的全身上下都流淌着如岩浆般的血液。 若往它身上大量泼水，这些水会瞬间遇热蒸发。 随后便会引发大规模的水蒸气爆炸。,https://paldb.cc/cn/Palpagos_Islands?pal=VolcanicMonster&t=dayTimeLocations
+79:0,true,20,61,20,61,25,25,27,29,45,615,0,0,这种帕鲁能操控阴之力量，施展奇妙的法术。 不论任何食物都喜欢生吃。 和焰巫狐的关系相当不好。,https://paldb.cc/cn/Palpagos_Islands?pal=CatMage&t=dayTimeLocations
+102:0,true,27,80,32,80,32,32,27,29,52,52,0,0,它拥有令人难以置信的力量。 在某次实验中，它甚至可以轻松撕破3000张叠在一起的纸。 你我都该庆幸它并不是肉食性帕鲁。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassPanda&t=dayTimeLocations
+107:0,true,17,44,22,44,33,35,17,40,660,660,0,0,过去有则寓言故事叫做「碎岩龟的钻头」。 那是个关于拥有最强甲壳和钻头的碎岩龟 思考矛盾的道德故事。,https://paldb.cc/cn/Palpagos_Islands?pal=DrillGame&t=dayTimeLocations
+135:0,true,29,67,29,67,45,46,51,52,10,649,0,0,古人曾认为，越接近世界末日，恐炬灵的火焰就越弱。 末日主义者曾屡次因火焰减弱了而产生骚乱， 最后发现火势强弱全看它的心情， 至少到目前还是这样的。,https://paldb.cc/cn/Palpagos_Islands?pal=CandleGhost&t=dayTimeLocations
+134:0,true,23,80,23,80,45,48,42,45,53,53,0,0,研究者为了揭开它的内部结构，而将它的毛都剃光。 结果只剩下满地毛发， 仿佛从最开始这团毛里面就空无一物。,https://paldb.cc/cn/Palpagos_Islands?pal=Yeti&t=dayTimeLocations
+165:0,true,63,69,63,66,65,65,65,69,37,37,0,0,聆听大地的声响，避开不稳固的落脚点奔跑。 但若与某些地面不投缘，它就会被迷了眼， 然后摔得兔仰马翻。,https://paldb.cc/cn/Palpagos_Islands?pal=BrownRabbit&t=dayTimeLocations
+167:0,true,65,66,65,66,65,65,66,66,42,42,0,0,想吃就吃，想睡就睡，想干什么就干什么。 电懒懒们为了维持这样的生活，一定也在我们看不见的地方努力着。 ......如果不强迫自己这么想的话，以前的岛民们的日子就没法过了。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecLizard&t=dayTimeLocations
+141:0,true,13,49,13,49,48,48,,,70,70,0,0,身怀5000多种毒素。 虽然其中甚至有能够立刻致死的可怕剧毒， 但是由于剂量都太低了，并没有什么卵用。,https://paldb.cc/cn/Palpagos_Islands?pal=ScorpionMan&t=dayTimeLocations
+149:0,true,50,66,50,66,50,50,55,60,1621,1621,0,0,黑色火焰即便摸上去也不过只是微热 但是持续接触的物体则会慢慢从内部开始融化。 如果用来烤乳酪，可谓绝品。,https://paldb.cc/cn/Palpagos_Islands?pal=BlackPuppy&t=dayTimeLocations
+68:0,true,22,39,22,38,34,34,39,39,43,43,0,0,它是统御骑士蜂的天选女王。 为伟大女王效力的喜悦 让无数甘愿为其劳动至死的仆人络绎不绝。,https://paldb.cc/cn/Palpagos_Islands?pal=QueenBee&t=dayTimeLocations
+91:0,true,10,44,10,44,30,36,36,38,105,105,0,0,它会在夜晚捕猎后，将猎物带回自己的领地。 那些被抓住的帕鲁，之后会遭受何种对待， 就不难想象了。,https://paldb.cc/cn/Palpagos_Islands?pal=Baphomet&t=dayTimeLocations
+117:0,true,27,59,27,59,40,46,42,45,0,356,0,0,它喜欢生物濒死时身体所散发的独特气味。 因此一旦被噬魂兽黏上了， 也就代表着大限将至。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostBeast&t=dayTimeLocations
+98:0,true,13,58,13,58,31,31,37,40,235,235,0,0,当它全速冲刺时就宛如一道闪电一般。 如果霹雳犬同类之间发生冲突， 更会不断响起雷鸣般的轰隆声。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderDog&t=dayTimeLocations
+147:0,true,50,66,50,66,52,52,56,65,639,639,0,0,因为它头脑聪明，行为举止富有格调 在岛上的贵族间，曾被作为照顾起居的近侍。 但是由于在晚上碰到的话，非常容易被脸吓到 很快就失去了人气。,https://paldb.cc/cn/Palpagos_Islands?pal=BlueberryFairy&t=dayTimeLocations
+112:0,true,30,80,35,80,35,35,30,38,57,57,0,0,它比较喜欢吃生肉，但每次吃到肚里的都成了全熟的肉。 这是因为它以灼热利爪为武器， 但却不知猎物会因此被烤成焦炭。,https://paldb.cc/cn/Palpagos_Islands?pal=Manticore&t=dayTimeLocations
+115:0,true,35,77,35,77,35,35,,,10,10,26,26,虽然摆出一副双手叉腰，一副如画般的神气姿态， 但是实际上，由于尾巴和头发过于沉重， 它不过是为了不摔倒而拼命保持平衡罢了。,https://paldb.cc/cn/Palpagos_Islands?pal=DarkFlameFox&t=dayTimeLocations
+93:0,true,30,80,30,80,30,35,36,38,93,93,0,0,这种帕鲁全身都是高效的散热器官， 使它能够发挥惊人的耐力。 当有人坐在它身上时，它会注意不烫伤对方。,https://paldb.cc/cn/Palpagos_Islands?pal=FireKirin&t=dayTimeLocations
+59:0,true,13,65,13,65,15,15,27,29,280,280,0,0,它脸颊周围的绒毛能吸收冲击力。 就算被击飞几米也没什么大不了的， 但整理羽毛很麻烦，痒的地方又挠不到， 总觉得有些烦乱、郁闷。,https://paldb.cc/cn/Palpagos_Islands?pal=FluffyBird&t=dayTimeLocations
+143:0,true,10,60,10,58,56,56,56,60,260,260,0,0,异常讨厌被人看到双眼。 如果有人强行盯着，它就会突然哭出来 之后两周左右的时间，对对方不理不睬。,https://paldb.cc/cn/Palpagos_Islands?pal=BadCatgirl&t=dayTimeLocations
+78:0,true,23,48,23,48,23,23,28,38,55,55,0,0,这种帕鲁能操控阳之力量，施展奇妙的法术。 不论任何食物都喜欢吃全熟。 和暗巫猫的关系相当不好。,https://paldb.cc/cn/Palpagos_Islands?pal=FoxMage&t=dayTimeLocations
+175:0,true,69,80,80,80,80,80,69,69,1,1,0,0,沁莲龙居住的水边，生有大量的外观相似的花朵。 研究者虽多次实验人工繁育花朵， 但只要进行了人为干预，无论怎样花朵都会枯萎。,https://paldb.cc/cn/Palpagos_Islands?pal=LotusDragon&t=dayTimeLocations
+56:0,true,14,54,14,54,14,15,27,29,0,1119,0,0,它头上的角可通过沐浴月光生长。 虽然这种帕鲁并不讨厌阳光， 可是它的角在被太阳照射时会发痒。,https://paldb.cc/cn/Palpagos_Islands?pal=Werewolf&t=dayTimeLocations
+57:0,true,14,57,14,57,15,15,17,40,264,1463,0,0,它曾经在天空中自由翱翔， 但在与天擒鸟的竞争中败北， 于是舍弃天空，过起了与黑夜共生的低调生活。,https://paldb.cc/cn/Palpagos_Islands?pal=DarkCrow&t=dayTimeLocations
+148:0,true,13,67,13,67,65,66,56,66,107,107,0,0,它手里捧着的，是自己的灵魂。 当它找到了心仪的对象，就会将对方的灵魂强行抽出 并与自己的灵魂融合，以求成为一心同体。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostRabbit&t=dayTimeLocations
+74:0,true,13,80,13,80,30,30,27,29,67,67,0,0,它会用不同的节奏敲击地面与同伴沟通。 每种节奏所对应的意思会根据族群有所差异， 但人类至今仍未能完全理解其具体分类。,https://paldb.cc/cn/Palpagos_Islands?pal=Gorilla&t=dayTimeLocations
+82:0,true,25,49,25,49,25,25,35,45,64,64,0,0,要是不小心和它对视，就会被操纵。 大部分带着秘斯媞雅的人 都以为自己才是主人。,https://paldb.cc/cn/Palpagos_Islands?pal=Mutant&t=dayTimeLocations
+124:0,true,40,80,40,80,40,40,42,45,423,423,0,0,将天羽龙当作抱枕一同入睡， 就能体验如同身处天堂一般的舒适感。 但如果个体的睡相很差，那么会因被压扁而进入天堂。,https://paldb.cc/cn/Palpagos_Islands?pal=SkyDragon&t=dayTimeLocations
+122:0,true,16,80,16,80,16,16,45,45,14,14,0,0,过去人们认为它是带来旱季的使者。 只要前一年发生干旱，人们就会全力驱逐这种帕鲁， 祈祷今年能够获得丰收。,https://paldb.cc/cn/Palpagos_Islands?pal=Suzaku&t=dayTimeLocations
+181:0,true,66,78,76,78,76,78,66,66,1,1,40,40,当其生命走到尽头时，夜空中的某处便会多出一颗星星。 一生中的回忆越多，其光芒越是璀璨。,https://paldb.cc/cn/Palpagos_Islands?pal=MoonChild&t=dayTimeLocations
+174:0,true,13,80,13,80,13,13,68,68,1,1,26,26,聚精会神，从火焰中窥探未来。 要是看见了不合心意的未来，就会一直重抽，直到抽出满意的结果。 所以昭炎狐的未来一直都是一片光明！,https://paldb.cc/cn/Palpagos_Islands?pal=FoxExorcist&t=dayTimeLocations
+152:0,true,29,53,29,53,52,52,35,35,84,84,0,0,踏春兔跑过的地面会变得土质肥沃，草木也会长得很茂盛。 但如果喷上除草剂后， 它们就不会在这里跑动了。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassRabbitMan&t=dayTimeLocations
+154:0,true,53,66,53,66,53,55,56,63,352,352,0,0,在岛上还盛行炼金术的时候， 它持续闪耀的金色毛发作为炼金的触媒很受欢迎。 不久之后，人们提出了跨时代的见解。 既然同是金色的，那么炼金就只加工金毛不就好了嘛。,https://paldb.cc/cn/Palpagos_Islands?pal=GoldenHorse&t=dayTimeLocations
+75:0,true,12,35,12,35,24,24,17,19,285,313,0,0,它流线型的外形很适合在水上活动。 因此经常被非法捕鱼团捕捉， 并被拿来代替冲浪板使用。,https://paldb.cc/cn/Palpagos_Islands?pal=Serpent&t=dayTimeLocations
+21:0,true,23,80,80,80,80,80,23,23,1,1,0,0,统领着美露帕们。 君王美露帕之间的决斗，会以族群的统治权为赌注。 孤身一只的个体就是输家。,https://paldb.cc/cn/Palpagos_Islands?pal=KingAlpaca&t=dayTimeLocations
+80:0,true,23,80,23,80,24,25,,,511,1109,0,0,它能从地狱召唤雷电。 如果被雷冥鸟释放的电流电死， 灵魂就会坠入地狱。,https://paldb.cc/cn/Palpagos_Islands?pal=HadesBird&t=dayTimeLocations
+127:0,true,29,64,29,64,53,53,47,49,52,52,0,0,有着辟邪的特性， 昔日曾经作为优秀的伙伴，和岛民构筑起了良好的关系。 而现在，八云犬和人们之间已经垒起了名为「邪念」的高墙。,https://paldb.cc/cn/Palpagos_Islands?pal=GuardianDog&t=dayTimeLocations
+43:1,true,16,38,16,35,20,20,36,38,790,790,0,0,它的性格会因出生地水温的不同而有所差异。 诞生于温暖水源地的水灵儿往往较为热情， 充满源源不绝的干劲。,https://paldb.cc/cn/Palpagos_Islands?pal=Kelpie_Fire&t=dayTimeLocations
+139:0,true,55,80,68,80,68,68,55,55,36,36,0,0,它的外表曾被视作高贵的象征。 而在那些蔑视权贵的人眼里，它就成了醒目的标靶。 于是在不知不觉间，阿努比斯成为了死亡的象征。,https://paldb.cc/cn/Palpagos_Islands?pal=Anubis&t=dayTimeLocations
+168:0,true,13,69,13,69,65,65,,,37,115,0,0,吓唬人就是它的生存意义，但是却完全不可怕。 但因为它太过可爱，大家总会忍不住装出被吓到的样子。 吓丝妮已经成为给人们带来笑容的使者了。,https://paldb.cc/cn/Palpagos_Islands?pal=OniGhostGirl&t=dayTimeLocations
+111:0,true,34,43,34,43,34,35,,,10,31,0,0,性格极为纤细敏感， 遇到讨厌的事物，就会躲在洞窟里不愿出来。 而古人们也认为，若苍焰狼躲藏起来则是一种不吉之兆。,https://paldb.cc/cn/Palpagos_Islands?pal=AmaterasuWolf&t=dayTimeLocations
+132:0,true,13,49,13,49,44,46,42,45,39,39,0,0,它的那双坚硬的爪子可使它轻而易举地登上险峻的山岭。 可是因为腿短的关系，并不擅长下山， 因此常常把自己困在山上，难以抽身。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteTiger&t=dayTimeLocations
+171:0,true,65,80,65,80,65,65,69,69,1,1,0,0,直到最近才被目击到的全新帕鲁。 性情沉稳又安静，只是想要自由的生活着。 已经，不再有任何束缚了。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostDragon&t=dayTimeLocations
+71:0,true,20,58,20,57,30,32,35,58,44,47,0,0,它非常的粘人，字面意义上的如胶似漆。 越是想要甩开它，就会粘的越紧。 以上就是它的「性格」特征。,https://paldb.cc/cn/Palpagos_Islands?pal=PurpleSpider&t=dayTimeLocations
+54:0,true,14,80,14,80,20,20,17,31,55,55,0,0,以前，它被认为是雷神的使者，不会被人类狩猎。 然而，当有人目击到它被闪电击中后死亡， 信仰逐渐消失，它也字面意思上沦落到当牛做马。,https://paldb.cc/cn/Palpagos_Islands?pal=Kirin&t=dayTimeLocations
+96:0,true,30,80,30,80,30,30,37,40,505,505,0,0,虽说与燧火鸟外形相似，但并无任何关系。 它会采用快速俯冲，并用尖锐的喙击败敌人。 那身姿宛如落雷一般。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderBird&t=dayTimeLocations
+110:0,true,33,80,33,80,33,34,47,49,247,247,0,0,吐息中混合着的疑似花粉的， 无论什么植物都能授粉成功的奇妙物质。 对于那些身上长有植物的帕鲁而言，这是个令兽心情复杂的家伙。,https://paldb.cc/cn/Palpagos_Islands?pal=Plesiosaur&t=dayTimeLocations
+109:0,true,14,39,14,39,20,24,14,38,373,373,0,0,这种帕鲁过于放松时，所有反应都会变得极为迟缓。 即使身中28刀，大概也要到隔天早上 它才会发现自己早该死去。,https://paldb.cc/cn/Palpagos_Islands?pal=LazyCatfish&t=dayTimeLocations
+166:0,true,13,69,13,69,65,65,,,37,115,0,0,睡着就变瘪了。 睡着了就不在里面了。 因为不存在睡着了的兜兜灵， 所以兜兜灵并没有睡着。,https://paldb.cc/cn/Palpagos_Islands?pal=HoodGhost&t=dayTimeLocations
+121:0,true,55,80,80,80,80,80,55,55,1,1,0,0,传说有位贤者因冤罪而被推入漩涡， 随后以覆海龙之姿重生， 并一举毁灭了整个国家。,https://paldb.cc/cn/Palpagos_Islands?pal=Umihebi&t=dayTimeLocations
+47:0,true,9,65,9,65,9,9,,,66,66,0,0,要是缺了其中一方，就会从不知何处出现替补者。 然后两者就会像无事发生般，开始和睦的生活在一起。 对于莉欧·莉涅来说，最重要的是「和睦相处」。,https://paldb.cc/cn/Palpagos_Islands?pal=ClioneTwins&t=dayTimeLocations
+58:0,true,14,34,14,34,20,20,15,19,109,109,0,0,昔日这种帕鲁常常被肉食帕鲁所猎杀。 炽焰牛对此深感不平， 于是这股愤怒化作炽热的火焰，在世代之间代代相传。,https://paldb.cc/cn/Palpagos_Islands?pal=FlameBuffalo&t=dayTimeLocations
+153:0,true,13,80,13,80,56,56,56,65,1,770,0,0,有着无法抑制住的想要将猎物大卸八块的本能。 具体从哪个部位开始，不同个体有着不同的讲究。 若是被幽恋娜抓到了，就祈祷它会从脑袋开始吧。,https://paldb.cc/cn/Palpagos_Islands?pal=GrimGirl&t=dayTimeLocations
+89:0,true,28,57,28,57,28,28,,,106,106,0,0,它在寿命已尽时，会变成一株巨大的植物。 之后每十年绽放出美丽的花朵， 而新的花丽娜将会从中诞生。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerDoll&t=dayTimeLocations
+67:0,true,19,38,19,38,28,30,,,43,43,0,0,它是发誓效忠女皇蜂的仆人。 誓死消灭对女王有害的一切事物。 甚至不惜采取自爆手段，也要守卫女王到最后一刻。,https://paldb.cc/cn/Palpagos_Islands?pal=SoldierBee&t=dayTimeLocations
+55:0,true,10,36,10,36,14,14,27,29,66,66,0,0,这种帕鲁在很久以前是相当强大的巨型水栖帕鲁， 但食物减少后，它们就搬到了陆地上。 由于走路会消耗许多能量， 导致它们的体型逐渐变小，现在已经是非常弱小的帕鲁了。,https://paldb.cc/cn/Palpagos_Islands?pal=SharkKid&t=dayTimeLocations
+172:0,true,35,70,35,70,66,66,65,69,27,27,0,0,要在食物匮乏的高空生存 有时甚至会连猎物的脑子都吃。 一种说法是，雷云鹫为了寻求更稳定的食物来源， 一部分族群从高空迁移到了低空，最终演化成了迅雷鸟。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderFluffyBird&t=dayTimeLocations
+160:0,true,62,80,80,80,80,80,62,62,1,1,0,0,颈部周围覆盖的金属部件，有着类似磁铁的性质。 如果靠近脚部的部件，就会自己互相吸附在一起。 虽然在颈部堆积了金属垃圾之后，会不情不愿的开始清理 但是由于总也取不下而变得暴躁。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteShieldDragon&t=dayTimeLocations
+108:0,true,23,80,33,80,33,35,23,23,493,493,0,0,它在交配前后，体味会发生巨大变化。 人们认为它找到伴侣后的香味芳香迷人， 并将其称为「初恋之香」。,https://paldb.cc/cn/Palpagos_Islands?pal=SakuraSaurus&t=dayTimeLocations
+49:0,true,11,38,11,38,11,11,17,29,429,429,0,0,即使它抓着人，也能毫不费力地飞向天空。 可是在疲惫至极时就会二话不说地松开脚爪， 因而导致的高空坠落死亡事故屡见不鲜。,https://paldb.cc/cn/Palpagos_Islands?pal=Eagle&t=dayTimeLocations
+37:0,true,5,39,5,39,10,10,27,29,1480,1480,0,0,为保护脆弱的本体，获得了坚硬的甲壳。 作为代价则完全舍弃了本体的防御力， 现在的它甚至会因为挠痒而陷入昏厥。,https://paldb.cc/cn/Palpagos_Islands?pal=TentacleTurtle&t=dayTimeLocations
+125:0,true,40,57,40,57,55,55,47,49,20,20,0,0,一到开春时节，就会乘风在岛上散布花粉。 波娜兔之所以会得花粉症， 都怪春彩娘。,https://paldb.cc/cn/Palpagos_Islands?pal=LeafPrincess&t=dayTimeLocations
+119:0,true,39,48,39,48,45,45,42,45,38,38,0,0,就算身体会在酷暑时融化，它还是痴迷于日光浴。 就算身体会在高温时融化，它依然痴迷于泡温泉。 反正最终都是一死，那么不如融化在艳阳高照的露天温泉里。,https://paldb.cc/cn/Palpagos_Islands?pal=IceWitch&t=dayTimeLocations
+140:0,true,37,80,37,80,37,37,,,360,360,0,0,曾经脾气暴躁并被当作死亡的象征。 当阿努比斯变为死亡的象征后，寻求替代的富人们用酒灌醉它，并将其驯服。 不知从何时起，塞赫麦特成为了高贵的象征。,https://paldb.cc/cn/Palpagos_Islands?pal=Sekhmet&t=dayTimeLocations
+84:0,true,10,39,25,39,25,25,10,13,262,262,0,0,它只要生气便会暴走，如同烈火一般不受控制。 因此「踩了花冠龙尾巴」这句话就是 指激怒某人的意思。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerDinosaur&t=dayTimeLocations
+114:0,true,39,68,39,68,65,65,42,45,100,100,0,0,对时间很敏感，每天早晨必然在固定的时间醒来。 帕洛斯群岛的一天之所以被分为24个片段， 据说就是因为从正面看开屏的白真雪雀时， 尾羽上分割的空白区域有24个的缘故。,https://paldb.cc/cn/Palpagos_Islands?pal=SnowPeafowl&t=dayTimeLocations
+170:0,true,65,72,65,72,65,65,,,29,29,0,0,爪尖的长毛是炫耀的资本。 它对于污渍很敏感，一直都小心翼翼的护理着毛发。 要是附近扬起了灰尘，就会露出非常嫌弃的表情。,https://paldb.cc/cn/Palpagos_Islands?pal=SleeveRabbit&t=dayTimeLocations
+70:0,true,13,48,13,48,25,25,17,29,60,630,0,0,如果进入笑魇猫的领地， 它监视来者的眼睛就会闪闪发光。 这并不是比喻，而是真的会发光。,https://paldb.cc/cn/Palpagos_Islands?pal=NaughtyCat&t=dayTimeLocations
+81:0,true,24,80,24,80,24,24,,,75,75,0,0,角上的那片叶子，无论如何拉扯也不会掉落。 而当它自行飘落时， 密林陶洛斯便感应到自身大限将至。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassMinotaur&t=dayTimeLocations
+161:0,true,63,80,63,80,63,65,66,66,113,113,0,0,和雷角马一样，曾经被视作雷神的使者。 由于雷角马不再受到人们信仰 便使得驭雷马被当作真正的雷神的使者 然而随着时代的变迁，它最终得到了拉车的马的地位。,https://paldb.cc/cn/Palpagos_Islands?pal=BlueThunderHorse&t=dayTimeLocations
+130:0,true,35,80,35,80,50,60,56,63,2,179,0,0,它最为自豪的，就是自己如流水般柔顺的鬃毛。 如果发现了毛发分叉，就会害羞的无法集中精力奔跑。 由于静电会导致炸毛，绝对不会让驭雷马靠近。,https://paldb.cc/cn/Palpagos_Islands?pal=NightBlueHorse&t=dayTimeLocations
+48:0,true,10,62,10,62,56,56,36,38,275,743,0,0,若要和它一起睡觉，最好确认下明天的行程。 吸盘的痕迹看起来就像吻痕， 如果被睡糊涂的它吸住，就会造成不必要的误解。,https://paldb.cc/cn/Palpagos_Islands?pal=OctopusGirl&t=dayTimeLocations
+99:0,true,31,44,31,43,31,39,44,44,546,546,0,0,它的本体是一种能量体，内部是空的。 它会将猎物活生生地塞进外壳并将其吸收。 周围总是不断回响着地狱般的呻吟声。,https://paldb.cc/cn/Palpagos_Islands?pal=DarkScorpion&t=dayTimeLocations
+131:0,true,42,50,42,46,42,42,50,50,17,17,0,0,通过撞击更坚硬的岩石，来保持自己中意的形体。 至于那些躯体凹陷的低沉个体还是放任自流吧。 用人来类比的话，就像不小心把刘海剪过头了。,https://paldb.cc/cn/Palpagos_Islands?pal=RockBeast&t=dayTimeLocations
+50:0,true,11,73,11,73,11,11,,,0,159,22,22,迄今为止，所有养育过它们一族的人类的思念， 全都凝聚在它背后的手里。 近来，尽情宠爱念影喵似乎已成了大家的共识。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostBlackCat&t=dayTimeLocations
+76:0,true,21,37,21,37,30,30,27,29,52,52,0,0,这类帕鲁在森林里过着狩猎生活，特征习性等与人类十分接近。 在远古时代，便走上了与人类不同的进化之路。 但也许它们就是能解答「帕鲁为何物」这个问题的关键。,https://paldb.cc/cn/Palpagos_Islands?pal=RobinHood&t=dayTimeLocations
+2:0,true,1,41,1,41,1,3,10,13,367,367,0,0,它装出一副威风凛凛的样子，其实胆小软弱。 如果被捣蛋猫看不起， 某种意义上可谓奇耻大辱。,https://paldb.cc/cn/Palpagos_Islands?pal=PinkCat&t=dayTimeLocations
+105:0,true,32,80,32,80,32,35,70,70,102,102,0,0,健康的个体，背部熔岩的流动也会十分顺畅。 如果生活习惯不健康，熔岩流动也会越来越滞涩。 最坏会发生熔岩堵塞，最后突然大爆发。,https://paldb.cc/cn/Palpagos_Islands?pal=VolcanoDragon&t=dayTimeLocations
+63:0,true,20,80,20,80,25,25,30,45,272,272,0,0,它的性格正如外表一样单纯无害。 正因为如此，它无法很好地区分善恶， 容易被内心歹毒的人利用。,https://paldb.cc/cn/Palpagos_Islands?pal=FairyDragon&t=dayTimeLocations
+126:0,true,40,49,40,48,46,46,47,49,70,70,0,0,曾经有一段时间流行过球犰足球这项运动。 虽然因为收到帕鲁保护组织的强烈反对，很快就被废除， 但其实被当球踢能够清理死皮，球犰也并非不情不愿。,https://paldb.cc/cn/Palpagos_Islands?pal=SmallArmadillo&t=dayTimeLocations
+52:0,true,10,45,12,42,12,13,10,45,0,160,0,0,它喜欢突然出现在其他帕鲁面前，傲慢地张开双翼炫耀自己。 虽然是一种恐吓行为， 但它脸上却带有几分陶醉的神情。,https://paldb.cc/cn/Palpagos_Islands?pal=CatBat&t=dayTimeLocations
+34:0,true,6,53,6,53,14,16,10,13,393,393,0,0,只要它肚子不饿，它背上的草丛就会结出野莓。 若它遇见中意的对象，它会请对方吃掉自己的野莓， 抓住了对方的胃，就诞生了一对新的伴侣。,https://paldb.cc/cn/Palpagos_Islands?pal=BerryGoat&t=dayTimeLocations
+33:0,true,5,44,5,44,10,11,10,13,458,458,0,0,猎狼与人类之间的关联早已淡化， 但过去与人类共同狩猎的模式， 构成了它们如今的狩猎体系。,https://paldb.cc/cn/Palpagos_Islands?pal=Garm&t=dayTimeLocations
+133:0,true,32,34,32,34,32,32,,,21,21,0,0,「直视雪墩墩的眼睛」 这句话的意思是要透过现象看本质。 说起来不知为何，从来没有想要探究雪墩墩到底有没有眼睛的研究者。,https://paldb.cc/cn/Palpagos_Islands?pal=SmallYeti&t=dayTimeLocations
+92:0,true,23,40,23,36,30,32,37,40,140,140,0,0,它对落单的帕鲁往往很和蔼可亲。 但要是有误会了什么的帕鲁因此缠上它， 它就会立即找来落雷解决掉对方。,https://paldb.cc/cn/Palpagos_Islands?pal=RaijinDaughter&t=dayTimeLocations
+39:0,true,9,35,9,35,9,9,17,19,88,88,0,0,它全身上下都比糖还要甜18000倍。 被其气味吸引的肉食性帕鲁，若是咬上一口， 就会被甜到翻白眼昏迷。,https://paldb.cc/cn/Palpagos_Islands?pal=SweetsSheep&t=dayTimeLocations
+85:0,true,23,59,23,59,25,42,25,38,1839,1839,0,0,它在死亡时身体会化为刀，由下一代继承。 浪刃武士以外的生物拿到这把刀时， 会因承受不住它的亡者之声而发狂。,https://paldb.cc/cn/Palpagos_Islands?pal=Ronin&t=dayTimeLocations
+32:0,true,6,80,6,80,9,11,10,13,227,227,0,0,拥有最富有力量感的双角的个体，会成为这种帕鲁的领袖。 犄角断裂时，内心也会大受打击。 这时候它就会默默离开族群，在远离人烟的地方结束一生。,https://paldb.cc/cn/Palpagos_Islands?pal=Deer&t=dayTimeLocations
+100:0,true,31,40,31,36,31,32,40,40,367,367,0,0,当某种感情变得强烈时，它的尖刺就会伸缩。 被精心养育的球抱苞，会令人忍不住想要拥入怀中， 但是十有八九都是悲剧结尾。,https://paldb.cc/cn/Palpagos_Islands?pal=CactusDoll&t=dayTimeLocations
+97:0,true,10,58,10,58,30,30,47,49,82,316,0,0,散发着光芒的拟饵照亮了黑暗。 被这光亮吸引来的帕鲁如果被冥灯鱼发现的话，那可是插翅难逃了。 它会一直作为其向导，直到该帕鲁平安返回自己的家。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostAnglerfish&t=dayTimeLocations
+35:0,true,5,34,5,34,20,20,,,100,100,0,0,在地面爬行，并以微小的有机物为食的帕鲁。 摄入的没营养的物质一段时间后会排出体外。 将它用作拖把进行清洁的话，就能构筑双赢的关系。,https://paldb.cc/cn/Palpagos_Islands?pal=MopBaby&t=dayTimeLocations
+53:0,true,10,47,10,47,25,26,17,40,918,918,0,0,这类帕鲁产下的蛋会爆炸，相当恐怖。 平时会将从屁股射出的蛋用作武器， 不过若它无计可施，它就会采取自爆手段了。,https://paldb.cc/cn/Palpagos_Islands?pal=ColorfulBird&t=dayTimeLocations
+88:0,true,1,40,1,36,1,1,37,40,679,679,0,0,虽然看上去就像是什么生物自布偶中向外窥视一样， 但是试着将手探进去却又什么也摸不到。 不仅如此，手甚至可以无止境地向深处伸去， 也许，这里面就是宇宙吧。,https://paldb.cc/cn/Palpagos_Islands?pal=StuffedShark&t=dayTimeLocations
+72:0,true,16,45,16,44,33,35,42,45,242,242,0,0,种群内能在雪上滑行最快的个体，就是最了不起的个体。 有时会有因为冲太快飞跃起来的个体突然从天而降， 在争夺首领地位时这种情况尤其多发。 今天晴转多云，部分地区大到「豹」雨。,https://paldb.cc/cn/Palpagos_Islands?pal=IceSeal&t=dayTimeLocations
+136:0,true,13,48,13,48,45,45,,,11,11,0,0,什么奇怪的东西都毫不在意地往嘴里塞， 导致头顶的嘴有时会患上口腔溃疡。 每当这种时候，就由脸部的嘴来替代。 但是胡乱吃东西的毛病依然不改，最终两张嘴都得了口腔溃疡。,https://paldb.cc/cn/Palpagos_Islands?pal=VenusFlytrap&t=dayTimeLocations
+45:0,true,6,58,6,58,50,50,10,13,873,117,0,0,和海月灵样貌非常接近的帕鲁。 和朋友们出行计划过多，导致预定计划冲突时， 就会拜托关系要好的海月灵，让它代替它去。 作为回礼会和海月灵约一次会。,https://paldb.cc/cn/Palpagos_Islands?pal=JellyfishFairy&t=dayTimeLocations
+142:0,true,48,80,48,80,48,48,55,55,326,326,0,0,背部堆砌的石头有一定自我意识。 若是取下来放到别处， 就会自己移动，试图回到本体所在的地方。,https://paldb.cc/cn/Palpagos_Islands?pal=CubeTurtle&t=dayTimeLocations
+163:0,true,63,69,63,65,64,64,65,69,34,34,0,0,传统的健康疗法中有着，向浴缸中放入电涡蜗， 然后享受电疗浴的做法。 换句话说就是，古老偏方，切勿模仿。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecSnail&t=dayTimeLocations
+155:0,true,13,56,13,56,53,53,51,52,52,52,0,0,为了到达「无我」的境地而不停的冥想。 直面烦恼并顿悟之后，它都会胃口大开吃到撑， 每当此时就会有所感悟——今天吃太多了。,https://paldb.cc/cn/Palpagos_Islands?pal=SifuDog&t=dayTimeLocations
+38:0,true,9,40,9,36,18,18,17,40,144,144,0,0,它那巨大的双臂就连铁块都能撕裂。 过去曾有过将犯下重罪的人绑在城镇的广场上， 让吊缚灵直接撕下他的肉这种极端残忍的处刑。,https://paldb.cc/cn/Palpagos_Islands?pal=WindChimes&t=dayTimeLocations
+184:0,true,79,79,,,,,79,79,0,0,1,1,很久以前，在通信手段匮乏的年代， 人们曾通过闪烁磐甲龙翅膀内侧的光芒， 传递简单的信号。,https://paldb.cc/cn/Palpagos_Islands?pal=DomeArmorDragon&t=dayTimeLocations
+90:0,true,10,68,10,68,28,28,,,105,105,0,0,磨砺一脉相传的武术，唯有日日精进！ 沉溺情爱乃荒唐无稽！唯有日日修行！ 时机已至！向心仪之人发起攻势！唯有失恋！ 恋爱之术未曾传承！此情唯有未竟！,https://paldb.cc/cn/Palpagos_Islands?pal=PandaGirl&t=dayTimeLocations
+179:0,true,75,78,75,77,75,77,78,78,0,0,43,43,在它眼中，人类不过是方便的寄生对象罢了。 红菇娘之所以演化成现在的模样， 就是为了让人类放松警惕，从而更高效地传播孢子。,https://paldb.cc/cn/Palpagos_Islands?pal=MushroomLady&t=dayTimeLocations
+137:0,true,46,80,46,80,46,46,52,52,17,17,0,0,传说它是火山喷发之际一同诞生的产物。 曾有可疑的团体主张， 这片大陆其实就是巨大焰煌的背。,https://paldb.cc/cn/Palpagos_Islands?pal=KingBahamut&t=dayTimeLocations
+169:0,true,13,67,13,67,66,66,,,117,117,0,0,通过旋转螺旋桨般的尾巴获得推进力。 根据以前的研究，若是能忽视肉体的崩溃， 理论上能够实现时速141.6km/h的游泳速度。,https://paldb.cc/cn/Palpagos_Islands?pal=KingSunfish&t=dayTimeLocations
+159:0,true,55,80,55,80,55,55,55,55,12,12,22,22,即便被拆解成215块零件，只要再拼装到一起， 便又能完好如初正常活动的神奇帕鲁。 需注意如果拼装过程中混进其他个体的零件， 它就会因为失去人格同一性而陷入抑郁。,https://paldb.cc/cn/Palpagos_Islands?pal=WingGolem&t=dayTimeLocations
+173:0,true,10,69,10,67,66,66,65,69,50,50,0,0,有人认为它之所以经常摇头晃脑的，是为了拟态成被风吹动的花朵。 但是也有人反驳， 难道不是快速扭来扭去的红花看起来太掉SAN，所以谁都不想接近吗。,https://paldb.cc/cn/Palpagos_Islands?pal=RedFlowerBird&t=dayTimeLocations
+176:0,true,55,74,55,74,55,55,,,18,18,63,63,有时会被自己召唤的分身打败，并被取而代之。 就连它自己也不太清楚昨天的拉比耶尔和今天的拉比耶尔还是同一只吗。,https://paldb.cc/cn/Palpagos_Islands?pal=ClownRabbit&t=dayTimeLocations
+95:0,true,15,37,30,37,30,30,15,15,188,188,0,0,当极光在夜空中闪耀时， 这种帕鲁会仰望天空，以美妙的嗓音歌唱。 但这个习性也让它非常容易被敌人锁定。,https://paldb.cc/cn/Palpagos_Islands?pal=IceFox&t=dayTimeLocations
+46:0,true,11,63,11,63,50,50,17,19,9,1197,0,0,和海月仙样貌非常接近的帕鲁。 有时会为了计划冲突的海月仙，作为它的替身代替其赴约。 由于演技过于逼真，谁都没有注意到是替身。,https://paldb.cc/cn/Palpagos_Islands?pal=JellyfishGhost&t=dayTimeLocations
+177:0,true,74,78,74,78,74,78,,,0,0,80,80,爪子有些不太老实，会趁人不注意顺爪牵羊。 就算快暴露了也没关系。 只要迅速连「眼睛」一起偷走，那就不会被目击到行窃现场了。,https://paldb.cc/cn/Palpagos_Islands?pal=ThiefBird&t=dayTimeLocations
+164:0,true,63,69,63,69,64,64,65,69,53,53,0,0,它会将不好的记忆封存在绒毛球里。 风一吹，绒毛乘风而去， 忧郁的心情也随之飘散。,https://paldb.cc/cn/Palpagos_Islands?pal=DandelionGirl&t=dayTimeLocations
+9:0,true,4,62,4,62,4,4,47,49,675,675,0,0,族群中犯下大错的个体会被逼迫自裁。 用树枝刺穿自己那膨胀到极限的鸣囊， 就会像泄气的气球一样飞向大气圈的远方，魂归天国。,https://paldb.cc/cn/Palpagos_Islands?pal=KendoFrog&t=dayTimeLocations
+158:0,true,55,80,80,80,80,80,55,55,1,1,0,0,来自深渊，暴乱之兽。 汝不得立于此兽之前。 汝不得聆听此兽之声。,https://paldb.cc/cn/Palpagos_Islands?pal=BlackMetalDragon&t=dayTimeLocations
+77:0,true,10,29,10,25,22,22,27,29,86,86,0,0,它喜欢植物众多的地方， 但是最近，波娜兔似乎集体染上了花粉症。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerRabbit&t=dayTimeLocations
+18:0,true,11,44,11,44,20,22,15,15,315,315,0,0,其实它与企丸丸是毫无关系的物种。 但因为什么都不做就能获得大家的追捧， 所以就努力摆出一副高傲的态度。,https://paldb.cc/cn/Palpagos_Islands?pal=CaptainPenguin&t=dayTimeLocations
+61:0,true,16,29,16,25,16,16,27,29,271,271,0,0,吸入它的鳞粉后，会获得升天般的愉悦感。 虽然有人试图对这种帕鲁严加管理， 但受到帕鲁保护团体的反对，至今没有进展。,https://paldb.cc/cn/Palpagos_Islands?pal=CuteButterfly&t=dayTimeLocations
+73:0,true,5,40,5,36,21,22,36,40,158,836,0,0,这种帕鲁对站姿的讲究异常执着。 它总是追求着最帅气的姿势。 给它一面镜子的话，它能为研究姿势而站一整天。,https://paldb.cc/cn/Palpagos_Islands?pal=LizardMan&t=dayTimeLocations
+69:0,true,10,42,10,42,30,38,37,40,0,768,0,0,它总是为了寻求一夜之欢而纠缠他人。 一开始只对帕鲁有兴趣， 但近年来，它的魔爪也开始伸向人类。,https://paldb.cc/cn/Palpagos_Islands?pal=PinkLizard&t=dayTimeLocations
+106:0,true,32,49,32,45,32,34,47,49,42,42,0,0,会用其独特的舞蹈打乱对手的节奏。 在领地争夺时，首先被对方带节奏的那一方就是败者。 求爱、消遣、万事唯有舞蹈！ 话说，当它面向人类跳舞时，那又代表着什么意思呢？,https://paldb.cc/cn/Palpagos_Islands?pal=TropicalOstrich&t=dayTimeLocations
+60:0,true,9,29,9,25,16,16,27,29,259,259,0,0,它的刺上有毒，被刺到会有危险。 与幻悦蝶关系很好， 只有让它吸花蜜时，才会露出开心的表情。,https://paldb.cc/cn/Palpagos_Islands?pal=LittleBriarRose&t=dayTimeLocations
+86:0,true,10,45,10,41,10,10,42,45,229,229,0,0,它的口腔内部十分凉爽，只要把嘴闭上就是移动冷库。 其唾液中所含的特殊成份也有食品保鲜的作用。 虽然也不是不能被人类当做保存食物的冰箱， 至于卫生方面的问题，还是闭上嘴比较好。,https://paldb.cc/cn/Palpagos_Islands?pal=IceCrocodile&t=dayTimeLocations
+44:0,true,1,62,1,62,1,1,17,19,399,399,0,0,这种帕鲁的脸上总是挂著微笑。 捣蛋猫偶尔会恶作剧，把它的缎带打成死结， 只有这种时候它才会露出恶鬼般的神色。,https://paldb.cc/cn/Palpagos_Islands?pal=PinkRabbit&t=dayTimeLocations
+156:0,true,53,56,53,56,53,53,,,52,52,0,0,曾经岛上有过力士獒相扑的娱乐活动， 若是最高级别的力士獒的话， 在受到草莽猪的突进攻击时， 结果反而是草莽猪会被击飞。,https://paldb.cc/cn/Palpagos_Islands?pal=SumoDog&t=dayTimeLocations
+120:0,true,39,80,39,80,39,39,,,325,325,0,0,如同金色绷带般的器官有着伸缩自如的特性。 若是处于极端干燥的环境下会发生断裂， 所以每天检查保湿必不可少。,https://paldb.cc/cn/Palpagos_Islands?pal=MummyPal&t=dayTimeLocations
+28:0,true,5,13,5,13,5,5,10,13,148,148,0,0,它十分好战，会在弄清双方力量差距前挑事。 虽然身材娇小，但拥有惊人的冲锋威力， 甚至能弹飞巨大岩石。,https://paldb.cc/cn/Palpagos_Islands?pal=Boar&t=dayTimeLocations
+150:0,true,13,66,13,66,50,65,56,60,1622,1622,0,0,像是假面的部分，貌似并不是它的脸。 仿佛就在眼前，但实际上又似乎并不存在。 常常不知道从哪里，仿佛有双眼睛在注视这边。 转头看去，似乎就在背后。,https://paldb.cc/cn/Palpagos_Islands?pal=MysteryMask&t=dayTimeLocations
+7:0,true,2,18,2,18,2,4,10,13,867,867,0,0,它会乘着风任其带它翱翔四方。 只要在旅途中找到命中之人， 就会结束自己的旅程。,https://paldb.cc/cn/Palpagos_Islands?pal=FlyingManta&t=dayTimeLocations
+104:0,true,13,80,13,80,32,35,36,38,150,150,0,0,虽说与迅雷鸟外形相似，但并无任何关系。 它主要以岩石为食，因此经年累月后， 不只是鸟喙，它的整个头部也变得十分坚硬。,https://paldb.cc/cn/Palpagos_Islands?pal=RedArmorBird&t=dayTimeLocations
+22:0,true,4,16,4,16,4,4,10,13,0,164,0,0,它可以使心仪的对象陷入熟睡当中， 并使对方永远做着幸福的美梦。 直到死亡来临之前都不会醒来。,https://paldb.cc/cn/Palpagos_Islands?pal=DreamDemon&t=dayTimeLocations
+10:0,true,1,40,1,40,5,5,27,29,208,208,0,0,在达鼠泥看来，坏了的东西只要捶一下就好了。 而它的力道掌控，对人类而言堪称完美。 只要被其捶一下，停止跳动的心脏就能顺利起搏。,https://paldb.cc/cn/Palpagos_Islands?pal=LeafMomonga&t=dayTimeLocations
+103:0,true,11,80,32,80,32,32,11,45,118,118,0,0,它能将身体蜷缩起来，并以迅疾的速度旋转移动。 过去人们会在被驯服的疾旋鼬身上装上放牛奶的袋子再放牧， 以此利用它的旋转能力来制作黄油。,https://paldb.cc/cn/Palpagos_Islands?pal=WeaselDragon&t=dayTimeLocations
+40:0,true,8,21,8,21,9,15,17,19,111,111,0,0,这种帕鲁不须特意照料，无论其性别为何， 都会像水龙头般地分泌大量牛奶。 这就是生命的神秘之处吧。,https://paldb.cc/cn/Palpagos_Islands?pal=CowPal&t=dayTimeLocations
+138:0,true,46,80,46,80,46,46,55,75,36,36,41,41,一副身躯，两个意识。 有时会因为思路分歧而发生争吵。 在它们和好前，完全不知道躯体会往哪里去！,https://paldb.cc/cn/Palpagos_Islands?pal=GrassGolem&t=dayTimeLocations
+62:0,true,10,71,10,71,18,18,65,69,113,113,0,0,泡在水里的话，蓬松的毛会大量吸水。 在它抖动身体甩干水分时，会伴随剧烈的放电， 和它一起泡澡可是赌命的行为。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecPomeranian&t=dayTimeLocations
+19:0,true,4,40,4,40,4,5,10,13,0,263,0,0,这类帕鲁经常会陷入沉思， 且会因过度思考而失眠。 「我思故我在」。,https://paldb.cc/cn/Palpagos_Islands?pal=WizardOwl&t=dayTimeLocations
+43:0,true,9,19,9,18,9,10,17,19,1371,1371,0,0,它的性格会因出生地水质的不同而有所差异。 诞生于肮脏水源地的水灵儿大多都性格恶劣， 一副街边混混的派头。,https://paldb.cc/cn/Palpagos_Islands?pal=Kelpie&t=dayTimeLocations
+17:0,true,2,45,2,41,2,4,10,45,1130,1130,0,0,它的翅膀已完全退化，无法飞翔。 但基因中刻着对天空的向往。 因此它想尽办法，想要再一次飞翔。,https://paldb.cc/cn/Palpagos_Islands?pal=Penguin&t=dayTimeLocations
+182:0,true,76,78,76,78,76,78,,,0,0,47,47,经历过美好的体验之后，若不经历同等程度糟糕的体验就无法释怀。 若要精心养育墨罗娜的话， 必须要做好相应的心理准备。,https://paldb.cc/cn/Palpagos_Islands?pal=MonochromeQueen&t=dayTimeLocations
+29:0,true,5,53,5,53,5,5,10,13,94,94,0,0,它刚出生时无法很好地操纵火焰， 动不动就不小心喷出火焰，结果呛到自己。 火绒狐的喷嚏会引起森林火灾。,https://paldb.cc/cn/Palpagos_Islands?pal=Kitsunebi&t=dayTimeLocations
+23:0,true,4,14,4,14,4,4,10,13,72,72,0,0,在古时这种帕鲁会使用树枝等细长状的物品作为武器。 但在它们与人类频繁接触后，便不再使用这些物品。 因为它们发现了同样细长，却更为高效的「枪械」。,https://paldb.cc/cn/Palpagos_Islands?pal=Monkey&t=dayTimeLocations
+51:0,true,12,45,12,45,12,12,18,40,228,228,0,0,它会将刚出生的帕鲁抓到巢中， 代替父母养育它长大。 等到能吃的时候，就会猎杀它。,https://paldb.cc/cn/Palpagos_Islands?pal=HawkBird&t=dayTimeLocations
+24:0,true,4,48,4,48,4,5,17,19,0,153,0,0,如果在夜路上发现了露娜蒂的毛， 最好不要將它捡起，而是直接原路返回。 因为那是通往无尽黑夜的单程票。,https://paldb.cc/cn/Palpagos_Islands?pal=NightFox&t=dayTimeLocations
+4:0,true,1,18,1,18,1,5,10,13,211,211,0,0,拥有等同于5至7岁儿童的智力。 虽然很适合作为伙伴，但也有不少的记录显示， 有些个体在学会使用武器后杀害了自己的主人。,https://paldb.cc/cn/Palpagos_Islands?pal=Carbunclo&t=dayTimeLocations
+25:0,true,4,38,4,35,4,4,36,38,232,232,0,0,这种帕鲁哭泣时流的不是眼泪，而是岩浆。 而这些岩浆更会被身体吸收，使它的躯体越来越炎热。 换言之，流过的眼泪越多，它就越强。,https://paldb.cc/cn/Palpagos_Islands?pal=LavaGirl&t=dayTimeLocations
+20:0,true,5,17,5,17,5,10,10,13,270,270,0,0,可别被它那毛茸茸的外表给骗了。 若挨下由它那双长腿甩出的一记超高速踢击， 整个人可是会飞到地球的另一端。,https://paldb.cc/cn/Palpagos_Islands?pal=Alpaca&t=dayTimeLocations
+27:0,false,5,64,5,64,25,25,10,13,0,0,0,0,它尾部的硬化组织即使割下后也不会发生劣化。 人们迷信它的尾部能够招来财运， 导致许多喵丝特因此殒命。,https://paldb.cc/cn/Palpagos_Islands?pal=Bastet&t=dayTimeLocations
+5:0,true,6,31,6,31,10,10,10,13,578,578,0,0,它产生的水可在任何地方形成波浪。 在事态紧急时可用身体冲浪形式移动。 但经常因为势头过猛，而发生撞墙而死的惨剧。,https://paldb.cc/cn/Palpagos_Islands?pal=BluePlatypus&t=dayTimeLocations
+30:0,true,5,62,5,62,56,56,10,13,201,361,0,0,它会咬住敌人的脖子，将对方身体吸干。 帕鲁木乃伊极为罕见， 而它们基本上都是勾魂鱿的牺牲品。,https://paldb.cc/cn/Palpagos_Islands?pal=NegativeOctopus&t=dayTimeLocations
+31:0,true,5,64,5,64,26,34,10,40,338,338,0,0,它的巨大爪子的硬度宛如钻石般坚固。 因为磨爪子需要消耗不少能量， 所以有时候等它磨完爪子，一天就过去了。,https://paldb.cc/cn/Palpagos_Islands?pal=CuteMole&t=dayTimeLocations
+16:0,true,4,64,4,64,4,5,10,13,0,406,0,0,它眼神凶恶，朋友也很少， 但其实心地很善良。 有人曾目击到它向离群的玉藻狐分享食物。,https://paldb.cc/cn/Palpagos_Islands?pal=NegativeKoala&t=dayTimeLocations
+11:0,true,2,16,2,16,2,2,10,13,169,169,0,0,它那被认为是鼻子的器官会喷出大量的水。 虽然也有人指出那只是鼻涕罢了， 但是研究者们仍然为此进行了热烈的讨论。,https://paldb.cc/cn/Palpagos_Islands?pal=Ganesha&t=dayTimeLocations
+3:0,true,1,28,1,28,1,5,10,13,274,274,0,0,它非常弱小，却又非常美味。 与棉悠悠同样都是极为弱小的帕鲁。 但不论再怎么对这种帕鲁展开围猎，它们也还是会从某处冒出来。,https://paldb.cc/cn/Palpagos_Islands?pal=ChickenPal&t=dayTimeLocations
+26:0,true,4,16,4,16,4,4,10,13,134,134,0,0,野生的燎火鹿从不生病，让人相当惊讶。 据说这种帕鲁永保健康的秘诀， 就是每天吃掉一根用树枝烧成的木炭。,https://paldb.cc/cn/Palpagos_Islands?pal=FlameBambi&t=dayTimeLocations
+8:0,true,1,14,1,14,1,1,10,13,200,200,0,0,与棉悠悠相较，这种帕鲁的毛质更加优良， 个性也更适合作为家畜。 但历史上这种帕鲁总是被当成宠物。 毕竟可爱就是正义。,https://paldb.cc/cn/Palpagos_Islands?pal=WoolFox&t=dayTimeLocations
+1:0,true,1,13,1,9,1,3,10,13,351,351,0,0,它只要走在坡道上就肯定会跌倒并滚动起来。 而且还会因为眼冒金星而无法动弹， 非常容易被当做是猎物，是食物链的底层。,https://paldb.cc/cn/Palpagos_Islands?pal=SheepBall&t=dayTimeLocations
+13:0,true,2,4,2,4,2,2,,,23,23,0,0,互相紧盯然后拔刀一闪，这便是宗铭丸间的领地争夺。 说起来，最好不要训练被饲养的个体「等下」命令， 它会无法忍耐接到「好」的命令之后，发自本能的拔刀行为。,https://paldb.cc/cn/Palpagos_Islands?pal=SamuraiDog&t=dayTimeLocations
+12:0,true,2,14,2,14,2,5,10,13,114,114,0,0,身体如树汁一般，是一种非常不可思议的帕鲁。 如果失去了头顶的新芽，便会渐渐枯萎。 最终走向腐烂殆尽的结局。,https://paldb.cc/cn/Palpagos_Islands?pal=PlantSlime&t=dayTimeLocations
+14:0,true,3,13,3,9,3,3,10,13,60,60,0,0,曾经存在过额头上的叶子有3片以上的个体， 但是因为被当作了幸运的象征，叶片多的个体被滥捕， 最终导致整个种族开始向着叶片数量少的方向进化了。,https://paldb.cc/cn/Palpagos_Islands?pal=CloverFairy&t=dayTimeLocations
+183:0,true,78,80,80,80,80,80,78,78,0,0,1,1,和敌人对峙时， 总是会做一些看似破绽百出的夸张动作。 可神奇的是，对手往往会被震慑住，愣愣地盯着它看。,https://paldb.cc/cn/Palpagos_Islands?pal=KabukiMan&t=dayTimeLocations
+42:0,true,10,32,10,32,10,10,,,45,45,0,0,它在旱季时期容易精神紧绷，总是一触即发。 一旦和同伴发生摩擦， 就会演变成电火花四溅的大战。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecCat&t=dayTimeLocations
+15:0,true,4,41,4,41,4,4,10,13,24,24,0,0,它在受到冲击后会释放储存的电力。 它的电压超过1000万伏特。 将它扔出去的话，威力比普通的重型炮弹危险得多。,https://paldb.cc/cn/Palpagos_Islands?pal=Hedgehog&t=dayTimeLocations
+10008:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+6:0,true,1,40,1,40,1,1,10,13,67,67,0,0,帕洛斯群岛的偶像。 胆敢欺负玉藻狐的人， 会在转眼间成为全民公敌。,https://paldb.cc/cn/Palpagos_Islands?pal=CuteFox&t=dayTimeLocations
+10002:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+10003:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+10010:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+10006:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+10007:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+10012:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+41:1,true,36,80,36,80,50,50,,,259,259,0,0,它的白色飘带会一直吸收周围的热量。 不可思议的是，飘带的温度不会有丝毫变化。 因为它的这种性质，曾致使人类对其疯狂猎捕， 导致它至今仍对人类抱有戒心。,https://paldb.cc/cn/Palpagos_Islands?pal=BlueDragon_Ice&t=dayTimeLocations
+96:1,true,75,77,75,77,75,77,,,0,0,69,69,特化适应了寒冷环境，即便身形纤细也能抵御严寒。 从高空俯冲攻击的威力惊人， 要比喻的话，就像巨大的冰锥从天而降一般。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderBird_Ice&t=dayTimeLocations
+195:0,false,,,,,,,,,0,0,0,0,不为实体存在的她，曾经只是静静的凝视着这个世界。 不知从何时开始，萌生出了被他人注视的渴望。 不断膨胀的欲望甚至凝聚成对外界的恶意 渐渐她被人们称作狂乱淑女。,https://paldb.cc/cn/Palpagos_Islands?pal=NightLady&t=dayTimeLocations
+112:1,true,34,80,34,80,35,46,36,38,116,517,0,0,它比较喜欢吃正常的肉，但每次吃到肚里的都成了受污染的肉。 这是因为它以暗黑利爪为武器， 但却不知猎物会因此受到诅咒。,https://paldb.cc/cn/Palpagos_Islands?pal=Manticore_Dark&t=dayTimeLocations
+10005:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+108:1,true,35,80,35,80,51,51,,,7,7,0,0,它在交配前后，体味会发生巨大变化。 人们认为它找到伴侣前的香味芳香迷人， 将其称为「纯洁之香」。,https://paldb.cc/cn/Palpagos_Islands?pal=SakuraSaurus_Water&t=dayTimeLocations
+85:1,true,23,67,23,67,47,56,51,52,1620,1990,0,0,它在死亡时身体会化为刀，由下一代继承。 若是继承的浪刃武士内心懦弱， 就会因为承受不住刀内亡魂的咒怨 化身为鬼刃武士，四处徘徊。,https://paldb.cc/cn/Palpagos_Islands?pal=Ronin_Dark&t=dayTimeLocations
+34:1,true,13,58,13,58,50,52,23,58,52,52,0,0,它背上的灌木结出的果实，会根据其精神状态改变味道。 越是在恶劣的环境下生长，味道就会越来越甜 所以被饲养的绝大多数郁木羊，都不曾知晓爱。,https://paldb.cc/cn/Palpagos_Islands?pal=BerryGoat_Dark&t=dayTimeLocations
+7:1,true,16,29,16,29,26,26,,,328,328,0,0,鲜艳的外表能帮助它找到命中之人。 自古以来，就有因为雷米儿而触电的事故。 现今的岛上，黄黑相间的纹理被认作危险的颜色。,https://paldb.cc/cn/Palpagos_Islands?pal=FlyingManta_Thunder&t=dayTimeLocations
+157:0,true,54,80,54,80,54,67,65,79,1614,1614,0,0,古文书中，它被记载为「救赎之兽」。 净世鹿释放出的光芒能够将各种东西净化的一干二净。 字面意义上的，一点痕迹都不留的从世间消失。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteDeer&t=dayTimeLocations
+157:1,true,79,79,,,,,79,79,0,0,1,1,光芒越是耀眼，阴影就越是深邃。 散布笼罩万物的黑暗，重拾本应存在的混沌。 平衡对这个世界是必要的。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteDeer_Dark&t=dayTimeLocations
+103:1,true,40,80,40,80,52,53,51,52,52,52,0,0,它能将身体蜷缩起来，一路火花带闪电地旋转移动。 另外在情绪激动时也会放出火花。 如果过度抚摸就会燃起来。,https://paldb.cc/cn/Palpagos_Islands?pal=WeaselDragon_Fire&t=dayTimeLocations
+9:1,true,13,62,13,62,61,61,,,645,645,0,0,抛弃荣誉的武道蛙聚集在一起，衍生出的分支族群。 不论用上多么下作的手段也要狩猎掉盯上的猎物。 如果在午夜遇到了一群极道蛙， 那魂归天国的就是这边了。,https://paldb.cc/cn/Palpagos_Islands?pal=KendoFrog_Dark&t=dayTimeLocations
+132:1,true,56,64,57,64,62,62,56,62,157,157,0,0,它的那双巨大的爪子可使它轻轻松松搬起大量东西。 可是因为腿短的关系，走起来很慢， 经常在半路上天就黑了。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteTiger_Ground&t=dayTimeLocations
+92:1,true,10,66,10,66,50,50,56,60,136,136,0,0,会温柔的对待落单的帕鲁 趁放松警惕时，招来落雷解决对方。 虽然是这么打算的，但是由于抓不住时机 结果就那么一直和睦相处了。,https://paldb.cc/cn/Palpagos_Islands?pal=RaijinDaughter_Water&t=dayTimeLocations
+84:1,true,34,47,34,39,34,36,37,47,574,574,0,0,它曾被落雷击中，但幸运地捡回一条命。 因此「雷落雷冠龙」这句话就是 指九死一生，大难不死的意思。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerDinosaur_Electric&t=dayTimeLocations
+138:1,true,70,77,75,77,75,77,70,70,1,1,3,3,一副身躯，两个意识。 平时意见向来不合，总是吵个没完， 可一旦进入战斗，它们就会在转瞬之间身心合一！,https://paldb.cc/cn/Palpagos_Islands?pal=GrassGolem_Dark&t=dayTimeLocations
+109:1,true,25,49,25,49,25,28,,,316,316,0,0,身体表面有着惊人的反射率。 不仅如此，它各处神经的反射速度比趴趴鲶还慢！,https://paldb.cc/cn/Palpagos_Islands?pal=LazyCatfish_Gold&t=dayTimeLocations
+171:1,true,75,77,75,77,75,77,,,0,0,26,26,最近才开始被目击到的新型帕鲁。 性情暴躁，总是对什么东西发泄怒气。 已经，不会再去相信任何事物。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostDragon_Fire&t=dayTimeLocations
+32:1,true,20,80,20,80,20,20,,,12,12,0,0,拥有最坚硬双角的个体，会成为这种帕鲁的领袖。 一旦失去了角，它的领袖地位也将不复存在。 这时候它只能在同伴的目送下离开，悄然回归尘土。,https://paldb.cc/cn/Palpagos_Islands?pal=Deer_Ground&t=dayTimeLocations
+81:1,true,75,77,75,77,75,77,,,0,0,69,69,只要一息尚存，头上的冰角就不会融化。 当水滴从冰角上滴落之时， 冰峰陶洛斯便会感觉到自己的身体逐渐变得冰冷。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassMinotaur_Ice&t=dayTimeLocations
+63:1,true,33,80,33,80,33,33,,,55,55,0,0,它的性格正如外表一样单纯无害。 正因为如此，它所采取的所有行动都无恶意， 即便是杀死了谁，也不会有任何想法。,https://paldb.cc/cn/Palpagos_Islands?pal=FairyDragon_Water&t=dayTimeLocations
+188:1,true,35,80,35,80,65,67,56,66,151,151,47,47,一旦它发现猎物的族群， 就会用强力的水流，将那片区域冲刷殆尽。 由于基本上都会把猎物冲到不知道什么地方去， 这一行为究竟能否定义为捕猎，非常的有待商榷。,https://paldb.cc/cn/Palpagos_Islands?pal=Horus_Water&t=dayTimeLocations
+83:1,true,35,80,35,80,57,57,60,60,259,259,0,0,在遥远的过去，有着如果画出雷隐鹿 就会被落雷劈死的迷信。 随着时代变迁，仿照雷隐鹿样子的艺术品 被视作有着避雷效果的护身符，成为了人们熟悉的存在。,https://paldb.cc/cn/Palpagos_Islands?pal=FengyunDeeper_Electric&t=dayTimeLocations
+88:1,true,36,48,36,48,36,36,,,414,414,0,0,从口部伸手进去也什么都摸不到，甚至能无止境地探向深处。 认为这是某种异次元空间的研究者们，突发奇想将其当作睡袋 试图把整个身子挤进去，但却导致它干呕了。 看来，还是有体内这个概念的。,https://paldb.cc/cn/Palpagos_Islands?pal=StuffedShark_Fire&t=dayTimeLocations
+29:1,true,13,58,13,55,30,30,15,58,44,44,0,0,它刚出生时无法很好地操纵冷气 动不动就不小心喷出冷气，结果噎住自己。 感冒时鼻涕会结冰，导致呼吸困难，手足无措。,https://paldb.cc/cn/Palpagos_Islands?pal=Kitsunebi_Ice&t=dayTimeLocations
+200:1,true,65,65,,,,,65,65,1,1,0,0,帕洛斯群岛之守护神，拥有呼唤黑夜之力。 其曾于灾厄席捲大地之际腾空而起， 唤来无尽暗夜，试图封印灾厄。,https://paldb.cc/cn/Palpagos_Islands?pal=IceHorse_Dark&t=dayTimeLocations
+5:1,true,16,36,16,36,32,32,,,124,124,0,0,腹部的摩擦系数很高， 身体冲浪时会产生火花。 经常因为势头过猛，从而变成一团火球。,https://paldb.cc/cn/Palpagos_Islands?pal=BluePlatypus_Fire&t=dayTimeLocations
+97:1,true,36,48,36,48,36,36,,,405,405,0,0,剧烈燃烧的拟饵，在烧烤猎物时也能用上。 被烤肉香气吸引来的帕鲁如果被炙灯鱼发现的话，那可是插翅难逃了。 它会一直热情款待，直到被吸引来的帕鲁肚子吃撑。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostAnglerfish_Fire&t=dayTimeLocations
+48:1,true,13,66,13,66,65,65,,,113,113,108,108,若要和它一起睡觉，最好确认下明天的行程。 吸盘的痕迹看起来就像咬痕， 如果被睡糊涂的它吸住，就会增加不必要的烦恼。,https://paldb.cc/cn/Palpagos_Islands?pal=OctopusGirl_Neutral&t=dayTimeLocations
+55:1,true,16,39,16,39,34,36,36,38,74,74,0,0,这种帕鲁在很久以前是相当强大的巨型水栖帕鲁， 但食物减少后，它们就搬到了陆地上。 由于走路会燃烧许多热量， 意外地让它们体内的火之力量觉醒了！,https://paldb.cc/cn/Palpagos_Islands?pal=SharkKid_Fire&t=dayTimeLocations
+74:1,true,29,80,29,80,35,36,51,52,67,67,0,0,它会用不同的节奏敲击地面与同伴沟通。 有着比铁拳猿更霸道的腕力， 假如所有的石掌猿同时捶击大地， 帕洛斯群岛将在1秒内沉没。,https://paldb.cc/cn/Palpagos_Islands?pal=Gorilla_Ground&t=dayTimeLocations
+38:1,true,26,45,26,45,32,37,,,0,335,0,0,它那巨大的双臂就连冰砖都能撕碎。 过去曾有过将犯下重罪的人绑在城镇的广场上， 让冰缚灵直接扯下他们的头发， 是种极为残忍的警示性惩罚。,https://paldb.cc/cn/Palpagos_Islands?pal=WindChimes_Ice&t=dayTimeLocations
+80:1,true,35,80,35,80,47,47,51,52,80,80,0,0,它能从地狱召唤雷电。 虽被分类为雷冥鸟的亚种， 但是也有学说称、实际应该是雷鸣鸟被来自地狱的雷电击中， 变异成了雷冥鸟。,https://paldb.cc/cn/Palpagos_Islands?pal=HadesBird_Electric&t=dayTimeLocations
+91:1,true,13,39,13,39,37,37,,,10,10,0,0,它只对帕鲁幼崽感兴趣，会将其掠走带回自己的领地。 不难想象，那些被夺走幼崽的帕鲁们会陷入多么绝望的境地。,https://paldb.cc/cn/Palpagos_Islands?pal=Baphomet_Dark&t=dayTimeLocations
+15:1,true,10,24,10,24,20,20,,,70,70,0,0,它在受到冲击后会释放储存的冷气。 它发射的冷气呈放射状，可冻结大气。 攻击它的对象会被击穿身体。,https://paldb.cc/cn/Palpagos_Islands?pal=Hedgehog_Ice&t=dayTimeLocations
+121:1,true,13,80,13,80,66,66,,,21,21,0,0,传说有位战士因冤罪而被推落火山， 随后以腾炎龙之姿重生， 并把整个国家烧成一片焦土。,https://paldb.cc/cn/Palpagos_Islands?pal=Umihebi_Fire&t=dayTimeLocations
+79:1,false,40,62,40,62,62,62,51,52,0,0,0,0,经过双亲的教育，已经不再挑食 只要是辣的东西，无论什么都喜欢。 和幽巫狐的关系相当不好。,https://paldb.cc/cn/Palpagos_Islands?pal=CatMage_Fire&t=dayTimeLocations
+30:1,true,16,44,16,44,24,24,,,382,382,0,0,它会咬住敌人的脖子，将对方浑身血液吸干。 蚀魂鱿同族之间互相咬住的话， 因为双方都想要将对手吸干， 在任意一方被榨干之前，彼此将无法分开。,https://paldb.cc/cn/Palpagos_Islands?pal=NegativeOctopus_Neutral&t=dayTimeLocations
+21:1,true,46,46,,,,,46,46,1,1,0,0,这种帕鲁性格冷淡，不擅长表达情感。 这个孤独的个体对美露帕来说没有什么价值，简直是个悲剧。,https://paldb.cc/cn/Palpagos_Islands?pal=KingAlpaca_Ice&t=dayTimeLocations
+111:1,true,35,66,35,66,61,63,56,65,341,341,0,0,性格极为纤细敏感， 遇到讨厌的事物，就会躲在洞窟里不愿出来。 由于过于家里蹲，兽生也变得阴暗起来。,https://paldb.cc/cn/Palpagos_Islands?pal=AmaterasuWolf_Dark&t=dayTimeLocations
+159:1,true,65,73,65,73,65,65,,,36,36,22,22,即便被拆解，只要再拼装到一起， 便又能完好如初正常活动的神奇帕鲁。 如果拼装过程中混进其他个体的零件，其思维就会发生致命错误， 最终导致过热。,https://paldb.cc/cn/Palpagos_Islands?pal=WingGolem_Fire&t=dayTimeLocations
+73:1,true,10,38,10,36,28,28,36,38,50,50,0,0,这种帕鲁对站姿的讲究异常执着。 它总是在寻找最热血的姿势， 因此它的饲主会被迫整天欣赏热血到让人烦躁的姿势。,https://paldb.cc/cn/Palpagos_Islands?pal=LizardMan_Fire&t=dayTimeLocations
+56:1,true,13,66,13,65,40,46,56,66,123,462,0,0,它头上的角是绝对不会融化的，不可思议的冰。 用它折断的角制成的刨冰，那可真称的上是绝顶美味， 无论是吃刨冰的人，还是霜镰魔，头都很疼。,https://paldb.cc/cn/Palpagos_Islands?pal=Werewolf_Ice&t=dayTimeLocations
+186:1,true,50,80,50,80,50,50,58,59,1,1,42,42,这是一种风度翩翩且行为优雅的帕鲁。 会使用超强巴掌对付无礼之人。 但偶尔也会出现以此为乐的帕鲁。,https://paldb.cc/cn/Palpagos_Islands?pal=LilyQueen_Dark&t=dayTimeLocations
+87:1,true,35,80,35,80,36,38,42,45,84,84,0,0,这种帕鲁背部的植被因个体而异。 在雪猛犸的背上曾发现过被认为已经灭绝的冰冻植物种子， 在冷冻状态下保存良好。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassMammoth_Ice&t=dayTimeLocations
+27:1,true,30,45,30,41,41,41,42,45,3,3,0,0,它尾部的结晶非常美丽，但它死去时结晶也会随之崩解。 人们迷信大量饲养它能够招来财运， 于是冰丝特通常都会得到悉心的照料。,https://paldb.cc/cn/Palpagos_Islands?pal=Bastet_Ice&t=dayTimeLocations
+99:1,true,35,55,35,52,48,48,55,55,12,12,0,0,它的本体是一种能量体，内部是空的。 通过将砂石和矿物填充进外壳，得以实现了压倒性的质量。 被其击中的生物只能发出如地狱般的呻吟声。,https://paldb.cc/cn/Palpagos_Islands?pal=DarkScorpion_Ground&t=dayTimeLocations
+105:1,true,78,78,,,,,78,78,0,0,1,1,健康的个体，背部物质的温度也会十分稳定。 但一旦心跳过快，温度便会失去稳定。 最坏会发生气化或凝固， 最后突然休克而亡。,https://paldb.cc/cn/Palpagos_Islands?pal=VolcanoDragon_Ice&t=dayTimeLocations
+102:1,true,31,80,35,80,35,37,31,31,1,1,40,40,它拥有令人难以置信的力量。 可以将电力转为神经信号，突破身体能力的极限。 只要提到最强生物，就必定有它。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassPanda_Electric&t=dayTimeLocations
+100:1,true,33,36,33,36,33,33,,,0,325,0,0,当某种感情变得强烈时，它的尖刺就会伸缩。 在满满的爱意中成长的妖抱苞， 总是动不动就爱往主人怀里钻， 但若要接纳它的爱，就要一并接纳它带来的痛。,https://paldb.cc/cn/Palpagos_Islands?pal=CactusDoll_Dark&t=dayTimeLocations
+148:1,true,50,54,50,54,50,50,,,13,13,0,0,它手里捧着的，是自己的灵魂。 当它找到了心仪的对象，就会将自己的灵魂抛向对方 渴望与对方的灵魂融合，成为一心同体。,https://paldb.cc/cn/Palpagos_Islands?pal=GhostRabbit_Grass&t=dayTimeLocations
+203:0,false,70,70,,,,,70,70,0,0,0,0,怀揣着使命一直等待着，种群中最后的幸存者。 即便履行了职责的它呼唤着母亲， 回应的，也已经只剩余音。,https://paldb.cc/cn/Palpagos_Islands?pal=KingWhale&t=dayTimeLocations
+17:1,true,16,26,16,26,16,16,,,0,657,0,0,它的翅膀已完全退化，无法飞翔。 对天空的向往逐渐变成嫉妒 为了击落天空中会飞的家伙，得到了雷电的力量！,https://paldb.cc/cn/Palpagos_Islands?pal=Penguin_Electric&t=dayTimeLocations
+18:1,true,36,48,36,48,36,36,,,252,252,0,0,为了能在水中狩猎，得到了雷电的力量从而改变了体色。 虽然因此失去了企丸丸们的追随。 可谁曾想， 现在反倒是有了叫做闪丸丸的小弟。,https://paldb.cc/cn/Palpagos_Islands?pal=CaptainPenguin_Black&t=dayTimeLocations
+89:1,true,71,73,71,73,71,73,,,0,0,22,22,它在寿命已尽时，会自燃化作灰烬。 这周围的土壤则会因此变得非常肥沃， 此后的10年左右，无数的草木在此繁荣茂盛。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerDoll_Fire&t=dayTimeLocations
+131:1,true,35,69,35,69,68,68,69,69,50,50,0,0,通过变换姿势晒日光浴，来将冰块融成中意的形状。 至于那些形态失衡的个体还是不要去打扰了。 用人来类比的话，就像不小心剪多了鬓角。,https://paldb.cc/cn/Palpagos_Islands?pal=RockBeast_Ice&t=dayTimeLocations
+72:1,true,36,60,36,60,55,55,,,26,26,0,0,种群内能在雪上滑行最快的个体，就是最了不起的个体。 有时会有因为冲太快飞跃起来的个体一头扎进雪里。 在争夺首领地位时这种情况尤其多发。 今日路况拥挤，当心连环「豹扎」。,https://paldb.cc/cn/Palpagos_Islands?pal=IceSeal_Ground&t=dayTimeLocations
+141:1,true,65,70,65,68,65,65,70,70,36,36,0,0,能将尾针刺入敌人体内，并释放电流。 但是，由于电流实在太弱了， 还是直接抡起钳子更有杀伤力。,https://paldb.cc/cn/Palpagos_Islands?pal=ScorpionMan_Electric&t=dayTimeLocations
+93:1,true,32,80,32,80,34,38,36,38,10,411,0,0,这种帕鲁会燃烧神秘的暗物质以获取能量， 并将剩余的暗粒子排出体外。 当有人坐在它身上时，会控制排放量，以免该人被黑暗侵蚀。,https://paldb.cc/cn/Palpagos_Islands?pal=FireKirin_Dark&t=dayTimeLocations
+124:1,true,45,80,45,80,45,45,51,52,59,59,0,0,在拥抱翠羽龙时， 如果闻到了太阳的味道和草原的馨香，那明天就是晴天。 如果闻到一股发霉的味道，那明天就是倾盆大雨。,https://paldb.cc/cn/Palpagos_Islands?pal=SkyDragon_Grass&t=dayTimeLocations
+98:1,true,35,77,35,77,35,36,,,76,76,69,69,它若在雪原上全速奔跑，就会扬起大量飞雪。 由于完全看不到彼此， 导致凛光犬间经常发生交通事故。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderDog_Ice&t=dayTimeLocations
+10009:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+94:1,true,23,80,23,80,48,48,,,17,17,0,0,佩克龙突发奇想， 是时候让自己做出些改变了。 那个瞬间，灵感就像雷电贯穿了它的全身！,https://paldb.cc/cn/Palpagos_Islands?pal=LazyDragon_Electric&t=dayTimeLocations
+129:1,true,29,67,29,67,48,48,42,45,133,133,0,0,它的全身上下都流淌着超低温的血液。 若突然往它身上施加热量，其血液会蒸发。 随后便会引发大规模的蒸气爆炸。,https://paldb.cc/cn/Palpagos_Islands?pal=VolcanicMonster_Ice&t=dayTimeLocations
+44:1,true,18,58,18,55,18,18,56,58,172,172,0,0,这种帕鲁的脸上总是挂著微笑。 捣蛋猫偶尔会恶作剧，把它的缎带打成死结， 每到这时，它都会笑眯眯的把捣蛋猫暴揍一顿。,https://paldb.cc/cn/Palpagos_Islands?pal=PinkRabbit_Grass&t=dayTimeLocations
+76:1,true,13,40,13,40,31,35,37,40,545,545,0,0,这类帕鲁在岩石地带过着狩猎生活，特征习性等与人类十分接近。 每当从遗址中发现山岳射手的骨头时， 那里总是一定会有人类的骨头。,https://paldb.cc/cn/Palpagos_Islands?pal=RobinHood_Ground&t=dayTimeLocations
+116:1,true,75,78,75,78,75,78,,,0,0,82,82,它喜欢凝望天空， 常常静静地伫立在那里。 经常成为小型帕鲁们聚会的场所。,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteMoth_Neutral&t=dayTimeLocations
+128:1,true,36,48,36,48,40,40,,,16,16,18,18,能将骨骼和身体暂时分离，用骨头斩断敌人。 如若不赶快收回体内，自己也会力竭倒下。 据传闻，年老的个体会故意长时间分离，借此激发求生本能， 以期达到延寿的效果，但真假未知。,https://paldb.cc/cn/Palpagos_Islands?pal=SwordCutlassfish_Fire&t=dayTimeLocations
+149:1,true,62,64,62,64,62,62,,,8,8,0,0,苍白的火焰即便摸上去也只感到些微的凉意， 但是持续接触的物体则会逐渐冻结。 放上一瓶牛奶，就能得到一瓶冰冻牛奶！,https://paldb.cc/cn/Palpagos_Islands?pal=BlackPuppy_Ice&t=dayTimeLocations
+163:1,true,74,76,74,76,74,76,,,0,0,33,33,将滚烫的金涡蜗放进浴缸， 享受一场火热浴，这在遥远的古代曾经十分流行。 由于近年复古风潮兴起，它也再度成为了火热新趋势。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecSnail_Ground&t=dayTimeLocations
+169:1,true,13,78,13,78,76,78,,,99,99,160,160,通过旋转螺旋桨般的尾巴从而产生电力。 虽然理论上能产生1.21吉瓦的电力， 但是肉体会在瞬间崩溃，并没有实际应用价值。,https://paldb.cc/cn/Palpagos_Islands?pal=KingSunfish_Thunder&t=dayTimeLocations
+130:1,true,74,76,74,76,74,76,,,0,0,63,63,它最为自豪的就是自己光彩夺目的鬃毛。 只要有一点脏污，就会害羞的无法集中精力奔跑。 因为容易沾上皮脂污垢，即便是最喜欢的帕鲁驯养师，也不希望被黏糊糊的摸个不停。,https://paldb.cc/cn/Palpagos_Islands?pal=NightBlueHorse_Neutral&t=dayTimeLocations
+75:1,true,13,63,13,63,31,31,37,40,594,594,0,0,它流线型的外形很适合在沙上活动。 因此经常被非法捕鱼团捕捉， 并被拿来代替冲浪板使用。,https://paldb.cc/cn/Palpagos_Islands?pal=Serpent_Ground&t=dayTimeLocations
+122:1,true,42,80,68,80,68,68,42,45,50,50,0,0,过去人们认为它是带来雨季的使者。 只要前一年发生水患，人们就会全力驱逐这种帕鲁， 祈祷今年能够平安度过。,https://paldb.cc/cn/Palpagos_Islands?pal=Suzaku_Water&t=dayTimeLocations
+23:1,true,10,12,10,12,10,10,,,27,27,0,0,手掌部位得到了进化， 能够握住烧红的物品而不被烫伤。 若是把子弹打光了，说不定能够握住高温的枪管， 然后抡起枪身揍人。,https://paldb.cc/cn/Palpagos_Islands?pal=Monkey_Fire&t=dayTimeLocations
+142:1,true,60,78,76,78,76,78,60,60,1,1,40,40,背部堆砌的石头即便被拿到某处， 净岩龟也能感应石头的位置。 就算相隔天涯海角，它也一定要去找出来。,https://paldb.cc/cn/Palpagos_Islands?pal=CubeTurtle_Neutral&t=dayTimeLocations
+37:1,true,13,48,13,48,40,42,,,777,777,0,0,为保护脆弱的本体，获得了坚硬的甲壳。 大半的触觉神经都集中在了手部和甲壳上， 偷偷摸一下它的本体也不会被发现。,https://paldb.cc/cn/Palpagos_Islands?pal=TentacleTurtle_Ground&t=dayTimeLocations
+54:1,true,75,77,75,77,75,77,,,0,0,69,69,昔日，它被视为冬之神的使者，无人敢猎捕。 然而当有人目睹它在冰面滑倒的瞬间， 信仰逐渐消失，一失足即成千古牛马。,https://paldb.cc/cn/Palpagos_Islands?pal=Kirin_Ice&t=dayTimeLocations
+64:1,true,23,67,23,67,30,36,42,45,233,260,0,0,据说用霜歌龙的外骨骼制成的笛子， 所奏的笛声可越遍千山万水， 因此在古代战事中通常会被用来吹奏胜利凯歌。,https://paldb.cc/cn/Palpagos_Islands?pal=BirdDragon_Ice&t=dayTimeLocations
+113:1,true,53,64,53,64,53,53,56,64,59,59,0,0,它全身包裹着超强力装甲， 拥有难以比拟的强度和耐热性。 即使被森猛犸踩踏也不疼不痒。,https://paldb.cc/cn/Palpagos_Islands?pal=HerculesBeetle_Ground&t=dayTimeLocations
+151:1,true,36,80,36,80,71,73,74,74,0,0,113,113,为了不再被错认成浮冰，硬生生将身体变为红色。 但是对于那些红色盲的帕鲁来说毫无意义， 努力只换来了空虚，到头来私人空间还是继续受到侵犯。,https://paldb.cc/cn/Palpagos_Islands?pal=IceNarwhal_Fire&t=dayTimeLocations
+78:1,true,46,55,46,55,46,46,51,52,0,184,0,0,经过双亲的教育，已经不再挑食 只要是甜的东西，无论什么都喜欢。 和炽巫猫的关系相当不好。,https://paldb.cc/cn/Palpagos_Islands?pal=FoxMage_Dark&t=dayTimeLocations
+39:1,true,55,60,55,60,55,55,,,26,26,0,0,虽然棉毛上散发出香甜浓郁的气息，但是肉质却苦涩到令人战栗。 被其气味吸引的肉食性帕鲁，若是咬上一口， 就会因难以忍受的苦味，翻着白眼再起不能。,https://paldb.cc/cn/Palpagos_Islands?pal=SweetsSheep_Ground&t=dayTimeLocations
+204:0,false,,,,,,,,,0,0,0,0,于遥远过去降临于帕洛斯群岛，神秘的帕鲁迎来其终焉。 作为灾厄带来过无数毁灭，后被长久封印。 最终被某位帕鲁驯养师所击败。,https://paldb.cc/cn/Palpagos_Islands?pal=WorldTreeDragon&t=dayTimeLocations
+191:0,true,75,80,75,80,75,80,,,0,0,69,69,一旦看见了圆形的物体，就不自觉的想要来上一拳。 对于霜牙王来说，仅次于生存的难题 就是完成堆雪人。,https://paldb.cc/cn/Palpagos_Islands?pal=SnowTigerBeastman&t=dayTimeLocations
+195:1,false,,,,,,,,,0,0,0,0,被解放的欲望，终于再也无法抑制。 「『我』渴望得到『自我』的注视。」 凝聚为恶意的，渴望被注视的姐妹 终于被放逐回世界的狭缝，闭上了凝视的眼睛。,https://paldb.cc/cn/Palpagos_Islands?pal=NightLady_Dark&t=dayTimeLocations
+137:1,false,,,,,,,,,0,0,0,0,自太古时期，其于地底现身。 焚天的烈火在将一切焚烧殆尽前，永远都不会熄灭。 此谓「永炎」。,https://paldb.cc/cn/Palpagos_Islands?pal=KingBahamut_Dragon&t=dayTimeLocations
+10011:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+194:0,false,78,78,,,,,78,78,0,0,0,0,其自古时起便静静伫立在“世界树”旁，一直守护着什么。 现今夜蔓爵已经看不到要守护什么，又为什么要守护了。 毕竟，“世界树”知晓一切。 毕竟，唯有它操纵的浓雾能揭露那片真相。,https://paldb.cc/cn/Palpagos_Islands?pal=FlowerPrince&t=dayTimeLocations
+188:0,true,54,80,54,80,76,80,,,0,0,47,47,一旦它发现猎物的族群， 就会用灼热的旋风，将那片区域焚烧殆尽。 因此荷鲁斯的栖息地总是飘荡着美味的气息。,https://paldb.cc/cn/Palpagos_Islands?pal=Horus&t=dayTimeLocations
+200:0,true,60,60,,,,,60,60,1,1,0,0,帕洛斯群岛之守护神，拥有呼唤严冬之力。 其曾于灾厄席捲大地之际腾空而起， 唤来无尽寒冬，试图封印灾厄。,https://paldb.cc/cn/Palpagos_Islands?pal=IceHorse&t=dayTimeLocations
+10004:0,false,,,,,,,,,0,0,0,0,当前 1.0 数据未记录普通野外栖息地。,https://palbreedingcalculator.org
+185:0,true,30,80,70,80,70,72,30,30,1,1,40,40,它拥有豪迈的笑容和强壮的体格。 在自己认可的搭档面前会表现得相当温顺。 可是不知为何，一旦拿到机关枪时就会性情大变。,https://paldb.cc/cn/Palpagos_Islands?pal=ElecPanda&t=dayTimeLocations
+197:0,false,,,,,,,,,0,0,0,0,于此幽寂之地，不觉心神凝定。 此处已无人，众人皆蒙救度。 救赎之王，请携我共赴无尽之寂。 ——古文书至此戛然而止。,https://paldb.cc/cn/Palpagos_Islands?pal=LegendDeer&t=dayTimeLocations
+202:0,true,70,70,,,,,70,70,1,1,0,0,居于遥远高空，守护帕洛斯群岛。 当灾厄再度甦醒，大地崩裂，天空化作火海之际， 它将以破灭万物之光摧毁灾厄。,https://paldb.cc/cn/Palpagos_Islands?pal=JetDragon&t=dayTimeLocations
+186:0,true,58,80,75,80,75,80,58,59,1,1,42,42,这是一种充满慈爱且温和的帕鲁。 会照顾失去双亲的小帕鲁们。 管教方式是全力释放太阳光束。,https://paldb.cc/cn/Palpagos_Islands?pal=LilyQueen&t=dayTimeLocations
+144:0,true,5,80,5,80,10,12,,,4930,4930,382,382,曾经岛上存在过一个王国， 王国里有一个传统，每年都会赐予死法最愚蠢的人奖赏。 值得纪念的最初的死因便是「没有识破旺财，打开箱子而被咬死。」,https://paldb.cc/cn/Palpagos_Islands?pal=MimicDog&t=dayTimeLocations
+199:0,false,60,60,,,,,60,60,0,0,0,0,曾与圣光骑士同为一体。 虽是分离后的负面情感所构成的存在， 但其眼眸深处仍留有着一丝慈悲。,https://paldb.cc/cn/Palpagos_Islands?pal=BlackCentaur&t=dayTimeLocations
+201:0,true,60,60,,,,,60,60,1,1,0,0,自灾厄被封印之后，来自天坠的强者与其邂逅。 自此，其便常在近海现身于强者眼前。 相逢乃是必然。,https://paldb.cc/cn/Palpagos_Islands?pal=PoseidonOrca&t=dayTimeLocations
+187:0,true,74,80,74,80,74,76,,,0,0,33,33,它的电击能从伤口进入，以此灼烧对手的全身。 波鲁杰克斯同类之间发生的争吵， 能在一瞬间决出胜负。,https://paldb.cc/cn/Palpagos_Islands?pal=ThunderDragonMan&t=dayTimeLocations
+198:0,true,60,60,,,,,60,60,1,1,0,0,曾与混沌骑士同为一体。 虽然它是被去除负面情感后诞生的存在， 但它的眼眸深处仍留有些许憎恨。,https://paldb.cc/cn/Palpagos_Islands?pal=SaintCentaur&t=dayTimeLocations
+190:0,true,76,80,76,80,76,80,,,0,0,40,40,据传，其身后漂浮的形似新月的物体， 会随着世代的交替一点点的接近圆形。 至于到满月月相时会发生什么，就没有人知道了。,https://paldb.cc/cn/Palpagos_Islands?pal=MoonQueen&t=dayTimeLocations
+189:0,true,50,80,50,80,50,50,,,11,11,0,0,于癫狂尽头诞生的禁忌之存在。 它已与其他帕鲁毫无任何基因上的关联， 可能其存在早已脱离了帕鲁的范畴。,https://paldb.cc/cn/Palpagos_Islands?pal=BlackGriffon&t=dayTimeLocations
+192:0,true,76,78,76,78,76,78,,,0,0,63,63,灵环寄吾心，长相伴君身。 悠悠青天鉴，袅袅霄龙吟。,https://paldb.cc/cn/Palpagos_Islands?pal=BlueSkyDragon&t=dayTimeLocations
+193:0,false,78,78,,,,,78,78,0,0,0,0,其自古时起便静静伫立在“世界树”旁，一直守护着什么。 现今Mothmon已然不知道要守护什么，又为什么要守护了。 毕竟，“世界树”会给予指引。 毕竟，被操纵的孢子们，也理应知晓敌人是谁。,https://paldb.cc/cn/Palpagos_Islands?pal=Mothman&t=dayTimeLocations
+146:0,false,23,23,23,23,23,23,,,0,0,0,0,具有吞食信息并转换为能量的能力。 会定期的向不明对象发送情报。 「喂喂？在查看刚才的讯息前不小心吃掉了，你说了啥？」,https://paldb.cc/cn/Palpagos_Islands?pal=WhiteAlienDragon&t=dayTimeLocations
+196:0,false,,,,,,,,,0,0,0,0,- 已抵达目的地，优先搜索个体：流星龙。 - 备注：镇压完成时限 年前。 - 追记：未发现镇压痕迹，确认目标已被同化，开始清剿。 - 业务联络：不可以忘掉或吃掉重要情报！,https://paldb.cc/cn/Palpagos_Islands?pal=DarkMechaDragon&t=dayTimeLocations
+145:0,false,23,45,23,45,23,23,,,0,0,0,0,具有将信息传输中的损耗变换为能量的能力。 会定期的向不明对象发送情报。 「发现目标，请立刻前往破坏，见信速回。」,https://paldb.cc/cn/Palpagos_Islands?pal=DarkAlien&t=dayTimeLocations

@@ -1,0 +1,300 @@
+pal_id,game_version,dex,name_en,name_zh,combo_count,gender_specific_combo_count,hp,attack,defense,work_speed,rarity,breeding_power,male_rate,image_url,source_url
+64:0,Palworld 1.0,064,Vanwyrm,烽歌龙,1358,0,90,115,90,100,5,1650,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BirdDragon_icon_normal.webp,https://paldb.cc/cn/Vanwyrm
+65:0,Palworld 1.0,065,Felbat,夜幕魔蝠,1271,0,100,105,110,100,6,1570,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CatVampire_icon_normal.webp,https://paldb.cc/cn/Felbat
+41:0,Palworld 1.0,041,Azurobe,碧海龙,1201,0,110,100,100,100,7,1830,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlueDragon_icon_normal.webp,https://paldb.cc/cn/Azurobe
+162:0,Palworld 1.0,162,Valentail,喵璐璐,894,0,75,80,70,100,2,1900,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LongCat_icon_normal.webp,https://paldb.cc/cn/Valentail
+87:0,Palworld 1.0,087,Mammorest,森猛犸,886,0,150,85,90,100,8,1340,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassMammoth_icon_normal.webp,https://paldb.cc/cn/Mammorest
+113:0,Palworld 1.0,113,Warsect,铠格力斯,858,0,120,100,120,100,8,1280,85,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HerculesBeetle_icon_normal.webp,https://paldb.cc/cn/Warsect
+178:0,Palworld 1.0,178,Venusa,梅杜娜,712,0,80,85,90,100,5,970,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SnakeGirl_icon_normal.webp,https://paldb.cc/cn/Venusa
+36:0,Palworld 1.0,036,Sweepa,毛老爹,692,0,100,90,90,100,6,2150,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MopKing_icon_normal.webp,https://paldb.cc/cn/Sweepa
+118:1,Palworld 1.0,118B,Shroomer Noct,菇波,625,0,110,85,90,100,5,1450,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MushroomDragon_Dark_icon_normal.webp,https://paldb.cc/cn/Shroomer_Noct
+180:0,Palworld 1.0,180,Loomen,妖焰灯,598,0,90,100,95,100,5,890,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LanternButler_icon_normal.webp,https://paldb.cc/cn/Loomen
+151:0,Palworld 1.0,151,Whalaska,凉晶鲸,585,0,105,115,110,100,8,710,58,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceNarwhal_icon_normal.webp,https://paldb.cc/cn/Whalaska
+134:1,Palworld 1.0,134B,Wumpo Botan,绿苔绒怪,583,0,140,80,110,100,8,610,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Yeti_Grass_icon_normal.webp,https://paldb.cc/cn/Wumpo_Botan
+123:0,Palworld 1.0,123,Dazemu,战冠雀,574,0,95,90,80,100,5,2210,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FeatherOstrich_icon_normal.webp,https://paldb.cc/cn/Dazemu
+83:0,Palworld 1.0,083,Fenglope,云海鹿,568,0,110,110,90,100,3,1960,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FengyunDeeper_icon_normal.webp,https://paldb.cc/cn/Fenglope
+118:0,Palworld 1.0,118,Shroomer,菇咚,522,0,110,80,90,100,4,1520,55,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MushroomDragon_icon_normal.webp,https://paldb.cc/cn/Shroomer
+66:0,Palworld 1.0,066,Vaelet,薇莉塔,509,0,100,100,120,100,8,1480,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VioletFairy_icon_normal.webp,https://paldb.cc/cn/Vaelet
+128:0,Palworld 1.0,128,Skutlass,鞘刀鱼,496,0,70,100,80,100,5,1420,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SwordCutlassfish_icon_normal.webp,https://paldb.cc/cn/Skutlass
+116:0,Palworld 1.0,116,Sibelyx,绸笠蛾,494,0,110,90,100,100,7,1810,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteMoth_icon_normal.webp,https://paldb.cc/cn/Sibelyx
+101:0,Palworld 1.0,101,Reindrix,严冬鹿,464,0,100,85,110,100,4,1930,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceDeer_icon_normal.webp,https://paldb.cc/cn/Reindrix
+94:0,Palworld 1.0,094,Relaxaurus,佩克龙,455,0,120,115,110,100,8,1090,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LazyDragon_icon_normal.webp,https://paldb.cc/cn/Relaxaurus
+129:0,Palworld 1.0,129,Reptyro,熔岩兽,450,0,110,105,120,100,6,1060,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VolcanicMonster_icon_normal.webp,https://paldb.cc/cn/Reptyro
+79:0,Palworld 1.0,079,Katress,暗巫猫,443,0,90,105,90,100,6,2040,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CatMage_icon_normal.webp,https://paldb.cc/cn/Katress
+102:0,Palworld 1.0,102,Mossanda,叶胖达,433,0,100,90,90,100,6,2060,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassPanda_icon_normal.webp,https://paldb.cc/cn/Mossanda
+107:0,Palworld 1.0,107,Digtoise,碎岩龟,411,0,80,95,120,100,5,1550,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DrillGame_icon_normal.webp,https://paldb.cc/cn/Digtoise
+135:0,Palworld 1.0,135,Sootseer,恐炬灵,409,0,105,125,90,100,7,980,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CandleGhost_icon_normal.webp,https://paldb.cc/cn/Sootseer
+134:0,Palworld 1.0,134,Wumpo,白绒雪怪,403,0,140,80,100,100,7,830,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Yeti_icon_normal.webp,https://paldb.cc/cn/Wumpo
+165:0,Palworld 1.0,165,Lapiron,詹兔曼,395,0,70,75,80,100,3,1680,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BrownRabbit_icon_normal.webp,https://paldb.cc/cn/Lapiron
+167:0,Palworld 1.0,167,Slowatt,电懒懒,389,0,80,75,70,100,4,1750,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecLizard_icon_normal.webp,https://paldb.cc/cn/Slowatt
+141:0,Palworld 1.0,141,Prixter,蛊刺妖,387,0,90,110,90,100,5,1510,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ScorpionMan_icon_normal.webp,https://paldb.cc/cn/Prixter
+149:0,Palworld 1.0,149,Smokie,墨丸,386,0,85,90,85,100,2,1760,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlackPuppy_icon_normal.webp,https://paldb.cc/cn/Smokie
+68:0,Palworld 1.0,068,Elizabee,女皇蜂,377,0,90,105,100,100,8,1790,10,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_QueenBee_icon_normal.webp,https://paldb.cc/cn/Elizabee
+91:0,Palworld 1.0,091,Incineram,炎魔羊,375,0,95,100,85,100,4,1470,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Baphomet_icon_normal.webp,https://paldb.cc/cn/Incineram
+117:0,Palworld 1.0,117,Maraith,噬魂兽,362,0,75,105,80,100,6,1710,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostBeast_icon_normal.webp,https://paldb.cc/cn/Maraith
+98:0,Palworld 1.0,098,Rayhound,霹雳犬,354,0,90,100,80,100,5,1920,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderDog_icon_normal.webp,https://paldb.cc/cn/Rayhound
+147:0,Palworld 1.0,147,Prunelia,梅莉姆,353,0,105,95,100,100,5,1390,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlueberryFairy_icon_normal.webp,https://paldb.cc/cn/Prunelia
+112:0,Palworld 1.0,112,Blazehowl,狱焰王,344,0,105,110,80,100,7,1360,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Manticore_icon_normal.webp,https://paldb.cc/cn/Blazehowl
+115:0,Palworld 1.0,115,Majex,紫狐娇,337,0,110,115,90,100,5,1010,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkFlameFox_icon_normal.webp,https://paldb.cc/cn/Majex
+93:0,Palworld 1.0,093,Pyrin,火麒麟,334,0,100,95,90,100,6,1980,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FireKirin_icon_normal.webp,https://paldb.cc/cn/Pyrin
+59:0,Palworld 1.0,059,Muffly,雪绵啾,326,0,60,80,55,100,2,2480,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FluffyBird_icon_normal.webp,https://paldb.cc/cn/Muffly
+143:0,Palworld 1.0,143,Nyafia,妮瞅莎,323,0,110,100,100,100,4,1250,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BadCatgirl_icon_normal.webp,https://paldb.cc/cn/Nyafia
+78:0,Palworld 1.0,078,Wixen,焰巫狐,319,0,90,110,80,100,6,2080,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FoxMage_icon_normal.webp,https://paldb.cc/cn/Wixen
+175:0,Palworld 1.0,175,Ophydia,沁莲龙,316,0,130,115,120,100,9,230,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LotusDragon_icon_normal.webp,https://paldb.cc/cn/Ophydia
+56:0,Palworld 1.0,056,Loupmoon,月镰魔,311,0,80,100,80,100,3,2110,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Werewolf_icon_normal.webp,https://paldb.cc/cn/Loupmoon
+57:0,Palworld 1.0,057,Cawgnito,黑鸦隐士,308,0,75,95,80,100,3,2370,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkCrow_icon_normal.webp,https://paldb.cc/cn/Cawgnito
+148:0,Palworld 1.0,148,Nitemary,魅爱莉,305,0,105,95,105,100,6,1230,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostRabbit_icon_normal.webp,https://paldb.cc/cn/Nitemary
+74:0,Palworld 1.0,074,Gorirat,铁拳猿,302,0,90,95,90,100,5,2140,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Gorilla_icon_normal.webp,https://paldb.cc/cn/Gorirat
+82:0,Palworld 1.0,082,Lunaris,秘斯媞雅,300,0,90,100,90,100,6,2010,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Mutant_icon_normal.webp,https://paldb.cc/cn/Lunaris
+124:0,Palworld 1.0,124,Quivern,天羽龙,300,0,105,100,100,100,7,1210,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SkyDragon_icon_normal.webp,https://paldb.cc/cn/Quivern
+122:0,Palworld 1.0,122,Suzaku,朱雀,296,0,120,105,105,100,8,1200,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Suzaku_icon_normal.webp,https://paldb.cc/cn/Suzaku
+181:0,Palworld 1.0,181,Wistella,缀夜星,290,0,80,90,60,100,2,1180,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MoonChild_icon_normal.webp,https://paldb.cc/cn/Wistella
+174:0,Palworld 1.0,174,Flaracle,昭炎狐,286,0,110,125,105,100,7,390,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FoxExorcist_icon_normal.webp,https://paldb.cc/cn/Flaracle
+152:0,Palworld 1.0,152,Verdash,踏春兔,284,0,90,115,90,100,8,1160,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassRabbitMan_icon_normal.webp,https://paldb.cc/cn/Verdash
+154:0,Palworld 1.0,154,Gildane,金驰兽,282,0,120,110,110,100,8,730,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GoldenHorse_icon_normal.webp,https://paldb.cc/cn/Gildane
+75:0,Palworld 1.0,075,Surfent,滑水蛇,281,0,90,90,80,100,4,2440,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Serpent_icon_normal.webp,https://paldb.cc/cn/Surfent
+21:0,Palworld 1.0,021,Kingpaca,君王美露帕,276,0,120,85,90,100,8,2220,90,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingAlpaca_icon_normal.webp,https://paldb.cc/cn/Kingpaca
+80:0,Palworld 1.0,080,Helzephyr,雷冥鸟,275,0,100,125,100,100,7,1130,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HadesBird_icon_normal.webp,https://paldb.cc/cn/Helzephyr
+127:0,Palworld 1.0,127,Yakumo,八云犬,273,0,85,85,85,100,4,2230,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GuardianDog_icon_normal.webp,https://paldb.cc/cn/Yakumo
+43:1,Palworld 1.0,043B,Kelpsea Ignis,火灵儿,271,0,70,70,70,100,2,2470,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kelpie_Fire_icon_normal.webp,https://paldb.cc/cn/Kelpsea_Ignis
+139:0,Palworld 1.0,139,Anubis,阿努比斯,267,0,120,130,100,100,10,480,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Anubis_icon_normal.webp,https://paldb.cc/cn/Anubis
+168:0,Palworld 1.0,168,Bakemi,吓丝妮,267,0,70,85,80,100,4,1540,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_OniGhostGirl_icon_normal.webp,https://paldb.cc/cn/Bakemi
+111:0,Palworld 1.0,111,Kitsun,苍焰狼,266,0,100,115,100,100,6,1670,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_AmaterasuWolf_icon_normal.webp,https://paldb.cc/cn/Kitsun
+132:0,Palworld 1.0,132,Cryolinx,冰棘兽,263,0,100,100,110,100,7,1040,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteTiger_icon_normal.webp,https://paldb.cc/cn/Cryolinx
+171:0,Palworld 1.0,171,Eidrolon,灵曦龙,263,0,115,125,120,100,7,300,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostDragon_icon_normal.webp,https://paldb.cc/cn/Eidrolon
+71:0,Palworld 1.0,071,Tarantriss,桃蛛娘,263,0,110,100,100,100,3,1730,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PurpleSpider_icon_normal.webp,https://paldb.cc/cn/Tarantriss
+54:0,Palworld 1.0,054,Univolt,雷角马,263,0,80,105,105,100,5,2270,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kirin_icon_normal.webp,https://paldb.cc/cn/Univolt
+96:0,Palworld 1.0,096,Beakon,迅雷鸟,261,0,105,115,80,100,6,1690,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderBird_icon_normal.webp,https://paldb.cc/cn/Beakon
+110:0,Palworld 1.0,110,Braloha,梁叶龙,258,0,130,95,120,100,8,1030,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Plesiosaur_icon_normal.webp,https://paldb.cc/cn/Braloha
+109:0,Palworld 1.0,109,Dumud,趴趴鲶,255,0,100,70,95,100,4,2290,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LazyCatfish_icon_normal.webp,https://paldb.cc/cn/Dumud
+166:0,Palworld 1.0,166,Hoodle,兜兜灵,254,0,70,85,80,100,3,1770,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HoodGhost_icon_normal.webp,https://paldb.cc/cn/Hoodle
+121:0,Palworld 1.0,121,Jormuntide,覆海龙,253,0,130,120,100,100,8,590,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Umihebi_icon_normal.webp,https://paldb.cc/cn/Jormuntide
+47:0,Palworld 1.0,047,Amione,莉欧·莉涅,252,0,65,70,65,100,2,2520,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ClioneTwins_icon_normal.webp,https://paldb.cc/cn/Amione
+58:0,Palworld 1.0,058,Arsox,炽焰牛,247,0,85,95,95,100,4,2320,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlameBuffalo_icon_normal.webp,https://paldb.cc/cn/Arsox
+153:0,Palworld 1.0,153,Splatterina,幽恋娜,246,0,95,115,105,100,4,780,38,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrimGirl_icon_normal.webp,https://paldb.cc/cn/Splatterina
+89:0,Palworld 1.0,089,Petallia,花丽娜,242,0,100,95,100,100,8,1720,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerDoll_icon_normal.webp,https://paldb.cc/cn/Petallia
+67:0,Palworld 1.0,067,Beegarde,骑士蜂,239,0,80,90,90,100,4,2350,10,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SoldierBee_icon_normal.webp,https://paldb.cc/cn/Beegarde
+55:0,Palworld 1.0,055,Gobfin,鲨小子,239,0,90,90,75,100,2,2550,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SharkKid_icon_normal.webp,https://paldb.cc/cn/Gobfin
+172:0,Palworld 1.0,172,Dynamoff,雷云鹫,238,0,75,85,80,100,6,1400,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderFluffyBird_icon_normal.webp,https://paldb.cc/cn/Dynamoff
+160:0,Palworld 1.0,160,Silvegis,艾基鲁迦,234,0,120,110,115,100,8,560,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteShieldDragon_icon_normal.webp,https://paldb.cc/cn/Silvegis
+108:0,Palworld 1.0,108,Broncherry,连理龙,233,0,120,90,100,100,8,1380,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SakuraSaurus_icon_normal.webp,https://paldb.cc/cn/Broncherry
+49:0,Palworld 1.0,049,Galeclaw,天擒鸟,228,0,75,85,60,100,2,2570,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Eagle_icon_normal.webp,https://paldb.cc/cn/Galeclaw
+37:0,Palworld 1.0,037,Turtacle,盔盔仔,221,0,75,75,115,100,3,2410,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_TentacleTurtle_icon_normal.webp,https://paldb.cc/cn/Turtacle
+125:0,Palworld 1.0,125,Lullu,春彩娘,220,0,90,90,80,100,4,1990,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LeafPrincess_icon_normal.webp,https://paldb.cc/cn/Lullu
+119:0,Palworld 1.0,119,Icelyn,冰姬灵,217,0,95,115,105,100,4,1260,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceWitch_icon_normal.webp,https://paldb.cc/cn/Icelyn
+140:0,Palworld 1.0,140,Sekhmet,塞赫麦特,212,0,110,115,100,100,5,870,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Sekhmet_icon_normal.webp,https://paldb.cc/cn/Sekhmet
+84:0,Palworld 1.0,084,Dinossom,花冠龙,210,0,110,85,90,100,6,2100,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerDinosaur_icon_normal.webp,https://paldb.cc/cn/Dinossom
+114:0,Palworld 1.0,114,Frostplume,白真雪雀,206,0,110,100,100,100,4,860,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SnowPeafowl_icon_normal.webp,https://paldb.cc/cn/Frostplume
+170:0,Palworld 1.0,170,Lapure,兔绣袖,206,0,105,100,100,100,4,810,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SleeveRabbit_icon_normal.webp,https://paldb.cc/cn/Lapure
+70:0,Palworld 1.0,070,Grintale,笑魇猫,205,0,110,80,80,100,6,2120,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NaughtyCat_icon_normal.webp,https://paldb.cc/cn/Grintale
+81:0,Palworld 1.0,081,Elgrove,密林陶洛斯,203,0,110,105,105,100,6,2020,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassMinotaur_icon_normal.webp,https://paldb.cc/cn/Elgrove
+161:0,Palworld 1.0,161,Azurmane,驭雷马,190,0,130,120,110,100,7,420,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlueThunderHorse_icon_normal.webp,https://paldb.cc/cn/Azurmane
+130:0,Palworld 1.0,130,Starryon,夜冥驹,187,0,110,100,100,100,7,1150,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NightBlueHorse_icon_normal.webp,https://paldb.cc/cn/Starryon
+48:0,Palworld 1.0,048,Gloopie,墨沫姬,184,0,70,85,70,100,5,2530,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_OctopusGirl_icon_normal.webp,https://paldb.cc/cn/Gloopie
+99:0,Palworld 1.0,099,Menasting,冥铠蝎,181,0,100,100,130,100,9,1120,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkScorpion_icon_normal.webp,https://paldb.cc/cn/Menasting
+131:0,Palworld 1.0,131,Pierdon,磐峰兽,180,0,100,105,120,100,6,1110,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RockBeast_icon_normal.webp,https://paldb.cc/cn/Pierdon
+50:0,Palworld 1.0,050,Wispaw,念影喵,180,0,85,95,70,100,5,2250,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostBlackCat_icon_normal.webp,https://paldb.cc/cn/Wispaw
+76:0,Palworld 1.0,076,Robinquill,羽箭射手,178,0,90,105,80,100,5,2260,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RobinHood_icon_normal.webp,https://paldb.cc/cn/Robinquill
+2:0,Palworld 1.0,002,Cattiva,捣蛋猫,175,0,70,70,70,100,1,2760,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PinkCat_icon_normal.webp,https://paldb.cc/cn/Cattiva
+105:0,Palworld 1.0,105,Moldron,流焰龙,174,0,110,125,115,100,7,750,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VolcanoDragon_icon_normal.webp,https://paldb.cc/cn/Moldron
+63:0,Palworld 1.0,063,Elphidran,精灵龙,173,0,110,80,90,100,7,2280,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FairyDragon_icon_normal.webp,https://paldb.cc/cn/Elphidran
+126:0,Palworld 1.0,126,Kikit,球犰,168,0,75,70,90,100,4,2310,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SmallArmadillo_icon_normal.webp,https://paldb.cc/cn/Kikit
+52:0,Palworld 1.0,052,Tombat,猫蝠怪,162,0,95,95,80,100,5,2340,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CatBat_icon_normal.webp,https://paldb.cc/cn/Tombat
+34:0,Palworld 1.0,034,Caprity,灌木羊,161,0,100,70,90,100,3,2610,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BerryGoat_icon_normal.webp,https://paldb.cc/cn/Caprity
+33:0,Palworld 1.0,033,Direhowl,猎狼,154,0,80,90,75,100,2,2680,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Garm_icon_normal.webp,https://paldb.cc/cn/Direhowl
+133:0,Palworld 1.0,133,Snugloo,雪墩墩,152,0,80,75,85,100,3,2390,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SmallYeti_icon_normal.webp,https://paldb.cc/cn/Snugloo
+92:0,Palworld 1.0,092,Dazzi,雷鸣童子,150,0,70,80,70,100,2,2400,20,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RaijinDaughter_icon_normal.webp,https://paldb.cc/cn/Dazzi
+39:0,Palworld 1.0,039,Woolipop,棉花糖,148,0,70,70,90,100,3,2820,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SweetsSheep_icon_normal.webp,https://paldb.cc/cn/Woolipop
+85:0,Palworld 1.0,085,Bushi,浪刃武士,147,0,80,125,80,100,7,1560,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Ronin_icon_normal.webp,https://paldb.cc/cn/Bushi
+32:0,Palworld 1.0,032,Eikthyrdeer,紫霞鹿,145,0,95,80,80,100,5,2710,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Deer_icon_normal.webp,https://paldb.cc/cn/Eikthyrdeer
+100:0,Palworld 1.0,100,Needoll,球抱苞,145,0,75,85,70,100,2,2420,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CactusDoll_icon_normal.webp,https://paldb.cc/cn/Needoll
+97:0,Palworld 1.0,097,Ghangler,冥灯鱼,144,0,90,125,105,100,5,880,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostAnglerfish_icon_normal.webp,https://paldb.cc/cn/Ghangler
+35:0,Palworld 1.0,035,Swee,毛掸儿,140,0,60,60,60,100,1,2840,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MopBaby_icon_normal.webp,https://paldb.cc/cn/Swee
+53:0,Palworld 1.0,053,Tocotoco,炸蛋鸟,140,0,60,75,70,100,1,2730,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ColorfulBird_icon_normal.webp,https://paldb.cc/cn/Tocotoco
+88:0,Palworld 1.0,088,Finsider,布偶鲨,139,0,75,85,80,100,3,2450,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_StuffedShark_icon_normal.webp,https://paldb.cc/cn/Finsider
+72:0,Palworld 1.0,072,Polapup,香草豹冰,134,0,95,105,105,100,5,1660,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceSeal_icon_normal.webp,https://paldb.cc/cn/Polapup
+136:0,Palworld 1.0,136,Carnibora,颚莉丝,131,0,85,90,85,100,6,1700,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VenusFlytrap_icon_normal.webp,https://paldb.cc/cn/Carnibora
+45:0,Palworld 1.0,045,Jelliette,海月仙,131,0,75,90,70,100,3,2650,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_JellyfishFairy_icon_normal.webp,https://paldb.cc/cn/Jelliette
+142:0,Palworld 1.0,142,Tetroise,重岩龟,131,0,95,100,135,100,8,790,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CubeTurtle_icon_normal.webp,https://paldb.cc/cn/Tetroise
+163:0,Palworld 1.0,163,Snock,电涡蜗,127,0,65,70,75,100,2,1780,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecSnail_icon_normal.webp,https://paldb.cc/cn/Snock
+155:0,Palworld 1.0,155,Dogen,汪宗师,124,0,90,100,100,100,6,1460,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SifuDog_icon_normal.webp,https://paldb.cc/cn/Dogen
+38:0,Palworld 1.0,038,Hangyu,吊缚灵,124,0,80,70,70,100,1,2780,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WindChimes_icon_normal.webp,https://paldb.cc/cn/Hangyu
+184:0,Palworld 1.0,184,Aegidron,磐甲龙,121,0,105,125,140,100,8,30,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DomeArmorDragon_icon_normal.webp,https://paldb.cc/cn/Aegidron
+90:0,Palworld 1.0,090,Leafan,莉芳,120,0,100,115,95,100,7,1410,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PandaGirl_icon_normal.webp,https://paldb.cc/cn/Leafan
+179:0,Palworld 1.0,179,Mycora,红菇娘,120,0,105,95,90,100,6,760,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MushroomLady_icon_normal.webp,https://paldb.cc/cn/Mycora
+137:0,Palworld 1.0,137,Blazamut,焰煌,117,0,100,125,120,100,9,410,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingBahamut_icon_normal.webp,https://paldb.cc/cn/Blazamut
+169:0,Palworld 1.0,169,Solmora,曼波王,116,0,90,90,85,100,4,1370,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingSunfish_icon_normal.webp,https://paldb.cc/cn/Solmora
+159:0,Palworld 1.0,159,Knocklem,泰锋,115,0,105,110,135,100,9,260,70,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WingGolem_icon_normal.webp,https://paldb.cc/cn/Knocklem
+173:0,Palworld 1.0,173,Tropicaw,大红呱,114,0,85,85,90,100,5,1350,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RedFlowerBird_icon_normal.webp,https://paldb.cc/cn/Tropicaw
+176:0,Palworld 1.0,176,Dupin,拉比耶尔,113,0,100,110,100,100,7,520,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ClownRabbit_icon_normal.webp,https://paldb.cc/cn/Dupin
+95:0,Palworld 1.0,095,Foxcicle,吹雪狐,113,0,90,95,105,100,5,1970,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceFox_icon_normal.webp,https://paldb.cc/cn/Foxcicle
+46:0,Palworld 1.0,046,Jellroy,海月灵,112,0,90,75,75,100,3,2590,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_JellyfishGhost_icon_normal.webp,https://paldb.cc/cn/Jellroy
+177:0,Palworld 1.0,177,Roujay,盗影鸦,111,0,110,115,95,100,5,530,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThiefBird_icon_normal.webp,https://paldb.cc/cn/Roujay
+164:0,Palworld 1.0,164,Souffline,蒲蒲飞芽,111,0,70,75,60,100,3,2000,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DandelionGirl_icon_normal.webp,https://paldb.cc/cn/Souffline
+9:0,Palworld 1.0,009,Croajiro,武道蛙,110,0,80,100,85,100,4,2600,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KendoFrog_icon_normal.webp,https://paldb.cc/cn/Croajiro
+158:0,Palworld 1.0,158,Astegon,魔渊龙,108,0,100,125,125,100,9,490,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlackMetalDragon_icon_normal.webp,https://paldb.cc/cn/Astegon
+77:0,Palworld 1.0,077,Flopie,波娜兔,108,0,75,65,70,100,1,2660,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerRabbit_icon_normal.webp,https://paldb.cc/cn/Flopie
+18:0,Palworld 1.0,018,Penking,企丸王,108,0,95,95,95,100,6,2070,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CaptainPenguin_icon_normal.webp,https://paldb.cc/cn/Penking
+61:0,Palworld 1.0,061,Cinnamoth,幻悦蝶,106,0,70,80,80,100,4,2620,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CuteButterfly_icon_normal.webp,https://paldb.cc/cn/Cinnamoth
+73:0,Palworld 1.0,073,Leezpunk,朋克蜥,106,0,80,80,50,100,2,2670,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LizardMan_icon_normal.webp,https://paldb.cc/cn/Leezpunk
+69:0,Palworld 1.0,069,Lovander,博爱蜥,106,0,120,70,70,100,5,2090,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PinkLizard_icon_normal.webp,https://paldb.cc/cn/Lovander
+106:0,Palworld 1.0,106,Palumba,咕咕桑葩,104,0,105,110,115,100,6,1240,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_TropicalOstrich_icon_normal.webp,https://paldb.cc/cn/Palumba
+60:0,Palworld 1.0,060,Bristla,荊棘魔仙,101,0,80,80,80,100,1,2690,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LittleBriarRose_icon_normal.webp,https://paldb.cc/cn/Bristla
+86:0,Palworld 1.0,086,Munchill,肚肚鳄,101,0,75,80,85,100,3,2130,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceCrocodile_icon_normal.webp,https://paldb.cc/cn/Munchill
+44:0,Palworld 1.0,044,Ribbuny,姬小兔,101,0,75,65,70,100,1,2860,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PinkRabbit_icon_normal.webp,https://paldb.cc/cn/Ribbuny
+156:0,Palworld 1.0,156,Bulldosu,力士獒,97,0,115,95,100,100,4,1190,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SumoDog_icon_normal.webp,https://paldb.cc/cn/Bulldosu
+120:0,Palworld 1.0,120,Gildra,缚乃伊,96,0,105,120,105,100,5,1170,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MummyPal_icon_normal.webp,https://paldb.cc/cn/Gildra
+28:0,Palworld 1.0,028,Rushoar,草莽猪,95,0,80,70,70,100,1,2880,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Boar_icon_normal.webp,https://paldb.cc/cn/Rushoar
+150:0,Palworld 1.0,150,Omascul,面惧,93,0,95,105,100,100,4,1140,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MysteryMask_icon_normal.webp,https://paldb.cc/cn/Omascul
+7:0,Palworld 1.0,007,Celaray,鲁米儿,90,0,80,70,80,100,3,2740,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlyingManta_icon_normal.webp,https://paldb.cc/cn/Celaray
+104:0,Palworld 1.0,104,Ragnahawk,燧火鸟,89,0,95,105,120,100,7,1050,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RedArmorBird_icon_normal.webp,https://paldb.cc/cn/Ragnahawk
+22:0,Palworld 1.0,022,Daedream,寐魔,86,0,70,75,60,100,1,2910,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DreamDemon_icon_normal.webp,https://paldb.cc/cn/Daedream
+10:0,Palworld 1.0,010,Herbil,达鼠泥,86,0,80,75,75,100,3,2630,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LeafMomonga_icon_normal.webp,https://paldb.cc/cn/Herbil
+103:0,Palworld 1.0,103,Chillet,疾旋鼬,82,0,90,80,80,100,4,2330,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WeaselDragon_icon_normal.webp,https://paldb.cc/cn/Chillet
+40:0,Palworld 1.0,040,Mozzarina,波霸牛,79,0,90,50,80,100,2,2800,20,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CowPal_icon_normal.webp,https://paldb.cc/cn/Mozzarina
+138:0,Palworld 1.0,138,Dualith,双心岩傀,78,0,110,105,125,100,8,510,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassGolem_icon_normal.webp,https://paldb.cc/cn/Dualith
+62:0,Palworld 1.0,062,Puffolt,电汪汪,78,0,75,80,70,100,2,2360,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecPomeranian_icon_normal.webp,https://paldb.cc/cn/Puffolt
+19:0,Palworld 1.0,019,Hoocrates,啼卡尔,77,0,70,70,80,100,1,2940,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WizardOwl_icon_normal.webp,https://paldb.cc/cn/Hoocrates
+43:0,Palworld 1.0,043,Kelpsea,水灵儿,77,0,70,70,70,100,1,2810,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kelpie_icon_normal.webp,https://paldb.cc/cn/Kelpsea
+17:0,Palworld 1.0,017,Pengullet,企丸丸,71,0,70,75,70,100,1,2960,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Penguin_icon_normal.webp,https://paldb.cc/cn/Pengullet
+182:0,Palworld 1.0,182,Solenne,墨罗娜,65,0,110,115,115,100,7,280,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MonochromeQueen_icon_normal.webp,https://paldb.cc/cn/Solenne
+29:0,Palworld 1.0,029,Foxparks,火绒狐,60,0,65,75,70,100,1,2990,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kitsunebi_icon_normal.webp,https://paldb.cc/cn/Foxparks
+23:0,Palworld 1.0,023,Tanzee,新叶猿,60,0,80,70,70,100,1,2900,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Monkey_icon_normal.webp,https://paldb.cc/cn/Tanzee
+51:0,Palworld 1.0,051,Nitewing,疾风隼,59,0,100,95,80,100,3,2560,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HawkBird_icon_normal.webp,https://paldb.cc/cn/Nitewing
+24:0,Palworld 1.0,024,Nox,露娜蒂,55,0,75,85,70,100,6,2920,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NightFox_icon_normal.webp,https://paldb.cc/cn/Nox
+4:0,Palworld 1.0,004,Lifmunk,翠叶鼠,53,0,75,70,70,100,1,3020,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Carbunclo_icon_normal.webp,https://paldb.cc/cn/Lifmunk
+25:0,Palworld 1.0,025,Flambelle,融焰娘,50,0,60,70,80,100,1,2700,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LavaGirl_icon_normal.webp,https://paldb.cc/cn/Flambelle
+20:0,Palworld 1.0,020,Melpaca,美露帕,48,0,90,75,90,100,3,2720,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Alpaca_icon_normal.webp,https://paldb.cc/cn/Melpaca
+27:0,Palworld 1.0,027,Mau,喵丝特,47,0,70,60,70,100,1,3040,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Bastet_icon_normal.webp,https://paldb.cc/cn/Mau
+5:0,Palworld 1.0,005,Fuack,冲浪鸭,44,0,60,80,60,100,1,2980,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BluePlatypus_icon_normal.webp,https://paldb.cc/cn/Fuack
+30:0,Palworld 1.0,030,Killamari,勾魂鱿,43,0,60,60,70,100,1,2770,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NegativeOctopus_icon_normal.webp,https://paldb.cc/cn/Killamari
+31:0,Palworld 1.0,031,Fuddler,遁地鼠,41,0,65,80,50,100,1,2790,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CuteMole_icon_normal.webp,https://paldb.cc/cn/Fuddler
+16:0,Palworld 1.0,016,Depresso,瞅什魔,38,0,70,70,70,100,1,3000,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NegativeKoala_icon_normal.webp,https://paldb.cc/cn/Depresso
+11:0,Palworld 1.0,011,Teafant,壶小象,38,0,70,60,70,100,1,3070,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Ganesha_icon_normal.webp,https://paldb.cc/cn/Teafant
+3:0,Palworld 1.0,003,Chikipi,皮皮鸡,34,0,60,60,60,100,1,3080,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ChickenPal_icon_normal.webp,https://paldb.cc/cn/Chikipi
+26:0,Palworld 1.0,026,Rooby,燎火鹿,33,0,75,70,75,100,2,2870,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlameBambi_icon_normal.webp,https://paldb.cc/cn/Rooby
+8:0,Palworld 1.0,008,Cremis,米露菲,31,0,70,70,75,100,1,2890,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WoolFox_icon_normal.webp,https://paldb.cc/cn/Cremis
+1:0,Palworld 1.0,001,Lamball,棉悠悠,29,0,70,70,70,100,1,3050,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SheepBall_icon_normal.webp,https://paldb.cc/cn/Lamball
+13:0,Palworld 1.0,013,Pupperai,宗铭丸,27,0,70,80,70,100,2,2930,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SamuraiDog_icon_normal.webp,https://paldb.cc/cn/Pupperai
+12:0,Palworld 1.0,012,Gumoss,叶泥泥,25,0,70,70,70,100,1,2950,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PlantSlime_icon_normal.webp,https://paldb.cc/cn/Gumoss
+14:0,Palworld 1.0,014,Clovee,幸叶茸,23,0,80,65,65,100,2,2970,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CloverFairy_icon_normal.webp,https://paldb.cc/cn/Clovee
+183:0,Palworld 1.0,183,Renjishi,燎火舞伶,23,0,105,120,100,100,7,290,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KabukiMan_icon_normal.webp,https://paldb.cc/cn/Renjishi
+42:0,Palworld 1.0,042,Sparkit,伏特喵,19,0,60,75,70,100,1,3010,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecCat_icon_normal.webp,https://paldb.cc/cn/Sparkit
+15:0,Palworld 1.0,015,Jolthog,电棘鼠,17,0,70,75,70,100,1,3030,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Hedgehog_icon_normal.webp,https://paldb.cc/cn/Jolthog
+10008:0,Palworld 1.0,-,Rainbow Slime,彩虹史莱姆,17,0,,,,,,,,https://palbreedingcalculator.org/pals/10008-0.webp,https://palbreedingcalculator.org
+6:0,Palworld 1.0,006,Vixy,玉藻狐,14,0,70,70,70,100,2,3060,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CuteFox_icon_normal.webp,https://paldb.cc/cn/Vixy
+10002:0,Palworld 1.0,-,Eye of Cthulhu,克苏鲁之眼,11,0,,,,,,,,https://palbreedingcalculator.org/pals/10002-0.webp,https://palbreedingcalculator.org
+10003:0,Palworld 1.0,-,Demon Eye,恶魔眼,10,0,,,,,,,,https://palbreedingcalculator.org/pals/10003-0.webp,https://palbreedingcalculator.org
+10010:0,Palworld 1.0,-,Enchanted Sword,附魔剑,8,0,,,,,,,,https://palbreedingcalculator.org/pals/10010-0.webp,https://palbreedingcalculator.org
+10006:0,Palworld 1.0,-,Illuminant Slime,夜明史莱姆,5,0,,,,,,,,https://palbreedingcalculator.org/pals/10006-0.webp,https://palbreedingcalculator.org
+10007:0,Palworld 1.0,-,Purple Slime,紫史莱姆,5,0,,,,,,,,https://palbreedingcalculator.org/pals/10007-0.webp,https://palbreedingcalculator.org
+10012:0,Palworld 1.0,-,Illuminant Bat,夜明蝙蝠,4,0,,,,,,,,https://palbreedingcalculator.org/pals/10012-0.webp,https://palbreedingcalculator.org
+41:1,Palworld 1.0,041B,Azurobe Cryst,碧月龙,2,0,115,105,105,100,8,1220,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlueDragon_Ice_icon_normal.webp,https://paldb.cc/cn/Azurobe_Cryst
+96:1,Palworld 1.0,096B,Beakon Cryst,疾霜鸟,2,0,105,115,85,100,7,580,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderBird_Ice_icon_normal.webp,https://paldb.cc/cn/Beakon_Cryst
+195:0,Palworld 1.0,195,Bellanoir,贝菈诺娃,2,0,120,150,100,100,20,620,10,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NightLady_icon_normal.webp,https://paldb.cc/cn/Bellanoir
+112:1,Palworld 1.0,112B,Blazehowl Noct,狱阎王,2,0,105,115,80,100,8,1270,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Manticore_Dark_icon_normal.webp,https://paldb.cc/cn/Blazehowl_Noct
+10005:0,Palworld 1.0,-,Blue Slime,蓝史莱姆,2,0,,,,,,,,https://palbreedingcalculator.org/pals/10005-0.webp,https://palbreedingcalculator.org
+108:1,Palworld 1.0,108B,Broncherry Aqua,海誓龙,2,0,120,95,100,100,8,1080,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SakuraSaurus_Water_icon_normal.webp,https://paldb.cc/cn/Broncherry_Aqua
+85:1,Palworld 1.0,085B,Bushi Noct,鬼刃武士,2,0,80,130,80,100,7,840,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Ronin_Dark_icon_normal.webp,https://paldb.cc/cn/Bushi_Noct
+34:1,Palworld 1.0,034B,Caprity Noct,郁木羊,2,0,100,75,90,100,3,1940,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BerryGoat_Dark_icon_normal.webp,https://paldb.cc/cn/Caprity_Noct
+7:1,Palworld 1.0,007B,Celaray Lux,雷米儿,2,0,80,75,80,100,4,2380,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlyingManta_Thunder_icon_normal.webp,https://paldb.cc/cn/Celaray_Lux
+157:0,Palworld 1.0,157,Celesdir,净世鹿,2,0,120,110,100,100,6,570,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteDeer_icon_normal.webp,https://paldb.cc/cn/Celesdir
+157:1,Palworld 1.0,157B,Celesdir Noct,织夜鹿,2,0,120,115,100,100,7,270,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteDeer_Dark_icon_normal.webp,https://paldb.cc/cn/Celesdir_Noct
+103:1,Palworld 1.0,103B,Chillet Ignis,桃旋鼬,2,0,90,85,80,100,5,1950,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WeaselDragon_Fire_icon_normal.webp,https://paldb.cc/cn/Chillet_Ignis
+9:1,Palworld 1.0,009B,Croajiro Noct,极道蛙,2,0,85,110,90,100,5,1860,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KendoFrog_Dark_icon_normal.webp,https://paldb.cc/cn/Croajiro_Noct
+132:1,Palworld 1.0,132B,Cryolinx Terra,金棘兽,2,0,100,105,110,100,7,470,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteTiger_Ground_icon_normal.webp,https://paldb.cc/cn/Cryolinx_Terra
+92:1,Palworld 1.0,092B,Dazzi Noct,天阴童子,2,0,70,80,75,100,2,1910,20,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RaijinDaughter_Water_icon_normal.webp,https://paldb.cc/cn/Dazzi_Noct
+84:1,Palworld 1.0,084B,Dinossom Lux,雷冠龙,2,0,110,90,90,100,7,1890,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerDinosaur_Electric_icon_normal.webp,https://paldb.cc/cn/Dinossom_Lux
+138:1,Palworld 1.0,138B,Dualith Noct,咒心岩傀,2,0,110,110,125,100,8,250,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassGolem_Dark_icon_normal.webp,https://paldb.cc/cn/Dualith_Noct
+109:1,Palworld 1.0,109B,Dumud Gild,梆梆鲶,2,0,105,75,100,100,5,1620,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LazyCatfish_Gold_icon_normal.webp,https://paldb.cc/cn/Dumud_Gild
+171:1,Palworld 1.0,171B,Eidrolon Ignis,狱熙龙,2,0,115,130,120,100,8,140,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostDragon_Fire_icon_normal.webp,https://paldb.cc/cn/Eidrolon_Ignis
+32:1,Palworld 1.0,032B,Eikthyrdeer Terra,祇岳鹿,2,0,95,80,80,100,6,2580,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Deer_Ground_icon_normal.webp,https://paldb.cc/cn/Eikthyrdeer_Terra
+81:1,Palworld 1.0,081B,Elgrove Cryst,冰峰陶洛斯,2,0,120,100,105,100,7,440,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassMinotaur_Ice_icon_normal.webp,https://paldb.cc/cn/Elgrove_Cryst
+63:1,Palworld 1.0,063B,Elphidran Aqua,水灵龙,2,0,115,80,95,100,8,1640,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FairyDragon_Water_icon_normal.webp,https://paldb.cc/cn/Elphidran_Aqua
+188:1,Palworld 1.0,188B,Faleris Aqua,伊西斯,2,0,110,110,115,100,9,450,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Horus_Water_icon_normal.webp,https://paldb.cc/cn/Faleris_Aqua
+83:1,Palworld 1.0,083B,Fenglope Lux,雷隐鹿,2,0,110,115,90,100,3,900,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FengyunDeeper_Electric_icon_normal.webp,https://paldb.cc/cn/Fenglope_Lux
+88:1,Palworld 1.0,088B,Finsider Ignis,粉粉布偶鲨,2,0,75,90,80,100,4,2240,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_StuffedShark_Fire_icon_normal.webp,https://paldb.cc/cn/Finsider_Ignis
+29:1,Palworld 1.0,029B,Foxparks Cryst,雪绒狐,2,0,65,80,70,100,1,2500,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kitsunebi_Ice_icon_normal.webp,https://paldb.cc/cn/Foxparks_Cryst
+200:1,Palworld 1.0,200B,Frostallion Noct,唤夜兽,2,0,140,140,135,100,20,110,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceHorse_Dark_icon_normal.webp,https://paldb.cc/cn/Frostallion_Noct
+5:1,Palworld 1.0,005B,Fuack Ignis,热浪鸭,2,0,60,85,60,100,2,2300,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BluePlatypus_Fire_icon_normal.webp,https://paldb.cc/cn/Fuack_Ignis
+97:1,Palworld 1.0,097B,Ghangler Ignis,炙灯鱼,2,0,90,130,105,100,6,720,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostAnglerfish_Fire_icon_normal.webp,https://paldb.cc/cn/Ghangler_Ignis
+48:1,Palworld 1.0,048B,Gloopie Primo,梦沫姬,2,0,75,85,70,100,6,1630,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_OctopusGirl_Neutral_icon_normal.webp,https://paldb.cc/cn/Gloopie_Primo
+55:1,Palworld 1.0,055B,Gobfin Ignis,红小鲨,2,0,90,90,75,100,3,2430,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SharkKid_Fire_icon_normal.webp,https://paldb.cc/cn/Gobfin_Ignis
+74:1,Palworld 1.0,074B,Gorirat Terra,石掌猿,2,0,90,100,90,100,5,1880,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Gorilla_Ground_icon_normal.webp,https://paldb.cc/cn/Gorirat_Terra
+38:1,Palworld 1.0,038B,Hangyu Cryst,冰缚灵,2,0,80,80,70,100,2,2510,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WindChimes_Ice_icon_normal.webp,https://paldb.cc/cn/Hangyu_Cryst
+80:1,Palworld 1.0,080B,Helzephyr Lux,雷鸣鸟,2,0,105,125,100,100,8,960,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HadesBird_Electric_icon_normal.webp,https://paldb.cc/cn/Helzephyr_Lux
+91:1,Palworld 1.0,091B,Incineram Noct,暗魔羊,2,0,95,105,85,100,5,1310,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Baphomet_Dark_icon_normal.webp,https://paldb.cc/cn/Incineram_Noct
+15:1,Palworld 1.0,015B,Jolthog Cryst,冰刺鼠,2,0,70,75,80,100,2,2850,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Hedgehog_Ice_icon_normal.webp,https://paldb.cc/cn/Jolthog_Cryst
+121:1,Palworld 1.0,121B,Jormuntide Ignis,腾炎龙,2,0,130,130,100,100,9,170,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Umihebi_Fire_icon_normal.webp,https://paldb.cc/cn/Jormuntide_Ignis
+79:1,Palworld 1.0,079B,Katress Ignis,炽巫猫,2,1,95,105,90,100,6,1800,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CatMage_Fire_icon_normal.webp,https://paldb.cc/cn/Katress_Ignis
+30:1,Palworld 1.0,030B,Killamari Primo,蚀魂鱿,2,0,70,60,70,100,2,2540,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NegativeOctopus_Neutral_icon_normal.webp,https://paldb.cc/cn/Killamari_Primo
+21:1,Palworld 1.0,021B,Kingpaca Cryst,冰帝美露帕,2,0,120,85,90,100,9,1530,90,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingAlpaca_Ice_icon_normal.webp,https://paldb.cc/cn/Kingpaca_Cryst
+111:1,Palworld 1.0,111B,Kitsun Noct,幽焰狼,2,0,100,115,105,100,6,800,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_AmaterasuWolf_Dark_icon_normal.webp,https://paldb.cc/cn/Kitsun_Noct
+159:1,Palworld 1.0,159B,Knocklem Ignis,丹烽,2,0,105,115,135,100,10,210,70,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WingGolem_Fire_icon_normal.webp,https://paldb.cc/cn/Knocklem_Ignis
+73:1,Palworld 1.0,073B,Leezpunk Ignis,热血蜥,2,0,80,80,50,100,3,2640,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LizardMan_Fire_icon_normal.webp,https://paldb.cc/cn/Leezpunk_Ignis
+56:1,Palworld 1.0,056B,Loupmoon Cryst,霜镰魔,2,0,80,105,80,100,3,1290,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Werewolf_Ice_icon_normal.webp,https://paldb.cc/cn/Loupmoon_Cryst
+186:1,Palworld 1.0,186B,Lyleen Noct,黑月女王,2,0,115,120,115,100,10,220,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LilyQueen_Dark_icon_normal.webp,https://paldb.cc/cn/Lyleen_Noct
+87:1,Palworld 1.0,087B,Mammorest Cryst,雪猛犸,2,0,150,85,90,100,9,1070,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassMammoth_Ice_icon_normal.webp,https://paldb.cc/cn/Mammorest_Cryst
+27:1,Palworld 1.0,027B,Mau Cryst,冰丝特,2,0,70,65,70,100,2,2750,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Bastet_Ice_icon_normal.webp,https://paldb.cc/cn/Mau_Cryst
+99:1,Palworld 1.0,099B,Menasting Terra,金铠蝎,2,0,100,105,130,100,10,640,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkScorpion_Ground_icon_normal.webp,https://paldb.cc/cn/Menasting_Terra
+105:1,Palworld 1.0,105B,Moldron Cryst,川霜龙,2,0,110,125,120,100,8,380,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VolcanoDragon_Ice_icon_normal.webp,https://paldb.cc/cn/Moldron_Cryst
+102:1,Palworld 1.0,102B,Mossanda Lux,雷胖达,2,0,100,100,100,100,7,1440,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GrassPanda_Electric_icon_normal.webp,https://paldb.cc/cn/Mossanda_Lux
+100:1,Palworld 1.0,100B,Needoll Noct,妖抱苞,2,0,75,90,70,100,3,1580,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CactusDoll_Dark_icon_normal.webp,https://paldb.cc/cn/Needoll_Noct
+148:1,Palworld 1.0,148B,Nitemary Botan,碧艾莉,2,0,110,95,105,100,7,1320,40,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_GhostRabbit_Grass_icon_normal.webp,https://paldb.cc/cn/Nitemary_Botan
+203:0,Palworld 1.0,203,Panthalus,奥沧鲸,2,0,180,120,200,100,10,20,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingWhale_icon_normal.webp,https://paldb.cc/cn/Panthalus
+17:1,Palworld 1.0,017B,Pengullet Lux,闪丸丸,2,0,70,80,70,100,2,2490,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Penguin_Electric_icon_normal.webp,https://paldb.cc/cn/Pengullet_Lux
+18:1,Palworld 1.0,018B,Penking Lux,闪丸王,2,0,100,100,100,100,7,1850,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CaptainPenguin_Black_icon_normal.webp,https://paldb.cc/cn/Penking_Lux
+89:1,Palworld 1.0,089B,Petallia Ignis,樱丽娜,2,0,95,105,100,100,9,820,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerDoll_Fire_icon_normal.webp,https://paldb.cc/cn/Petallia_Ignis
+131:1,Palworld 1.0,131B,Pierdon Cryst,寒峰兽,2,0,100,110,120,100,7,460,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RockBeast_Ice_icon_normal.webp,https://paldb.cc/cn/Pierdon_Cryst
+72:1,Palworld 1.0,072B,Polapup Terra,巧克力豹冰,2,0,95,105,110,100,6,1100,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceSeal_Ground_icon_normal.webp,https://paldb.cc/cn/Polapup_Terra
+141:1,Palworld 1.0,141B,Prixter Lux,电针妖,2,0,90,115,90,100,6,850,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ScorpionMan_Electric_icon_normal.webp,https://paldb.cc/cn/Prixter_Lux
+93:1,Palworld 1.0,093B,Pyrin Noct,邪麒麟,2,0,100,95,90,100,7,1870,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FireKirin_Dark_icon_normal.webp,https://paldb.cc/cn/Pyrin_Noct
+124:1,Palworld 1.0,124B,Quivern Botan,翠羽龙,2,0,105,105,100,100,8,1300,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SkyDragon_Grass_icon_normal.webp,https://paldb.cc/cn/Quivern_Botan
+98:1,Palworld 1.0,098B,Rayhound Cryst,凛光犬,2,0,90,105,80,100,6,1600,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderDog_Ice_icon_normal.webp,https://paldb.cc/cn/Rayhound_Cryst
+10009:0,Palworld 1.0,-,Red Slime,红史莱姆,2,0,,,,,,,,https://palbreedingcalculator.org/pals/10009-0.webp,https://palbreedingcalculator.org
+94:1,Palworld 1.0,094B,Relaxaurus Lux,派克龙,2,0,120,120,110,100,9,770,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LazyDragon_Electric_icon_normal.webp,https://paldb.cc/cn/Relaxaurus_Lux
+129:1,Palworld 1.0,129B,Reptyro Cryst,寒霜兽,2,0,110,105,130,100,7,600,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_VolcanicMonster_Ice_icon_normal.webp,https://paldb.cc/cn/Reptyro_Cryst
+44:1,Palworld 1.0,044B,Ribbuny Botan,艾小兔,2,0,80,65,70,100,1,2460,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PinkRabbit_Grass_icon_normal.webp,https://paldb.cc/cn/Ribbuny_Botan
+76:1,Palworld 1.0,076B,Robinquill Terra,山岳射手,2,0,90,105,80,100,6,2050,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_RobinHood_Ground_icon_normal.webp,https://paldb.cc/cn/Robinquill_Terra
+116:1,Palworld 1.0,116B,Sibelyx Primo,绢笠蛾,2,0,115,90,100,100,8,650,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteMoth_Neutral_icon_normal.webp,https://paldb.cc/cn/Sibelyx_Primo
+128:1,Palworld 1.0,128B,Skutlass Ignis,炼刃鱼,2,0,70,105,80,100,5,1590,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SwordCutlassfish_Fire_icon_normal.webp,https://paldb.cc/cn/Skutlass_Ignis
+149:1,Palworld 1.0,149B,Smokie Cryst,冬丸,2,0,85,90,90,100,3,1610,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlackPuppy_Ice_icon_normal.webp,https://paldb.cc/cn/Smokie_Cryst
+163:1,Palworld 1.0,163B,Snock Lux,金涡蜗,2,0,65,70,80,100,3,1500,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecSnail_Ground_icon_normal.webp,https://paldb.cc/cn/Snock_Lux
+169:1,Palworld 1.0,169B,Solmora Lux,曼波皇,2,0,90,95,85,100,5,1000,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingSunfish_Thunder_icon_normal.webp,https://paldb.cc/cn/Solmora_Lux
+130:1,Palworld 1.0,130B,Starryon Primo,日耀驹,2,0,110,105,100,100,8,430,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NightBlueHorse_Neutral_icon_normal.webp,https://paldb.cc/cn/Starryon_Primo
+75:1,Palworld 1.0,075B,Surfent Terra,流沙蛇,2,0,90,90,100,100,5,1840,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Serpent_Ground_icon_normal.webp,https://paldb.cc/cn/Surfent_Terra
+122:1,Palworld 1.0,122B,Suzaku Aqua,清雀,2,0,125,105,105,100,9,740,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Suzaku_Water_icon_normal.webp,https://paldb.cc/cn/Suzaku_Aqua
+23:1,Palworld 1.0,023B,Tanzee Ignis,秋叶猿,2,0,80,75,70,100,2,2830,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Monkey_Fire_icon_normal.webp,https://paldb.cc/cn/Tanzee_Ignis
+142:1,Palworld 1.0,142B,Tetroise Primo,净岩龟,2,0,95,100,140,100,8,200,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_CubeTurtle_Neutral_icon_normal.webp,https://paldb.cc/cn/Tetroise_Primo
+37:1,Palworld 1.0,037B,Turtacle Terra,金盔仔,2,0,85,85,125,100,4,1330,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_TentacleTurtle_Ground_icon_normal.webp,https://paldb.cc/cn/Turtacle_Terra
+54:1,Palworld 1.0,054B,Univolt Cryst,凌角马,2,0,80,105,110,100,6,540,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Kirin_Ice_icon_normal.webp,https://paldb.cc/cn/Univolt_Cryst
+64:1,Palworld 1.0,064B,Vanwyrm Cryst,霜歌龙,2,0,90,120,95,100,5,1430,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BirdDragon_Ice_icon_normal.webp,https://paldb.cc/cn/Vanwyrm_Cryst
+113:1,Palworld 1.0,113B,Warsect Terra,格鲁力斯,2,0,120,105,120,100,9,630,85,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_HerculesBeetle_Ground_icon_normal.webp,https://paldb.cc/cn/Warsect_Terra
+151:1,Palworld 1.0,151B,Whalaska Ignis,桃晶鲸,2,0,105,120,110,100,8,370,42,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceNarwhal_Fire_icon_normal.webp,https://paldb.cc/cn/Whalaska_Ignis
+78:1,Palworld 1.0,078B,Wixen Noct,幽巫狐,2,1,90,110,85,100,6,1490,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FoxMage_Dark_icon_normal.webp,https://paldb.cc/cn/Wixen_Noct
+39:1,Palworld 1.0,039B,Woolipop Terra,可可棉花糖,2,0,70,70,95,100,4,2030,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SweetsSheep_Ground_icon_normal.webp,https://paldb.cc/cn/Woolipop_Terra
+204:0,Palworld 1.0,204,Astralym,枯星龙,1,0,200,200,200,100,10,10,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WorldTreeDragon_icon_normal.webp,https://paldb.cc/cn/Astralym
+191:0,Palworld 1.0,191,Bastigor,霜牙王,1,0,140,130,120,100,8,50,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SnowTigerBeastman_icon_normal.webp,https://paldb.cc/cn/Bastigor
+195:1,Palworld 1.0,195B,Bellanoir Libero,贝菈露洁,1,0,120,150,100,100,20,130,10,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_NightLady_Dark_icon_normal.webp,https://paldb.cc/cn/Bellanoir_Libero
+137:1,Palworld 1.0,137B,Blazamut Ryu,殁殃,1,0,105,130,125,100,10,100,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_KingBahamut_Dragon_icon_normal.webp,https://paldb.cc/cn/Blazamut_Ryu
+10011:0,Palworld 1.0,-,Cave Bat,洞穴蝙蝠,1,0,,,,,,,,https://palbreedingcalculator.org/pals/10011-0.webp,https://palbreedingcalculator.org
+194:0,Palworld 1.0,194,Dandilord,夜蔓爵,1,0,125,135,110,100,8,60,60,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_FlowerPrince_icon_normal.webp,https://paldb.cc/cn/Dandilord
+188:0,Palworld 1.0,188,Faleris,荷鲁斯,1,0,105,110,115,100,9,500,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Horus_icon_normal.webp,https://paldb.cc/cn/Faleris
+200:0,Palworld 1.0,200,Frostallion,唤冬兽,1,0,140,140,120,100,20,150,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_IceHorse_icon_normal.webp,https://paldb.cc/cn/Frostallion
+10004:0,Palworld 1.0,-,Green Slime,绿史莱姆,1,0,,,,,,,,https://palbreedingcalculator.org/pals/10004-0.webp,https://palbreedingcalculator.org
+185:0,Palworld 1.0,185,Grizzbolt,暴电熊,1,0,120,105,105,100,8,1020,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ElecPanda_icon_normal.webp,https://paldb.cc/cn/Grizzbolt
+197:0,Palworld 1.0,197,Hartalis,默世鹿,1,0,135,130,110,100,10,90,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LegendDeer_icon_normal.webp,https://paldb.cc/cn/Hartalis
+202:0,Palworld 1.0,202,Jetragon,空涡龙,1,0,115,140,120,100,20,70,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_JetDragon_icon_normal.webp,https://paldb.cc/cn/Jetragon
+186:0,Palworld 1.0,186,Lyleen,百合女王,1,0,120,120,110,100,9,240,30,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_LilyQueen_icon_normal.webp,https://paldb.cc/cn/Lyleen
+144:0,Palworld 1.0,144,Mimog,旺财,1,0,60,60,130,100,7,1740,80,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MimicDog_icon_normal.webp,https://paldb.cc/cn/Mimog
+199:0,Palworld 1.0,199,Necromus,混沌骑士,1,0,130,145,120,100,20,190,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlackCentaur_icon_normal.webp,https://paldb.cc/cn/Necromus
+201:0,Palworld 1.0,201,Neptilius,海皇鲸,1,0,105,145,125,100,20,160,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_PoseidonOrca_icon_normal.webp,https://paldb.cc/cn/Neptilius
+187:0,Palworld 1.0,187,Orserk,波鲁杰克斯,1,0,120,130,115,100,9,120,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_ThunderDragonMan_icon_normal.webp,https://paldb.cc/cn/Orserk
+198:0,Palworld 1.0,198,Paladius,圣光骑士,1,0,130,120,145,100,20,180,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_SaintCentaur_icon_normal.webp,https://paldb.cc/cn/Paladius
+190:0,Palworld 1.0,190,Selyne,辉月伊,1,0,130,115,110,100,9,360,20,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_MoonQueen_icon_normal.webp,https://paldb.cc/cn/Selyne
+189:0,Palworld 1.0,189,Shadowbeak,异构格里芬,1,0,120,120,140,100,10,550,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlackGriffon_icon_normal.webp,https://paldb.cc/cn/Shadowbeak
+192:0,Palworld 1.0,192,Shaolong,霄龙,1,0,140,135,120,100,9,40,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_BlueSkyDragon_icon_normal.webp,https://paldb.cc/cn/Shaolong
+193:0,Palworld 1.0,193,Silvance,暮尘蛾,1,0,140,120,110,100,8,80,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_Mothman_icon_normal.webp,https://paldb.cc/cn/Silvance
+146:0,Palworld 1.0,146,Xenogard,杰诺路达,1,0,110,120,130,100,9,990,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_WhiteAlienDragon_icon_normal.webp,https://paldb.cc/cn/Xenogard
+196:0,Palworld 1.0,196,Xenolord,杰诺多兰,1,0,130,120,120,100,8,400,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkMechaDragon_icon_normal.webp,https://paldb.cc/cn/Xenolord
+145:0,Palworld 1.0,145,Xenovader,杰诺贝达,1,0,90,125,85,100,7,1820,50,https://cdn.paldb.cc/image/Pal/Texture/PalIcon/Normal/T_DarkAlien_icon_normal.webp,https://paldb.cc/cn/Xenovader
