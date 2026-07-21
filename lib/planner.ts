@@ -72,6 +72,7 @@ export type BreedingData = {
   generatedAt: string;
   pals: Pal[];
   passives?: string[];
+  passiveRanks?: Record<string, number | null>;
   combos: ComboTuple[];
 };
 

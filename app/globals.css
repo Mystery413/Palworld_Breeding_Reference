@@ -123,7 +123,7 @@ button { color: inherit; }
 .inventory-main .male { color: var(--blue); }
 .inventory-main .female { color: #e24b7a; }
 .mini-passives { display: flex; flex-wrap: wrap; gap: 4px; }
-.mini-passives span { background: #eee8ff; border-radius: 5px; color: #5e42a6; font-size: 9px; font-weight: 700; padding: 3px 5px; }
+.mini-passives span { border-radius: 5px; font-size: 9px; font-weight: 700; padding: 3px 5px; }
 .mini-passives em { color: #9a9c9f; font-size: 10px; }
 .remove-button { background: transparent; border: 0; color: #9ca2ad; cursor: pointer; font-size: 18px; position: absolute; right: 8px; top: 7px; }
 .inventory-tools { border-top: 1px solid var(--line); display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); margin-top: 18px; padding-top: 16px; }
@@ -167,7 +167,7 @@ button { color: inherit; }
 .tag-input > span button { background: transparent; border: 0; color: #acb7c8; cursor: pointer; padding: 0; }
 .tag-input input { background: transparent; border: 0; flex: 1; min-width: 150px; outline: none; padding: 7px 2px; }
 .quick-passives, .preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
-.quick-passives button, .preset-row button { background: transparent; border: 1px solid var(--line); border-radius: 20px; color: var(--ink-soft); cursor: pointer; font-size: 10px; padding: 5px 8px; }
+.quick-passives button, .preset-row button { align-items: center; background: transparent; border: 1px solid var(--line); border-radius: 20px; color: var(--ink-soft); cursor: pointer; display: inline-flex; font-size: 10px; gap: 5px; padding: 5px 8px; }
 .quick-passives button:hover, .preset-row button:hover { border-color: var(--teal); color: var(--teal); }
 .quick-passives small { color: var(--muted); font-size: 10px; }
 .search-suggestions { display: grid; gap: 5px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 9px; max-height: 105px; overflow: auto; }
@@ -176,6 +176,25 @@ button { color: inherit; }
 .search-suggestions button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-suggestions button small { color: var(--teal); font-size: 8px; font-weight: 900; }
 .search-suggestions p { color: var(--muted); font-size: 9px; grid-column: 1 / -1; margin: 2px 0; }
+.passive-tag { --passive-bg: #edf0f3; --passive-border: #c9ced6; --passive-color: #374151; align-items: center; background: var(--passive-bg) !important; border: 1px solid var(--passive-border); color: var(--passive-color) !important; display: inline-flex; gap: 6px; }
+.passive-tag b { font-size: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.passive-tag i { background: rgba(255,255,255,.7); border-radius: 4px; color: inherit; font-size: 7px; font-style: normal; font-weight: 900; letter-spacing: .04em; padding: 2px 4px; white-space: nowrap; }
+.passive-tag.compact { gap: 3px; padding: 3px 5px; }
+.passive-tag.compact i { font-size: 6px; padding: 1px 3px; }
+.passive-rank-1 { --passive-bg: #eef1f4; --passive-border: #cbd1d8; --passive-color: #46515e; }
+.passive-rank-2 { --passive-bg: #e2f1ff; --passive-border: #78b9ec; --passive-color: #17649d; }
+.passive-rank-3 { --passive-bg: #fff1bd; --passive-border: #d7a51d; --passive-color: #7b5700; }
+.passive-rank-4 { --passive-bg: linear-gradient(120deg, #ffe6a3, #dbf4ff 42%, #eee1ff 72%, #ffd9e9); --passive-border: #ae7bdb; --passive-color: #563078; }
+.passive-rank-5 { --passive-bg: linear-gradient(120deg, #d7fff6, #fff1a8 30%, #ffd8ee 62%, #d8ddff); --passive-border: #8a55d7; --passive-color: #4d237c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.65); }
+.passive-custom { --passive-bg: #f1eee8; --passive-border: #cfc8bb; --passive-color: #625b50; }
+.passive-negative { --passive-bg: #ffe5e4; --passive-border: #e58b86; --passive-color: #a1332e; }
+.passive-negative-2 { --passive-bg: #ffd6d4; --passive-border: #dc6b65; --passive-color: #93231f; }
+.passive-negative-3 { --passive-bg: #ffc7c4; --passive-border: #c94d47; --passive-color: #7e1713; }
+.search-suggestions button[class*="passive-"] { background: var(--passive-bg); border-color: var(--passive-border); color: var(--passive-color); }
+.search-suggestions button[class*="passive-"]:hover { border-color: var(--passive-color); filter: brightness(1.03); }
+.search-suggestions button[class*="passive-"] small { background: rgba(255,255,255,.7); border-radius: 4px; color: inherit; padding: 2px 4px; }
+.quick-passives button[class*="passive-"] { background: var(--passive-bg); border-color: var(--passive-border); color: var(--passive-color); }
+.quick-passives button[class*="passive-"] small { background: rgba(255,255,255,.65); border-radius: 4px; color: inherit; font-size: 7px; font-weight: 900; padding: 1px 3px; }
 .profile-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); margin-top: 20px; }
 .profile-grid button { background: transparent; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; min-height: 112px; padding: 14px; text-align: left; }
 .profile-grid button > span { color: var(--coral); font-size: 19px; }
@@ -317,6 +336,7 @@ button { color: inherit; }
 .pal-options strong { font-size: 12px; }
 .pal-options small { color: var(--muted); font-size: 9px; }
 .pal-options i { color: var(--teal); font-style: normal; font-weight: 900; }
+.pal-search-empty { color: var(--muted); font-size: 10px; line-height: 1.6; margin: 18px 8px; text-align: center; }
 .draft-fields { padding: 24px; }
 .field-row { margin-bottom: 20px; }
 .field-row > label small { color: var(--muted); float: right; font-weight: 500; }

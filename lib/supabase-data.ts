@@ -107,7 +107,7 @@ export async function loadBreedingData(): Promise<BreedingData> {
     fetchAllRows("pal_habitats", "*", "pal_id.asc"),
     fetchAllRows("pal_habitat_locations", "*", "location_id.asc"),
     fetchAllRows("breeding_combos", "*", "combo_id.asc"),
-    fetchAllRows("passives", "name_zh", "name_zh.asc"),
+    fetchAllRows("passives", "name_zh,rank", "name_zh.asc"),
   ]);
 
   const workByPal = new Map<string, Record<string, number>>();
@@ -207,6 +207,7 @@ export async function loadBreedingData(): Promise<BreedingData> {
     generatedAt: date,
     pals,
     passives: [...new Set(passiveRows.map((row) => text(row.name_zh)).filter(Boolean))],
+    passiveRanks: Object.fromEntries(passiveRows.map((row) => [text(row.name_zh), nullableNumber(row.rank)])),
     combos,
   };
 }

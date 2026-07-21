@@ -21,6 +21,7 @@ import { loadBreedingData } from "@/lib/supabase-data";
 import { SaveImportModal } from "./SaveImportModal";
 
 const STORAGE_KEY = "palworld-breeding-lab-v1";
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const PASSIVE_PRESETS = [
   "破坏神",
@@ -115,6 +116,47 @@ function fuzzyMatches(value: string, query: string): boolean {
   let cursor = 0;
   for (const char of haystack) if (char === needle[cursor]) cursor += 1;
   return cursor === needle.length;
+}
+
+function editDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let diagonal = previous[0];
+    previous[0] = leftIndex;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const above = previous[rightIndex];
+      previous[rightIndex] = Math.min(
+        previous[rightIndex] + 1,
+        previous[rightIndex - 1] + 1,
+        diagonal + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+      );
+      diagonal = above;
+    }
+  }
+  return previous[right.length];
+}
+
+function palMatchScore(pal: Pal, rawQuery: string): number | null {
+  const query = normalizedSearch(rawQuery);
+  if (!query) return 0;
+  const fields = [pal.dex.replace(/^0+/, ""), pal.dex, pal.id, pal.nameZh, pal.name];
+  const normalizedFields = fields.map(normalizedSearch);
+  if (normalizedFields.some((field) => field === query)) return 0;
+  if (normalizedFields.some((field) => field.startsWith(query))) return 1;
+  if (normalizedFields.some((field) => field.includes(query))) return 2;
+  if (normalizedFields.some((field) => fuzzyMatches(field, query))) return 3;
+  if (query.length >= 2 && normalizedFields.some((field) => editDistance(field, query) <= Math.max(1, Math.floor(query.length * .25)))) return 4;
+  return null;
+}
+
+function passiveTier(rank?: number | null): { className: string; label: string } {
+  if (rank == null) return { className: "passive-custom", label: "自定义" };
+  if (rank < 0) return { className: `passive-negative passive-negative-${Math.min(3, Math.abs(rank))}`, label: `负面 ${Math.abs(rank)}` };
+  if (rank >= 5) return { className: "passive-rank-5", label: "顶级" };
+  if (rank === 4) return { className: "passive-rank-4", label: "彩色" };
+  if (rank === 3) return { className: "passive-rank-3", label: "金色" };
+  if (rank === 2) return { className: "passive-rank-2", label: "稀有" };
+  return { className: "passive-rank-1", label: "普通" };
 }
 
 function captureRangeLabel(source: Pick<CaptureSource, "level" | "maxLevel" | "kind">): string {
@@ -265,6 +307,7 @@ export default function PlannerApp() {
   }, [inventory, desiredPassives, profile, exactTargetId, playerLevel, allowCapture, maxBreedingSteps, isHydrated]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
+  const passiveRanks = data?.passiveRanks ?? {};
   const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)), [inventory]);
   const catchLevelLimit = Math.min(80, playerLevel + 8);
   const captureSources = useMemo(() => {
@@ -321,10 +364,11 @@ export default function PlannerApp() {
 
   const filteredPals = useMemo(() => {
     if (!data) return [];
-    const query = normalizedSearch(palSearch);
     return data.pals
-      .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
-      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }))
+      .map((pal) => ({ pal, score: palMatchScore(pal, palSearch) }))
+      .filter((item): item is { pal: Pal; score: number } => item.score != null)
+      .sort((a, b) => a.score - b.score || a.pal.dex.localeCompare(b.pal.dex, undefined, { numeric: true }))
+      .map((item) => item.pal)
       .slice(0, 80);
   }, [data, palSearch]);
 
@@ -528,7 +572,7 @@ export default function PlannerApp() {
                 <div className="inventory-main">
                   <div><strong>{pal?.nameZh ?? item.palId}</strong><span className={item.sex === "M" ? "male" : "female"}>{item.sex === "M" ? "♂" : "♀"}</span></div>
                   <small>No.{pal?.dex} · {pal?.name}</small>
-                  <div className="mini-passives">{item.passives.length ? item.passives.map((passive) => <span key={passive}>{passive}</span>) : <em>无词条</em>}</div>
+                  <div className="mini-passives">{item.passives.length ? item.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} compact />) : <em>无词条</em>}</div>
                 </div>
                 <button className="remove-button" onClick={() => setInventory((current) => current.filter((entry) => entry.id !== item.id))} aria-label={`删除${pal?.nameZh ?? "帕鲁"}`}>×</button>
               </article>;
@@ -567,12 +611,12 @@ export default function PlannerApp() {
             <div className="goal-block">
               <label>目标词条 <small>{desiredPassives.length}/4</small></label>
               <div className="tag-input">
-                {desiredPassives.map((passive) => <span key={passive}>{passive}<button onClick={() => setDesiredPassives((current) => current.filter((item) => item !== passive))}>×</button></span>)}
+                {desiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => setDesiredPassives((current) => current.filter((item) => item !== passive))} />)}
                 {desiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={desiredPassives.length ? "搜索并继续添加…" : "搜索词条，支持模糊匹配"} />}
               </div>
-              {desiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, desiredPassives)} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
+              {desiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, desiredPassives)} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
               <div className="quick-passives">
-                {availablePassives.filter((passive) => !desiredPassives.includes(passive)).slice(0, 8).map((passive) => <button key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}</button>)}
+                {availablePassives.filter((passive) => !desiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRanks[passive]); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}<small>{tier.label}</small></button>; })}
                 {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
               </div>
             </div>
@@ -649,11 +693,12 @@ export default function PlannerApp() {
           <div className="modal-body">
             <div className="pal-picker">
               <label htmlFor="pal-search">选择帕鲁 *</label>
-              <input id="pal-search" value={palSearch} onChange={(event) => setPalSearch(event.target.value)} placeholder="搜索中文名、英文名或编号" autoFocus />
+              <input id="pal-search" value={palSearch} onChange={(event) => { setPalSearch(event.target.value); setDraft((current) => ({ ...current, palId: "" })); }} placeholder="支持中文、英文、编号及模糊匹配" autoFocus />
               <div className="pal-options">
                 {filteredPals.map((pal) => <button key={pal.id} className={draft.palId === pal.id ? "selected" : ""} onClick={() => { setDraft((current) => ({ ...current, palId: pal.id })); setPalSearch(`${pal.nameZh} · ${pal.name}`); }}>
                   <img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span><i>{draft.palId === pal.id ? "✓" : ""}</i>
                 </button>)}
+                {!filteredPals.length && <p className="pal-search-empty">没有找到匹配帕鲁，试试简称、英文片段或相近拼写。</p>}
               </div>
             </div>
             <div className="draft-fields">
@@ -668,10 +713,10 @@ export default function PlannerApp() {
               <div className="field-row">
                 <label>已有词条 <small>请把杂词条也录入</small></label>
                 <div className="tag-input draft-tags">
-                  {draft.passives.map((passive) => <span key={passive}>{passive}<button onClick={() => setDraft((current) => ({ ...current, passives: current.passives.filter((item) => item !== passive) }))}>×</button></span>)}
+                  {draft.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => setDraft((current) => ({ ...current, passives: current.passives.filter((item) => item !== passive) }))} />)}
                   <input value={passiveInput} onChange={(event) => setPassiveInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "draft")} placeholder="搜索词条或输入自定义词条" />
                 </div>
-                <SearchSuggestions items={passiveSuggestions(passiveInput, draft.passives)} query={passiveInput} onSelect={addDraftPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />
+                <SearchSuggestions items={passiveSuggestions(passiveInput, draft.passives)} ranks={passiveRanks} query={passiveInput} onSelect={addDraftPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />
               </div>
               <div className="field-row">
                 <label>潜力值 <small>没有能力眼镜可以留空</small></label>
@@ -714,9 +759,14 @@ function PaldexBrowserModal({ pals, total, query, onQueryChange, onOpenPal, onCl
   </div>;
 }
 
-function SearchSuggestions({ items, query, onSelect, emptyText }: { items: string[]; query: string; onSelect: (value: string) => void; emptyText: string }) {
+function PassiveTag({ name, rank, onRemove, compact = false }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean }) {
+  const tier = passiveTier(rank);
+  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""}`}><b>{name}</b><i>{tier.label}</i>{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}</span>;
+}
+
+function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items: string[]; ranks: Record<string, number | null>; query: string; onSelect: (value: string) => void; emptyText: string }) {
   return <div className="search-suggestions" aria-label="匹配选项">
-    {items.map((item) => <button key={item} onClick={() => onSelect(item)}><span>{item}</span><small>添加</small></button>)}
+    {items.map((item) => { const tier = passiveTier(ranks[item]); return <button className={tier.className} key={item} onClick={() => onSelect(item)}><span>{item}</span><small>{tier.label}</small></button>; })}
     {query.trim() && !items.length && <p>{emptyText}</p>}
   </div>;
 }
@@ -837,7 +887,7 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
         <div className="habitat-map-panel">
           <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss · 放大后按住拖动</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
           {locations.length ? <div ref={mapRef} className={`habitat-map ${mapZoom > 1 ? "draggable" : ""} ${mapDragging ? "dragging" : ""}`} onPointerDown={startMapDrag} onPointerMove={moveMap} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag}>
-            <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={world === "palpagos" ? "/palpagos-map.webp" : "/world-tree-map.webp"} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
+            <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={`${BASE_PATH}/${world === "palpagos" ? "palpagos-map.webp" : "world-tree-map.webp"}`} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
             <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div></div>
           </div> : <div className="no-habitat-map">当前 1.0 数据没有记录普通野外分布；它可能只能通过配种、事件、召唤或其他特殊方式获得。</div>}
           <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>常见野生 <b>{wildRange}</b></span><span>Alpha Boss <b>{bossRange}</b></span></div>
