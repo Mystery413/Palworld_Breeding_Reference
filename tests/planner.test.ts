@@ -334,11 +334,18 @@ test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
 
 test("一代搜索保留姬小兔加燧火鸟直达云海鹿的最短路径", async () => {
   const data = JSON.parse(await readFile(new URL("../public/data/breeding-data.json", import.meta.url), "utf8")) as BreedingData;
+  const strictSources = data.pals.flatMap((pal) => {
+    const source = selectCaptureSource(pal, 28);
+    return source ? [source] : [];
+  });
   const captureSources = data.pals.flatMap((pal) => {
     const source = selectCaptureSource(pal, 80);
     return source ? [source] : [];
   });
-  const search = searchBreedingPlans(data, [{ id: "ribbuny", palId: "44:0", sex: "F", passives: [] }], [], {
+  const inventory: InventoryPal[] = [{ id: "ribbuny", palId: "44:0", sex: "F", passives: [] }];
+  const strictSearch = searchBreedingPlans(data, inventory, [], { maxGenerations: 1, maxBreedingSteps: 12, captureSources: strictSources });
+  assert.equal(findTargetPlans(strictSearch, "83:0", { requireOwnedAncestry: true, requireFullPassives: true }).length, 0);
+  const search = searchBreedingPlans(data, inventory, [], {
     maxGenerations: 1,
     maxBreedingSteps: 12,
     captureSources,

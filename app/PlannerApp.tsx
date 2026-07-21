@@ -81,6 +81,7 @@ type SavedState = {
   exactTargetId: string;
   playerLevel: number;
   allowCapture: boolean;
+  restrictCaptureByLevel: boolean;
   excludeWorldTreeOnly: boolean;
   excludeBossCaptures: boolean;
   maxGenerations: number;
@@ -244,6 +245,7 @@ export default function PlannerApp() {
   const [exactTargetId, setExactTargetId] = useState("");
   const [playerLevel, setPlayerLevel] = useState(20);
   const [allowCapture, setAllowCapture] = useState(true);
+  const [restrictCaptureByLevel, setRestrictCaptureByLevel] = useState(true);
   const [excludeWorldTreeOnly, setExcludeWorldTreeOnly] = useState(false);
   const [excludeBossCaptures, setExcludeBossCaptures] = useState(false);
   const [maxGenerations, setMaxGenerations] = useState(4);
@@ -302,6 +304,7 @@ export default function PlannerApp() {
           if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
           if (typeof parsed.playerLevel === "number") setPlayerLevel(Math.max(1, Math.min(80, parsed.playerLevel)));
           if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+          if (typeof parsed.restrictCaptureByLevel === "boolean") setRestrictCaptureByLevel(parsed.restrictCaptureByLevel);
           if (typeof parsed.excludeWorldTreeOnly === "boolean") setExcludeWorldTreeOnly(parsed.excludeWorldTreeOnly);
           if (typeof parsed.excludeBossCaptures === "boolean") setExcludeBossCaptures(parsed.excludeBossCaptures);
           const savedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
@@ -317,9 +320,9 @@ export default function PlannerApp() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations };
+    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
+  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const passiveRanks = data?.passiveRanks ?? {};
@@ -329,11 +332,11 @@ export default function PlannerApp() {
     if (!data || !allowCapture) return [];
     return data.pals.flatMap((pal) => {
       if (excludeWorldTreeOnly && isWorldTreeOnlyPal(pal)) return [];
-      const source = selectCaptureSource(pal, 80);
+      const source = selectCaptureSource(pal, restrictCaptureByLevel ? catchLevelLimit : 80);
       if (excludeBossCaptures && source?.kind === "alpha") return [];
       return source ? [source] : [];
     });
-  }, [data, allowCapture, excludeWorldTreeOnly, excludeBossCaptures]);
+  }, [data, allowCapture, restrictCaptureByLevel, catchLevelLimit, excludeWorldTreeOnly, excludeBossCaptures]);
   const catchablePalIds = useMemo(() => captureSources.map((source) => source.palId), [captureSources]);
   const overLevelCaptureCount = useMemo(() => captureSources.filter((source) => source.level > catchLevelLimit).length, [captureSources, catchLevelLimit]);
   const activeDesiredPassives = mode === "exact" ? exactTargetPassives : desiredPassives;
@@ -474,6 +477,7 @@ export default function PlannerApp() {
     setProfile("combat");
     setPlayerLevel(20);
     setAllowCapture(true);
+    setRestrictCaptureByLevel(true);
     setExcludeWorldTreeOnly(false);
     setExcludeBossCaptures(false);
     setMaxGenerations(4);
@@ -482,7 +486,7 @@ export default function PlannerApp() {
   };
 
   const exportJson = () => {
-    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 5, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations }, null, 2), "application/json");
+    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 6, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations }, null, 2), "application/json");
   };
 
   const exportCsv = () => {
@@ -505,6 +509,7 @@ export default function PlannerApp() {
         if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
         if (typeof parsed.playerLevel === "number") setPlayerLevel(parsed.playerLevel);
         if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+        if (typeof parsed.restrictCaptureByLevel === "boolean") setRestrictCaptureByLevel(parsed.restrictCaptureByLevel);
         if (typeof parsed.excludeWorldTreeOnly === "boolean") setExcludeWorldTreeOnly(parsed.excludeWorldTreeOnly);
         if (typeof parsed.excludeBossCaptures === "boolean") setExcludeBossCaptures(parsed.excludeBossCaptures);
         const importedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
@@ -637,11 +642,12 @@ export default function PlannerApp() {
             <div className="level-control">
               <span>你的当前等级</span>
               <label><input type="number" min="1" max="80" value={playerLevel} onChange={(event) => setPlayerLevel(Math.max(1, Math.min(80, Number(event.target.value) || 1)))} /><b>级</b></label>
-              <small>等级用于提示捕捉难度，不再隐藏更短路线；高于推荐上限 <strong>{catchLevelLimit}</strong> 的种源目前有 {overLevelCaptureCount} 种。</small>
+              <small>{restrictCaptureByLevel ? <>已严格排除高于推荐上限 <strong>{catchLevelLimit}</strong> 的捕捉种源。</> : <>已允许高等级种源；高于推荐上限 <strong>{catchLevelLimit}</strong> 的来源有 {overLevelCaptureCount} 种。</>}</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
             <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); setExactPlanPage(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
             <div className="capture-filters">
+              <label><input type="checkbox" checked={restrictCaptureByLevel} disabled={!allowCapture} onChange={(event) => setRestrictCaptureByLevel(event.target.checked)} /><span><b>仅使用当前等级＋8以内种源</b><small>关闭后可查看包含高等级捕捉的最短路线</small></span></label>
               <label><input type="checkbox" checked={excludeWorldTreeOnly} disabled={!allowCapture} onChange={(event) => setExcludeWorldTreeOnly(event.target.checked)} /><span><b>不选择仅在世界树内的帕鲁</b><small>仍允许同时分布在帕洛斯群岛的帕鲁</small></span></label>
               <label><input type="checkbox" checked={excludeBossCaptures} disabled={!allowCapture} onChange={(event) => setExcludeBossCaptures(event.target.checked)} /><span><b>不需要额外捕捉 Boss</b><small>已在库存中的 Boss 不受影响</small></span></label>
             </div>
@@ -743,7 +749,7 @@ export default function PlannerApp() {
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
           <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>繁殖代数可选</h3><p>代数按目标到最远库存祖先的亲代链计算；指定目标路线始终从你的库存个体开始，高等级种源会保留并明确展示捕捉等级。</p></article>
+          <article><b>04</b><h3>繁殖代数可选</h3><p>代数按目标到最远库存祖先的亲代链计算；等级＋8过滤可以开关，关闭后会保留高等级种源并展示捕捉等级。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
@@ -958,7 +964,7 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
         <aside className="paldex-info">
           <div className="paldex-stats"><span><b>{pal.stats.hp ?? "—"}</b>生命</span><span><b>{pal.stats.attack ?? "—"}</b>攻击</span><span><b>{pal.stats.defense ?? "—"}</b>防御</span></div>
           <section><h3>图鉴说明</h3><p>{habitat?.summary || "暂无说明。"}</p></section>
-          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高；可在规划条件中完全排除额外捕捉 Boss。</small></span></div><p>高于当前等级的种源不会再导致最短路线消失，但会保留等级信息供你判断执行时机。</p></section>
+          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高；可在规划条件中完全排除额外捕捉 Boss。</small></span></div><p>开启等级＋8过滤时只保留当前可执行路线；关闭后可查看包含高等级种源的理论最短路线。</p></section>
           <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => { const copy = WORK_COPY[name] ?? { label: name, icon: "◆", color: "#687686" }; return <span key={name} style={{ "--work-color": copy.color } as React.CSSProperties}><i>{copy.icon}</i><b>{copy.label}</b><strong>Lv.{level}</strong></span>; }) : <small>无据点工作数据</small>}</div></section>
           <section className="source-note"><h3>1.0 数据说明</h3><p>点位与等级快照采集于 2026-07-20。野外等级会受世界设置、地下城和特殊事件影响。</p>{habitat?.mapSourceUrl && <a href={habitat.mapSourceUrl} target="_blank" rel="noreferrer">在 PalDB 核对原始分布 ↗</a>}</section>
         </aside>
