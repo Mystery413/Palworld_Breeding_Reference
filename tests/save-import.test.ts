@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 // The browser parser is deliberately plain ESM so the Web Worker and Node tests share it.
-import { parseCharacterMap } from "../public/pal-save-parser.js";
+import { parseCharacterMap, parseUesaveJson } from "../public/pal-save-parser.js";
 import { filterSaveImportedPals } from "../lib/save-import.ts";
 import type { SaveImportedPal } from "../lib/save-import.ts";
 
@@ -63,4 +64,12 @@ test("Level.sav 角色表可提取物种、性别、中文词条和三项潜力"
   const imported = result.pals as SaveImportedPal[];
   assert.equal(filterSaveImportedPals(imported, true).length, 1);
   assert.equal(filterSaveImportedPals([{ ...imported[0], elitePassives: [] }], true).length, 0);
+});
+
+test("浏览器兼容的 Level.sav.json 夹具可走完整解析入口", async () => {
+  const json = await readFile(new URL("./fixtures/Level.sav.json", import.meta.url), "utf8");
+  const result = parseUesaveJson(json, { pals: { SheepBall: "1:0" }, passives: { MoveSpeed_up_3: "神速", Legend: "传说" }, passiveRanks: { MoveSpeed_up_3: 4, Legend: 4 } });
+  assert.equal(result.pals.length, 1);
+  assert.equal(result.pals[0].nickname, "浏览器验收");
+  assert.deepEqual(result.pals[0].passives, ["神速", "传说"]);
 });

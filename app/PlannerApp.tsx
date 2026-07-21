@@ -5,8 +5,10 @@
 import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BreedingData,
+  calculateOffspring,
   CaptureSource,
   findTargetPlans,
+  findBreedingPartners,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   InventoryPal,
@@ -728,7 +730,7 @@ export default function PlannerApp() {
           ) : mode === "recommend" ? (
             <div className="recommendations">
               <div className="result-title"><div><span>03</span><h2>当前最值得孵化</h2></div><small>综合强度 − 路线成本 − 缺失词条</small></div>
-              {recommendations.length ? <div className="recommendation-grid">
+              {recommendations.length ? <><div className="recommendation-grid">
                 {recommendations.map((item, index) => <button key={item.pal.id} className={`recommend-card ${(activeResult as Recommendation | null)?.pal?.id === item.pal.id ? "active" : ""}`} onClick={() => setSelectedPalId(item.pal.id)}>
                   <span className="rank">#{index + 1}</span>
                   <img src={item.pal.image} alt="" />
@@ -736,7 +738,7 @@ export default function PlannerApp() {
                   <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.steps.length}</b>步</span><span><b>{item.captures.reduce((sum, capture) => sum + capture.count, 0)}</b>补抓</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
                   <div className="scorebar"><i style={{ width: `${Math.max(8, Math.min(100, item.score / 2.1))}%` }} /></div>
                 </button>)}
-              </div> : <div className="no-route">没有找到满足当前性别条件的配种入口。补录另一性别个体，或先指定一个已有帕鲁作为目标。</div>}
+              </div>{activeResult && <PlanExecutionDetails result={activeResult} palById={palById} inventory={inventory} palLabel={palLabel} onOpenPal={setDetailPalId} />}</> : <div className="no-route">没有找到满足当前性别条件的配种入口。补录另一性别个体，或先指定一个已有帕鲁作为目标。</div>}
             </div>
           ) : (
             <div className="exact-result">
@@ -750,6 +752,7 @@ export default function PlannerApp() {
                   selectedPlanIndex={exactPlanIndex}
                   inventory={inventory}
                   palById={palById}
+                  palLabel={palLabel}
                   onSelectPlan={setSelectedExactPlanIndex}
                   onOpenPal={setDetailPalId}
                   onSortModeChange={(nextMode) => {
@@ -763,10 +766,10 @@ export default function PlannerApp() {
               </>}
             </div>
           )}
-
-          {activeResult && activePal && <PlanDetails result={activeResult} pal={activePal} palById={palById} desiredCount={activeDesiredPassives.length} palLabel={palLabel} onOpenPal={setDetailPalId} />}
         </div>
       </section>
+
+      {data && <BreedingCalculator data={data} palById={palById} onOpenPal={setDetailPalId} />}
 
       <section className="mechanics" id="mechanics">
         <div className="section-heading light"><div><span>规则</span><h2>为什么这样规划</h2></div><p>每个结果都基于同一套 1.0 规则。</p></div>
@@ -865,7 +868,69 @@ function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items
   </div>;
 }
 
-function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComplexityTradeoff, selectedPlanIndex, inventory, palById, onSelectPlan, onOpenPal, onSortModeChange, onShowMore }: {
+function effectiveParentSex(
+  step: PlanResult["steps"][number],
+  side: "A" | "B",
+  inventoryById: Map<string, InventoryPal>,
+  stepById: Map<string, PlanResult["steps"][number]>,
+): string {
+  const parent = side === "A" ? step.parentA : step.parentB;
+  const other = side === "A" ? step.parentB : step.parentA;
+  const required = side === "A" ? step.genderA : step.genderB;
+  if (required === "MALE" || required === "FEMALE") return genderLabel(required);
+  const routeRequirements = new Map<string, Set<"M" | "F">>();
+  const addRequirement = (nodeId: string, sex: "M" | "F") => {
+    const values = routeRequirements.get(nodeId) ?? new Set<"M" | "F">();
+    values.add(sex); routeRequirements.set(nodeId, values);
+  };
+  for (const routeStep of stepById.values()) {
+    if (routeStep.sexRequirement === "M" || routeStep.sexRequirement === "F") addRequirement(routeStep.id, routeStep.sexRequirement);
+    if (routeStep.sexRequirement === "BOTH") { addRequirement(routeStep.id, "M"); addRequirement(routeStep.id, "F"); }
+    if (routeStep.parentA.source === "owned" && routeStep.parentA.inventoryId) { const sex = inventoryById.get(routeStep.parentA.inventoryId)?.sex; if (sex) addRequirement(routeStep.parentA.nodeId, sex); }
+    if (routeStep.parentB.source === "owned" && routeStep.parentB.inventoryId) { const sex = inventoryById.get(routeStep.parentB.inventoryId)?.sex; if (sex) addRequirement(routeStep.parentB.nodeId, sex); }
+  }
+  for (let pass = 0; pass < stepById.size + 1; pass += 1) {
+    for (const routeStep of stepById.values()) {
+      if (routeStep.genderA !== "WILDCARD") addRequirement(routeStep.parentA.nodeId, routeStep.genderA === "MALE" ? "M" : "F");
+      if (routeStep.genderB !== "WILDCARD") addRequirement(routeStep.parentB.nodeId, routeStep.genderB === "MALE" ? "M" : "F");
+      if (routeStep.genderA !== "WILDCARD" || routeStep.genderB !== "WILDCARD") continue;
+      const a = routeRequirements.get(routeStep.parentA.nodeId); const b = routeRequirements.get(routeStep.parentB.nodeId);
+      const fixedA = a?.size === 1 ? [...a][0] : null; const fixedB = b?.size === 1 ? [...b][0] : null;
+      if (fixedA && !fixedB) addRequirement(routeStep.parentB.nodeId, fixedA === "M" ? "F" : "M");
+      if (fixedB && !fixedA) addRequirement(routeStep.parentA.nodeId, fixedB === "M" ? "F" : "M");
+    }
+  }
+  const knownSex = (candidate: typeof parent): "M" | "F" | null => {
+    const routed = routeRequirements.get(candidate.nodeId);
+    return routed?.size === 1 ? [...routed][0] : null;
+  };
+  const ownSex = knownSex(parent);
+  if (ownSex) return genderLabel(ownSex);
+  if (parent.source === "captured") {
+    const otherSex = knownSex(other);
+    if (otherSex) return genderLabel(otherSex === "M" ? "F" : "M");
+    return "任一性别（需与另一亲代异性）";
+  }
+  return "需与另一亲代异性";
+}
+
+function captureSexRequirement(
+  result: PlanResult,
+  palId: string,
+  inventoryById: Map<string, InventoryPal>,
+  stepById: Map<string, PlanResult["steps"][number]>,
+): string {
+  const labels = new Set<string>();
+  for (const step of result.steps) {
+    if (step.parentA.source === "captured" && step.parentA.palId === palId) labels.add(effectiveParentSex(step, "A", inventoryById, stepById));
+    if (step.parentB.source === "captured" && step.parentB.palId === palId) labels.add(effectiveParentSex(step, "B", inventoryById, stepById));
+  }
+  if ([...labels].some((label) => label.includes("任一性别"))) return "任一性别，需异性配对";
+  if ([...labels].some((label) => label.includes("雄")) && [...labels].some((label) => label.includes("雌"))) return "一雄一雌";
+  return [...labels][0] ?? "任一性别";
+}
+
+function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComplexityTradeoff, selectedPlanIndex, inventory, palById, palLabel, onSelectPlan, onOpenPal, onSortModeChange, onShowMore }: {
   groups: TargetPlanGroup[];
   totalGroups: number;
   totalPlans: number;
@@ -874,6 +939,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
   selectedPlanIndex: number;
   inventory: InventoryPal[];
   palById: Map<string, Pal>;
+  palLabel: (id: string) => string;
   onSelectPlan: (index: number) => void;
   onOpenPal: (id: string) => void;
   onSortModeChange: (mode: TargetPlanSortMode) => void;
@@ -882,7 +948,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   return <section className="method-browser" aria-label="可行繁殖方法">
     <header className="method-browser-title">
-      <div><span>03</span><div><h2>{sortMode === "recommended" ? "按推荐顺序选择方法" : "按综合难度选择方法"}</h2><p>{totalPlans.toLocaleString("zh-CN")} 条路线按“步骤数＋补抓数”合并为 {totalGroups} 类；类内难度从低到高。</p></div></div>
+      <div><span>03</span><div><h2>{sortMode === "recommended" ? "按推荐顺序选择方法" : "按综合难度选择方法"}</h2><p>{sortMode === "recommended" ? `${totalPlans.toLocaleString("zh-CN")} 条路线按“步骤数＋补抓数”合并为 ${totalGroups} 类；类内难度从低到高。` : `${totalPlans.toLocaleString("zh-CN")} 条路线全部拆开，严格按综合难度从低到高展示。`}</p></div></div>
       <div className="route-sort-toggle" role="group" aria-label="方法排序方式"><button className={sortMode === "recommended" ? "active" : ""} onClick={() => onSortModeChange("recommended")}>推荐顺序</button><button className={sortMode === "difficulty" ? "active" : ""} onClick={() => onSortModeChange("difficulty")}>综合难度</button></div>
     </header>
     <div className="difficulty-rule"><b>综合难度</b> = 捕捉成本 + 预计蛋数 × 30</div>
@@ -892,6 +958,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
         const selectedOffset = group.planIndexes.indexOf(selectedPlanIndex);
         const active = selectedOffset >= 0;
         const plan = active ? group.plans[selectedOffset] : group.plans[0];
+        const stepById = new Map(plan.steps.map((step) => [step.id, step]));
         const variantOffsets = group.plans.slice(0, 4).map((_, index) => index);
         if (active && !variantOffsets.includes(selectedOffset)) variantOffsets.push(selectedOffset);
         return <article className={`method-card ${active ? "active" : ""}`} key={group.key}>
@@ -902,13 +969,13 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
           {plan.steps.length > 0 ? <div className="method-flow">
             {plan.steps.slice(0, 3).map((step) => <div className="method-flow-step" key={step.id}>
               <span className="method-step-number">STEP {String(step.index).padStart(2, "0")}</span>
-              <RoutePalButton pal={palById.get(step.parentA.palId)} source={step.parentA.source} captureSource={step.parentA.captureSource} onOpenPal={onOpenPal} />
+              <RoutePalButton pal={palById.get(step.parentA.palId)} source={step.parentA.source} captureSource={step.parentA.captureSource} sexLabel={effectiveParentSex(step, "A", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <i>＋</i>
-              <RoutePalButton pal={palById.get(step.parentB.palId)} source={step.parentB.source} captureSource={step.parentB.captureSource} onOpenPal={onOpenPal} />
+              <RoutePalButton pal={palById.get(step.parentB.palId)} source={step.parentB.source} captureSource={step.parentB.captureSource} sexLabel={effectiveParentSex(step, "B", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <i>→</i>
               <RoutePalButton pal={palById.get(step.childId)} source="result" onOpenPal={onOpenPal} />
             </div>)}
-            {plan.steps.length > 3 && <div className="method-more-steps">还有 {plan.steps.length - 3} 步，选择后可在下方查看完整流程</div>}
+            {plan.steps.length > 3 && <div className="method-more-steps">下方已展开全部 {plan.steps.length} 步操作</div>}
           </div> : <div className="method-direct">目标已经在库存中，无需继续配种。</div>}
           <div className="method-variants">
             <div className="variant-heading"><b>{group.plans.length > 1 ? `${group.plans.length} 种可替换组合` : "唯一组合"}</b><small>每一行都是完整可执行组合，点击即可查看详细步骤</small></div>
@@ -929,6 +996,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
             </div>
             {group.plans.length > variantOffsets.length && <small className="variant-remainder">另有 {(group.plans.length - variantOffsets.length).toLocaleString("zh-CN")} 条同类路线，已按综合难度排序。</small>}
           </div>
+          {active && <PlanExecutionDetails result={plan} palById={palById} inventory={inventory} palLabel={palLabel} onOpenPal={onOpenPal} />}
         </article>;
       })}
     </div>
@@ -936,39 +1004,40 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
   </section>;
 }
 
-function RoutePalButton({ pal, source, captureSource, onOpenPal }: {
+function RoutePalButton({ pal, source, captureSource, sexLabel, onOpenPal }: {
   pal?: Pal;
   source: "owned" | "captured" | "bred" | "result";
   captureSource?: CaptureSource;
+  sexLabel?: string;
   onOpenPal: (id: string) => void;
 }) {
-  const sourceLabel = source === "owned" ? "库存已有" : source === "captured" ? `补抓 · 难度 ${Math.round(captureSource?.difficulty ?? 0)}` : source === "bred" ? "前序子代" : "本步产出";
+  const sourceLabel = source === "owned" ? `库存已有${sexLabel ? ` · ${sexLabel}` : ""}` : source === "captured" ? `补抓${sexLabel ? ` · ${sexLabel}` : ""} · ${captureSource ? captureRangeLabel(captureSource) : "等级未知"}` : source === "bred" ? `前序子代${sexLabel ? ` · ${sexLabel}` : ""}` : "本步产出";
   return <button className={`route-pal ${source}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>
     {pal?.image && <img src={pal.image} alt="" />}
     <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong></span>
   </button>;
 }
 
-function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }: { result: PlanResult; pal: Pal; palById: Map<string, Pal>; desiredCount: number; palLabel: (id: string) => string; onOpenPal: (id: string) => void }) {
-  return <section className="plan-details" id="steps">
-    <div className="plan-summary">
-      <button className="plan-target" onClick={() => onOpenPal(pal.id)} aria-label={`查看${pal.nameZh}图鉴`}><img src={pal.image} alt="" /><div><span>已选路线</span><h2>{pal.nameZh}</h2><small>{pal.name} · No.{pal.dex}</small></div></button>
-      <div className="plan-numbers"><span><b>{result.steps.length}</b>实际步骤</span><span><b>{result.newCaptureCount}</b>需要补抓</span><span><b>{formatNumber(result.expectedEggs)}</b>预计总蛋数</span><span><b>{formatNumber(result.difficultyScore)}</b>综合难度</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>目标词条</span></div>
-    </div>
+function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal }: { result: PlanResult; palById: Map<string, Pal>; inventory: InventoryPal[]; palLabel: (id: string) => string; onOpenPal: (id: string) => void }) {
+  const inventoryById = new Map(inventory.map((item) => [item.id, item]));
+  const stepById = new Map(result.steps.map((step) => [step.id, step]));
+  return <section className="plan-details inline-plan-details" id="steps">
+    <div className="inline-details-title"><div><b>完整操作</b><span>已在当前方法内展开，无需翻到页面底部</span></div><small>{result.steps.length} 步 · {result.newCaptureCount} 补抓 · 约 {formatNumber(result.expectedEggs)} 蛋</small></div>
     <div className="difficulty-breakdown"><span>捕捉成本 <b>{formatNumber(result.captureDifficulty)}</b></span><i>＋</i><span>孵蛋成本 <b>{formatNumber(result.eggDifficulty)}</b></span><small>预计 {formatNumber(result.expectedEggs)} 枚蛋 × 30</small></div>
     {result.missingPassives.length > 0 && <div className="warning-box"><b>还有词条种源缺口</b><span>{result.missingPassives.join("、")} 未在当前库存的可达链中。路线会先给出最接近结果；若想稳定遗传，请先抓到携带这些词条的帕鲁。</span></div>}
     {result.captures.length > 0 && <div className="capture-checklist">
       <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击任意卡片可打开内置栖息地图。</p></div>
       <div className="capture-cards">{result.captures.map((requirement) => {
         const capturePal = palById.get(requirement.palId);
+        const requiredSex = captureSexRequirement(result, requirement.palId, inventoryById, stepById);
         return <button key={requirement.palId} className={requirement.kind === "alpha" ? "alpha-capture" : ""} onClick={() => onOpenPal(requirement.palId)} aria-label={`查看${capturePal?.nameZh ?? requirement.palId}图鉴与地图`}>
           {capturePal?.image && <img src={capturePal.image} alt="" />}
-          <div><strong>{capturePal?.nameZh ?? requirement.palId}</strong><small>{captureRangeLabel(requirement)} · 需要 {requirement.count} 只{requirement.count > 1 ? "异性个体" : ""}</small></div>
+          <div><strong>{capturePal?.nameZh ?? requirement.palId}<em>{requiredSex}</em></strong><small>{captureRangeLabel(requirement)} · 需要 {requirement.count} 只</small></div>
           <i>↗</i>
         </button>;
       })}</div>
     </div>}
-    {!result.steps.length ? <div className="owned-result">{result.source === "captured" ? <><b>无需配种：</b>直接按上方图鉴位置捕捉 {pal.nameZh} 即可。<button onClick={() => onOpenPal(pal.id)}>打开栖息地图</button></> : "✓ 目标已经在你的库存中，不需要额外配种。"}</div> : <div className="step-list">
+    {!result.steps.length ? <div className="owned-result">{result.source === "captured" ? <><b>无需配种：</b>直接捕捉 {palById.get(result.node.palId)?.nameZh ?? result.node.palId} 即可。<button onClick={() => onOpenPal(result.node.palId)}>打开栖息地图</button></> : "✓ 目标已经在你的库存中，不需要额外配种。"}</div> : <div className="step-list">
       {result.steps.map((step) => {
         const child = palById.get(step.childId);
         const a = palById.get(step.parentA.palId);
@@ -977,9 +1046,9 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
           <div className="step-index"><small>STEP</small><strong>{String(step.index).padStart(2, "0")}</strong></div>
           <div className="step-content">
             <div className="step-breed">
-              <ParentChip pal={a} parent={step.parentA} gender={step.genderA} onOpenPal={onOpenPal} />
+              <ParentChip pal={a} parent={step.parentA} gender={effectiveParentSex(step, "A", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <span className="breed-plus">＋</span>
-              <ParentChip pal={b} parent={step.parentB} gender={step.genderB} onOpenPal={onOpenPal} />
+              <ParentChip pal={b} parent={step.parentB} gender={effectiveParentSex(step, "B", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <span className="breed-arrow">→</span>
               <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>筛选子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong></span></button>
             </div>
@@ -991,20 +1060,40 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
         </article>;
       })}
     </div>}
-    <div className="final-checklist">
-      <h3>最终验收清单</h3>
-      <label><input type="checkbox" /> 目标物种与性别符合后续用途</label>
-      <label><input type="checkbox" /> 只保留目标词条，没有杂词条污染</label>
-      <label><input type="checkbox" /> 用能力眼镜检查生命、攻击、防御潜力</label>
-      <label><input type="checkbox" /> 主动技能槽只设置希望遗传的技能</label>
-      <label><input type="checkbox" /> 近满潜力可用生命/力量/坚硬果实补齐</label>
-    </div>
   </section>;
 }
 
 function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {genderLabel(gender)} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em></span></button>;
+  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em></span></button>;
+}
+
+function BreedingCalculator({ data, palById, onOpenPal }: { data: BreedingData; palById: Map<string, Pal>; onOpenPal: (id: string) => void }) {
+  const [calculatorMode, setCalculatorMode] = useState<"offspring" | "partner">("offspring");
+  const [parentAId, setParentAId] = useState("");
+  const [parentBId, setParentBId] = useState("");
+  const [targetId, setTargetId] = useState("");
+  const matches = calculatorMode === "offspring" ? calculateOffspring(data, parentAId, parentBId) : findBreedingPartners(data, parentAId, targetId);
+  const options = [...data.pals].sort((a, b) => (a.dex === "-" ? 1 : b.dex === "-" ? -1 : a.dex.localeCompare(b.dex, "zh-CN", { numeric: true })));
+  const selector = (label: string, value: string, onChange: (value: string) => void) => <label><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}><option value="">请选择帕鲁</option>{options.map((pal) => <option value={pal.id} key={pal.id}>No.{pal.dex} · {pal.nameZh}</option>)}</select></label>;
+  return <section className="breeding-calculator" aria-label="A加B配种计算器">
+    <div className="calculator-heading"><div><span>快速工具</span><h2>A ＋ B ＝ C 配种计算器</h2><p>只查配方，不考虑库存、词条和路线；点击结果即可打开图鉴。</p></div><div className="calculator-mode"><button className={calculatorMode === "offspring" ? "active" : ""} onClick={() => setCalculatorMode("offspring")}>A＋B 得到什么</button><button className={calculatorMode === "partner" ? "active" : ""} onClick={() => setCalculatorMode("partner")}>A＋什么得到 C</button></div></div>
+    <div className="calculator-equation">
+      {selector("亲代 A", parentAId, setParentAId)}<b>＋</b>
+      {calculatorMode === "offspring" ? selector("亲代 B", parentBId, setParentBId) : <div className="calculator-unknown"><span>待查亲代</span><strong>？</strong></div>}
+      <b>＝</b>{calculatorMode === "partner" ? selector("目标 C", targetId, setTargetId) : <div className="calculator-unknown"><span>子代结果</span><strong>？</strong></div>}
+    </div>
+    {(calculatorMode === "offspring" ? parentAId && parentBId : parentAId && targetId) && <div className="calculator-results">
+      {matches.length ? matches.map((match, index) => {
+        const a = palById.get(match.parentAId); const b = palById.get(match.parentBId); const child = palById.get(match.childId);
+        return <div className="calculator-result" key={`${match.parentBId}-${match.childId}-${index}`}>
+          <button onClick={() => onOpenPal(match.parentAId)}>{a?.image && <img src={a.image} alt="" />}<span><small>{genderLabel(match.parentASex)}</small><b>{a?.nameZh}</b></span></button><i>＋</i>
+          <button onClick={() => onOpenPal(match.parentBId)}>{b?.image && <img src={b.image} alt="" />}<span><small>{genderLabel(match.parentBSex)}</small><b>{b?.nameZh}</b></span></button><i>＝</i>
+          <button className="calculator-child" onClick={() => onOpenPal(match.childId)}>{child?.image && <img src={child.image} alt="" />}<span><small>子代</small><b>{child?.nameZh}</b></span></button>
+        </div>;
+      }) : <div className="calculator-empty">当前 1.0 配方表中没有找到这个组合。</div>}
+    </div>}
+  </section>;
 }
 
 const MAP_BOUNDS = {

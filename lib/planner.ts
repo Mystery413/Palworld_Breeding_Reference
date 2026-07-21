@@ -152,6 +152,7 @@ export type PlanStep = {
 export type PlanParent = {
   nodeId: string;
   palId: string;
+  sex: Sex;
   source: "owned" | "captured" | "bred";
   inventoryId?: string;
   nickname?: string;
@@ -192,6 +193,43 @@ export type TargetPlanGroup = {
 };
 
 export type TargetPlanSortMode = "recommended" | "difficulty";
+
+export type BreedingCalculatorMatch = {
+  childId: string;
+  parentAId: string;
+  parentBId: string;
+  parentASex: ComboTuple[3];
+  parentBSex: ComboTuple[4];
+};
+
+export function calculateOffspring(data: BreedingData, parentAId: string, parentBId: string): BreedingCalculatorMatch[] {
+  if (!parentAId || !parentBId) return [];
+  const matches = data.combos.flatMap((combo) => {
+    if (combo[1] === parentAId && combo[2] === parentBId) {
+      return [{ childId: combo[0], parentAId, parentBId, parentASex: combo[3], parentBSex: combo[4] }];
+    }
+    if (combo[1] === parentBId && combo[2] === parentAId) {
+      return [{ childId: combo[0], parentAId, parentBId, parentASex: combo[4], parentBSex: combo[3] }];
+    }
+    return [];
+  });
+  return [...new Map(matches.map((match) => [`${match.childId}|${match.parentASex}|${match.parentBSex}`, match])).values()];
+}
+
+export function findBreedingPartners(data: BreedingData, parentId: string, childId: string): BreedingCalculatorMatch[] {
+  if (!parentId || !childId) return [];
+  const matches = data.combos.flatMap((combo) => {
+    if (combo[0] !== childId) return [];
+    if (combo[1] === parentId) {
+      return [{ childId, parentAId: parentId, parentBId: combo[2], parentASex: combo[3], parentBSex: combo[4] }];
+    }
+    if (combo[2] === parentId) {
+      return [{ childId, parentAId: parentId, parentBId: combo[1], parentASex: combo[4], parentBSex: combo[3] }];
+    }
+    return [];
+  });
+  return [...new Map(matches.map((match) => [`${match.parentBId}|${match.parentASex}|${match.parentBSex}`, match])).values()];
+}
 
 export type Profile = "combat" | "attack" | "worker" | "balanced";
 
@@ -509,6 +547,7 @@ function parentSummary(node: PlanNode): PlanParent {
   return {
     nodeId: node.nodeId,
     palId: node.palId,
+    sex: node.sex,
     source: node.kind,
     inventoryId: node.inventoryId,
     nickname: node.nickname,
@@ -565,25 +604,44 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
   const palById = new Map(data.pals.map((pal) => [pal.id, pal]));
   const maleChance = (palId: string) => Math.max(0, Math.min(1, (palById.get(palId)?.stats.maleRate ?? 50) / 100));
   const requireSex = (parent: PlanNode, sex: "M" | "F") => {
-    if (parent.kind !== "bred") return;
     const current = requirements.get(parent.nodeId) ?? new Set<"M" | "F">();
     current.add(sex);
     requirements.set(parent.nodeId, current);
   };
+  const knownSex = (parent: PlanNode): "M" | "F" | null => {
+    if (parent.sex === "M" || parent.sex === "F") return parent.sex;
+    const required = requirements.get(parent.nodeId);
+    return required?.size === 1 ? [...required][0] : null;
+  };
 
-  for (const current of nodesById.values()) {
-    if (!current.parents || !current.combo) continue;
-    const [parentA, parentB] = current.parents;
-    const [genderA, genderB] = [current.combo[3], current.combo[4]];
-    if (genderA !== "WILDCARD") requireSex(parentA, genderA === "MALE" ? "M" : "F");
-    if (genderB !== "WILDCARD") requireSex(parentB, genderB === "MALE" ? "M" : "F");
-    if (genderA !== "WILDCARD" || genderB !== "WILDCARD") continue;
-
-    if (parentA.kind === "bred" && parentB.kind === "bred") {
+  // Sex constraints can travel across steps when the same captured or bred
+  // parent is reused. Iterate to a fixed point so a known sex in an earlier
+  // pairing also constrains the intermediate child paired with it later.
+  for (let pass = 0; pass < Math.max(2, steps.length + 1); pass += 1) {
+    const before = [...requirements.values()].reduce((sum, value) => sum + value.size, 0);
+    for (const current of nodesById.values()) {
+      if (!current.parents || !current.combo) continue;
+      const [parentA, parentB] = current.parents;
+      const [genderA, genderB] = [current.combo[3], current.combo[4]];
+      if (genderA !== "WILDCARD") requireSex(parentA, genderA === "MALE" ? "M" : "F");
+      if (genderB !== "WILDCARD") requireSex(parentB, genderB === "MALE" ? "M" : "F");
+      if (genderA !== "WILDCARD" || genderB !== "WILDCARD") continue;
       if (parentA.nodeId === parentB.nodeId) {
         requireSex(parentA, "M");
         requireSex(parentA, "F");
-      } else {
+        continue;
+      }
+      const fixedA = knownSex(parentA);
+      const fixedB = knownSex(parentB);
+      if (fixedA && !fixedB) {
+        requireSex(parentB, fixedA === "M" ? "F" : "M");
+        continue;
+      }
+      if (fixedB && !fixedA) {
+        requireSex(parentA, fixedB === "M" ? "F" : "M");
+        continue;
+      }
+      if (parentA.kind === "bred" && parentB.kind === "bred" && !fixedA && !fixedB) {
         const stepA = stepById.get(parentA.nodeId);
         const stepB = stepById.get(parentB.nodeId);
         const maleA = maleChance(parentA.palId);
@@ -600,11 +658,9 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
           requireSex(parentB, "M");
         }
       }
-    } else if (parentA.kind === "bred" && (parentB.sex === "M" || parentB.sex === "F")) {
-      requireSex(parentA, parentB.sex === "M" ? "F" : "M");
-    } else if (parentB.kind === "bred" && (parentA.sex === "M" || parentA.sex === "F")) {
-      requireSex(parentB, parentA.sex === "M" ? "F" : "M");
     }
+    const after = [...requirements.values()].reduce((sum, value) => sum + value.size, 0);
+    if (after === before) break;
   }
 
   return steps.map((step, index) => {
@@ -628,8 +684,35 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
   });
 }
 
+function routeParentSexRequirements(steps: PlanStep[]): Map<string, Set<"M" | "F">> {
+  const requirements = new Map<string, Set<"M" | "F">>();
+  const add = (nodeId: string, sex: "M" | "F") => {
+    const current = requirements.get(nodeId) ?? new Set<"M" | "F">();
+    current.add(sex); requirements.set(nodeId, current);
+  };
+  for (const step of steps) {
+    if (step.sexRequirement === "M" || step.sexRequirement === "F") add(step.id, step.sexRequirement);
+    if (step.sexRequirement === "BOTH") { add(step.id, "M"); add(step.id, "F"); }
+    if (step.parentA.sex === "M" || step.parentA.sex === "F") add(step.parentA.nodeId, step.parentA.sex);
+    if (step.parentB.sex === "M" || step.parentB.sex === "F") add(step.parentB.nodeId, step.parentB.sex);
+  }
+  for (let pass = 0; pass < steps.length + 1; pass += 1) {
+    for (const step of steps) {
+      if (step.genderA !== "WILDCARD") add(step.parentA.nodeId, step.genderA === "MALE" ? "M" : "F");
+      if (step.genderB !== "WILDCARD") add(step.parentB.nodeId, step.genderB === "MALE" ? "M" : "F");
+      if (step.genderA !== "WILDCARD" || step.genderB !== "WILDCARD") continue;
+      const a = requirements.get(step.parentA.nodeId); const b = requirements.get(step.parentB.nodeId);
+      const fixedA = a?.size === 1 ? [...a][0] : null; const fixedB = b?.size === 1 ? [...b][0] : null;
+      if (fixedA && !fixedB) add(step.parentB.nodeId, fixedA === "M" ? "F" : "M");
+      if (fixedB && !fixedA) add(step.parentA.nodeId, fixedB === "M" ? "F" : "M");
+    }
+  }
+  return requirements;
+}
+
 function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: number, data: BreedingData): PlanResult {
   const steps = flattenSteps(node, data);
+  const parentSexRequirements = routeParentSexRequirements(steps);
   const captureCounts = new Map<string, number>();
   if (node.kind === "captured") captureCounts.set(node.palId, 1);
   for (const step of steps) {
@@ -641,6 +724,13 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     }
     for (const [palId, count] of countsInStep) {
       captureCounts.set(palId, Math.max(captureCounts.get(palId) ?? 0, count));
+    }
+  }
+  for (const step of steps) {
+    for (const parent of [step.parentA, step.parentB]) {
+      if (parent.source === "captured" && parentSexRequirements.get(parent.nodeId)?.size === 2) {
+        captureCounts.set(parent.palId, Math.max(2, captureCounts.get(parent.palId) ?? 0));
+      }
     }
   }
   const captures = [...captureCounts].map(([palId, count]) => {
@@ -786,6 +876,11 @@ export function findTargetPlans(
 
 /** Groups routes by the two costs users act on first: breeding operations and new captures. */
 export function groupTargetPlans(plans: PlanResult[], sortMode: TargetPlanSortMode = "recommended"): TargetPlanGroup[] {
+  if (sortMode === "difficulty") {
+    return plans
+      .map((plan, index) => ({ key: `plan:${index}`, plans: [plan], planIndexes: [index] }))
+      .sort((left, right) => left.plans[0].difficultyScore - right.plans[0].difficultyScore || left.planIndexes[0] - right.planIndexes[0]);
+  }
   const entriesByKey = new Map<string, Array<{ plan: PlanResult; index: number }>>();
   plans.forEach((plan, index) => {
     const key = `${plan.breedingSteps}|${plan.newCaptureCount}`;
@@ -800,9 +895,6 @@ export function groupTargetPlans(plans: PlanResult[], sortMode: TargetPlanSortMo
   return groups.sort((left, right) => {
     const leftPlan = left.plans[0];
     const rightPlan = right.plans[0];
-    if (sortMode === "difficulty" && Math.abs(leftPlan.difficultyScore - rightPlan.difficultyScore) > 0.001) {
-      return leftPlan.difficultyScore - rightPlan.difficultyScore;
-    }
     return leftPlan.breedingSteps - rightPlan.breedingSteps || leftPlan.newCaptureCount - rightPlan.newCaptureCount || leftPlan.difficultyScore - rightPlan.difficultyScore;
   });
 }

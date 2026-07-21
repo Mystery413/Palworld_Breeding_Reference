@@ -5,8 +5,10 @@ import test from "node:test";
 import {
   type BreedingData,
   type InventoryPal,
+  calculateOffspring,
   findTargetPlan,
   findTargetPlans,
+  findBreedingPartners,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   isWorldTreeOnlyPal,
@@ -185,6 +187,38 @@ test("中间亲代所需性别会增加预计蛋数与综合难度", () => {
   assert.ok(Math.abs(plan.difficultyScore - 181) < 1e-12);
 });
 
+test("重复使用的补抓亲代会把性别要求传递到中间子代", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["D", "C", "B", "WILDCARD", "WILDCARD"],
+  ]);
+  const search = searchBreedingPlans(data, [{ id: "owned-a", palId: "A", sex: "F", passives: [] }], [], {
+    maxGenerations: 2,
+    captureSources: [{ palId: "B", level: 10, maxLevel: 10, kind: "wild", difficulty: 10 }],
+  });
+  const plan = findTargetPlan(search, "D", { requireOwnedAncestry: true });
+  assert.ok(plan);
+  assert.equal(plan.steps[0].sexRequirement, "F");
+  assert.equal(plan.steps[0].expectedEggs, 2);
+  assert.equal(plan.expectedEggs, 3);
+});
+
+test("同一补抓物种在不同步骤需要两种性别时计为两只", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["D", "C", "B", "MALE", "FEMALE"],
+  ]);
+  const search = searchBreedingPlans(data, [{ id: "owned-a", palId: "A", sex: "F", passives: [] }], [], {
+    maxGenerations: 2,
+    captureSources: [{ palId: "B", level: 10, maxLevel: 10, kind: "wild", difficulty: 10 }],
+  });
+  const plan = findTargetPlan(search, "D", { requireOwnedAncestry: true });
+  assert.ok(plan);
+  assert.equal(plan.captures[0].count, 2);
+  assert.equal(plan.newCaptureCount, 2);
+  assert.equal(plan.captureDifficulty, 20);
+});
+
 test("仓库帕鲁携带的无用词条会降低遗传效率", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const route = (passives: string[]) => findTargetPlans(
@@ -265,7 +299,22 @@ test("仅替换同一位置帕鲁的路线合并为一种方法", () => {
   ], "difficulty");
   assert.equal(recommended[0].plans[0].breedingSteps, 1);
   assert.equal(byDifficulty[0].plans[0].breedingSteps, 2);
+  assert.equal(byDifficulty.every((group) => group.plans.length === 1), true);
   assert.equal(hasComplexityDifficultyTradeoff(recommended), true);
+});
+
+test("精简计算器支持 A+B 查子代与 A+? 查目标", () => {
+  const data = fixture([
+    ["C", "A", "B", "MALE", "FEMALE"],
+    ["D", "A", "B", "WILDCARD", "WILDCARD"],
+  ]);
+  assert.deepEqual(calculateOffspring(data, "B", "A"), [
+    { childId: "C", parentAId: "B", parentBId: "A", parentASex: "FEMALE", parentBSex: "MALE" },
+    { childId: "D", parentAId: "B", parentBId: "A", parentASex: "WILDCARD", parentBSex: "WILDCARD" },
+  ]);
+  assert.deepEqual(findBreedingPartners(data, "A", "C"), [
+    { childId: "C", parentAId: "A", parentBId: "B", parentASex: "MALE", parentBSex: "FEMALE" },
+  ]);
 });
 
 test("综合难度相同时优先普通捕捉，避免不必要的 Boss", () => {
