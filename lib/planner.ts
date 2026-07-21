@@ -121,6 +121,11 @@ export function selectCaptureSource(pal: Pal, levelLimit: number): CaptureSource
   return candidates.sort((a, b) => a.difficulty - b.difficulty || a.level - b.level)[0] ?? null;
 }
 
+export function isWorldTreeOnlyPal(pal: Pal): boolean {
+  const locations = pal.habitat?.locations ?? [];
+  return locations.some((location) => location.world === "worldTree") && !locations.some((location) => location.world === "palpagos");
+}
+
 export type PlanStep = {
   id: string;
   index: number;
@@ -567,11 +572,11 @@ export type TargetPlanOptions = {
 function compareTargetPlans(a: PlanResult, b: PlanResult): number {
   const coverage = b.coveredPassives.length - a.coveredPassives.length;
   if (coverage) return coverage;
-  if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
+  if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;
   if (a.newCaptureCount !== b.newCaptureCount) return a.newCaptureCount - b.newCaptureCount;
+  if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
   if (Math.abs(a.routePriority - b.routePriority) > 0.001) return a.routePriority - b.routePriority;
   if (a.generations !== b.generations) return a.generations - b.generations;
-  if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;
   return a.expectedEggs - b.expectedEggs;
 }
 

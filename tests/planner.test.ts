@@ -7,6 +7,7 @@ import {
   type InventoryPal,
   findTargetPlan,
   findTargetPlans,
+  isWorldTreeOnlyPal,
   passiveInheritanceChance,
   potentialInheritanceChance,
   recommendTargets,
@@ -216,6 +217,48 @@ test("无 Boss 路线中优先需要新捕捉帕鲁更少的方案", () => {
   assert.equal(plans[0].captures[0].palId, "B");
 });
 
+test("优先按实际步骤排序，步骤相同时再按新增捕捉数量排序", () => {
+  const data = fixture([
+    ["E", "A", "B", "WILDCARD", "WILDCARD"],
+    ["C", "E", "X", "WILDCARD", "WILDCARD"],
+    ["F", "D", "Y", "WILDCARD", "WILDCARD"],
+    ["C", "F", "Z", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "owned-a", palId: "A", sex: "M", passives: [] },
+    { id: "owned-b", palId: "B", sex: "F", passives: [] },
+    { id: "owned-d", palId: "D", sex: "M", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, [], { catchablePalIds: ["X", "Y", "Z"] });
+  const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true });
+  const twoStepPlans = plans.filter((plan) => plan.breedingSteps === 2);
+  assert.ok(twoStepPlans.some((plan) => plan.newCaptureCount === 1));
+  assert.ok(twoStepPlans.some((plan) => plan.newCaptureCount === 2));
+  assert.equal(twoStepPlans[0].newCaptureCount, 1);
+});
+
+test("世界树专属判定只排除没有帕洛斯群岛点位的帕鲁", () => {
+  const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
+  const basePal = {
+    ...data.pals[0],
+    id: "tree-only",
+    habitat: {
+      catchable: true,
+      minLevel: 1,
+      maxLevel: 80,
+      dayCount: 0,
+      nightCount: 0,
+      worldTreeDayCount: 1,
+      worldTreeNightCount: 0,
+      summary: "",
+      locations: [{ world: "worldTree" as const, x: 0, y: 0, time: "day" as const, level: 80 }],
+      mapSourceUrl: "",
+    },
+  };
+  assert.equal(isWorldTreeOnlyPal(basePal), true);
+  assert.equal(isWorldTreeOnlyPal({ ...basePal, habitat: { ...basePal.habitat, locations: [...basePal.habitat.locations, { world: "palpagos", x: 1, y: 1, time: "day", level: 20 }] } }), false);
+});
+
 test("捕捉来源严格排除等级上限外目标，并区分普通野生与 Alpha", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const pal = data.pals[0];
@@ -287,6 +330,24 @@ test("1.0 全量图谱可从示例库存生成可执行推荐", async () => {
       assert.ok(step.chance > 0 && step.chance <= 1);
     }
   }
+});
+
+test("一代搜索保留姬小兔加燧火鸟直达云海鹿的最短路径", async () => {
+  const data = JSON.parse(await readFile(new URL("../public/data/breeding-data.json", import.meta.url), "utf8")) as BreedingData;
+  const captureSources = data.pals.flatMap((pal) => {
+    const source = selectCaptureSource(pal, 80);
+    return source ? [source] : [];
+  });
+  const search = searchBreedingPlans(data, [{ id: "ribbuny", palId: "44:0", sex: "F", passives: [] }], [], {
+    maxGenerations: 1,
+    maxBreedingSteps: 12,
+    captureSources,
+  });
+  const plans = findTargetPlans(search, "83:0", { requireOwnedAncestry: true, requireFullPassives: true });
+  const direct = plans.find((plan) => plan.steps.length === 1 && plan.steps[0].parentA.palId === "104:0" && plan.steps[0].parentB.palId === "44:0");
+  assert.ok(direct);
+  assert.equal(direct.breedingSteps, 1);
+  assert.equal(direct.newCaptureCount, 1);
 });
 
 test("全量 1.0 图谱只引入玩家等级加八以内的野外种源", async () => {

@@ -158,6 +158,13 @@ button { color: inherit; }
 .generation-cap select option { color: var(--ink); }
 .generation-cap span { display: flex; flex-direction: column; font-size: 9px; white-space: nowrap; }
 .generation-cap small { color: #8190a6; font-size: 8px; margin-top: 3px; }
+.capture-filters { display: grid; gap: 8px; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.capture-filters label { align-items: center; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; cursor: pointer; display: flex; gap: 9px; padding: 9px 11px; }
+.capture-filters input { accent-color: var(--lime); height: 16px; width: 16px; }
+.capture-filters input:disabled { opacity: .45; }
+.capture-filters span { display: flex; flex-direction: column; gap: 2px; }
+.capture-filters b { font-size: 10px; }
+.capture-filters small { color: #8190a6; font-size: 8px; }
 .goal-builder { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 30px rgba(16,26,42,.04); margin-bottom: 34px; padding: 22px; }
 .goal-block > label, .exact-target label { display: block; font-size: 12px; font-weight: 900; margin-bottom: 10px; }
 .goal-block > label small { color: var(--muted); float: right; }
@@ -526,6 +533,7 @@ button { color: inherit; }
   .search-suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .capture-policy { grid-template-columns: 1fr; }
   .generation-cap { grid-column: auto; }
+  .capture-filters { grid-template-columns: 1fr; }
   .recommendation-grid { grid-template-columns: 1fr; }
   .target-overview { grid-template-columns: 64px 1fr; }
   .target-overview > img { height: 64px; width: 64px; }

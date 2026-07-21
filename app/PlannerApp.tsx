@@ -8,6 +8,7 @@ import {
   CaptureSource,
   findTargetPlans,
   InventoryPal,
+  isWorldTreeOnlyPal,
   Pal,
   PlanResult,
   Profile,
@@ -80,6 +81,8 @@ type SavedState = {
   exactTargetId: string;
   playerLevel: number;
   allowCapture: boolean;
+  excludeWorldTreeOnly: boolean;
+  excludeBossCaptures: boolean;
   maxGenerations: number;
   maxBreedingSteps?: number;
 };
@@ -241,6 +244,8 @@ export default function PlannerApp() {
   const [exactTargetId, setExactTargetId] = useState("");
   const [playerLevel, setPlayerLevel] = useState(20);
   const [allowCapture, setAllowCapture] = useState(true);
+  const [excludeWorldTreeOnly, setExcludeWorldTreeOnly] = useState(false);
+  const [excludeBossCaptures, setExcludeBossCaptures] = useState(false);
   const [maxGenerations, setMaxGenerations] = useState(4);
   const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
   const [exactPlanPage, setExactPlanPage] = useState(0);
@@ -297,6 +302,8 @@ export default function PlannerApp() {
           if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
           if (typeof parsed.playerLevel === "number") setPlayerLevel(Math.max(1, Math.min(80, parsed.playerLevel)));
           if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+          if (typeof parsed.excludeWorldTreeOnly === "boolean") setExcludeWorldTreeOnly(parsed.excludeWorldTreeOnly);
+          if (typeof parsed.excludeBossCaptures === "boolean") setExcludeBossCaptures(parsed.excludeBossCaptures);
           const savedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
           if (typeof savedGenerations === "number") setMaxGenerations(Math.max(1, Math.min(12, savedGenerations)));
         }
@@ -310,9 +317,9 @@ export default function PlannerApp() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations };
+    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations, isHydrated]);
+  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const passiveRanks = data?.passiveRanks ?? {};
@@ -321,11 +328,14 @@ export default function PlannerApp() {
   const captureSources = useMemo(() => {
     if (!data || !allowCapture) return [];
     return data.pals.flatMap((pal) => {
-      const source = selectCaptureSource(pal, catchLevelLimit);
+      if (excludeWorldTreeOnly && isWorldTreeOnlyPal(pal)) return [];
+      const source = selectCaptureSource(pal, 80);
+      if (excludeBossCaptures && source?.kind === "alpha") return [];
       return source ? [source] : [];
     });
-  }, [data, allowCapture, catchLevelLimit]);
+  }, [data, allowCapture, excludeWorldTreeOnly, excludeBossCaptures]);
   const catchablePalIds = useMemo(() => captureSources.map((source) => source.palId), [captureSources]);
+  const overLevelCaptureCount = useMemo(() => captureSources.filter((source) => source.level > catchLevelLimit).length, [captureSources, catchLevelLimit]);
   const activeDesiredPassives = mode === "exact" ? exactTargetPassives : desiredPassives;
 
   useEffect(() => {
@@ -464,13 +474,15 @@ export default function PlannerApp() {
     setProfile("combat");
     setPlayerLevel(20);
     setAllowCapture(true);
+    setExcludeWorldTreeOnly(false);
+    setExcludeBossCaptures(false);
     setMaxGenerations(4);
     setMode("recommend");
     setNotice("示例已载入：5 只前期帕鲁，各携带一个高阶词条。可以直接查看推荐路线。 ");
   };
 
   const exportJson = () => {
-    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 4, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, maxGenerations }, null, 2), "application/json");
+    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 5, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations }, null, 2), "application/json");
   };
 
   const exportCsv = () => {
@@ -493,6 +505,8 @@ export default function PlannerApp() {
         if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
         if (typeof parsed.playerLevel === "number") setPlayerLevel(parsed.playerLevel);
         if (typeof parsed.allowCapture === "boolean") setAllowCapture(parsed.allowCapture);
+        if (typeof parsed.excludeWorldTreeOnly === "boolean") setExcludeWorldTreeOnly(parsed.excludeWorldTreeOnly);
+        if (typeof parsed.excludeBossCaptures === "boolean") setExcludeBossCaptures(parsed.excludeBossCaptures);
         const importedGenerations = parsed.maxGenerations ?? parsed.maxBreedingSteps;
         if (typeof importedGenerations === "number") setMaxGenerations(Math.max(1, Math.min(12, importedGenerations)));
       } else {
@@ -623,10 +637,14 @@ export default function PlannerApp() {
             <div className="level-control">
               <span>你的当前等级</span>
               <label><input type="number" min="1" max="80" value={playerLevel} onChange={(event) => setPlayerLevel(Math.max(1, Math.min(80, Number(event.target.value) || 1)))} /><b>级</b></label>
-              <small>严格排除常见野生等级或 Boss 等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪。</small>
+              <small>等级用于提示捕捉难度，不再隐藏更短路线；高于推荐上限 <strong>{catchLevelLimit}</strong> 的种源目前有 {overLevelCaptureCount} 种。</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
             <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); setExactPlanPage(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
+            <div className="capture-filters">
+              <label><input type="checkbox" checked={excludeWorldTreeOnly} disabled={!allowCapture} onChange={(event) => setExcludeWorldTreeOnly(event.target.checked)} /><span><b>不选择仅在世界树内的帕鲁</b><small>仍允许同时分布在帕洛斯群岛的帕鲁</small></span></label>
+              <label><input type="checkbox" checked={excludeBossCaptures} disabled={!allowCapture} onChange={(event) => setExcludeBossCaptures(event.target.checked)} /><span><b>不需要额外捕捉 Boss</b><small>已在库存中的 Boss 不受影响</small></span></label>
+            </div>
           </div>
 
           <div className="goal-builder">
@@ -695,7 +713,7 @@ export default function PlannerApp() {
             <div className="exact-result">
               {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示从已录入帕鲁出发、不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>路线必须包含你的库存起点并完整继承所选词条。可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
                 {exactPlans.length > 1 && <section className="route-browser" aria-label="全部繁殖方案">
-                  <header><div><strong>全部可行路径</strong><small>共 {exactPlans.length} 条 · 无 Boss、易捕捉、短路线优先</small></div><span>第 {exactPlanPageIndex + 1}/{exactPlanPageCount} 页</span></header>
+                  <header><div><strong>全部可行路径</strong><small>共 {exactPlans.length} 条 · 步骤最少、补抓更少；同条件下 Boss 后置</small></div><span>第 {exactPlanPageIndex + 1}/{exactPlanPageCount} 页</span></header>
                   <div className="route-options">
                   {visibleExactPlans.map((plan, pageIndex) => {
                     const index = exactPlanPageIndex * ROUTES_PER_PAGE + pageIndex;
@@ -725,7 +743,7 @@ export default function PlannerApp() {
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
           <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>繁殖代数可选</h3><p>代数按目标到最远库存祖先的亲代链计算；指定目标路线始终从你的库存个体开始，途中补抓仍受等级＋8 限制。</p></article>
+          <article><b>04</b><h3>繁殖代数可选</h3><p>代数按目标到最远库存祖先的亲代链计算；指定目标路线始终从你的库存个体开始，高等级种源会保留并明确展示捕捉等级。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
@@ -820,7 +838,7 @@ function TargetOverview({ pal, result, desiredCount }: { pal?: Pal; result: Plan
   if (!pal) return null;
   return <article className="target-overview">
     <img src={pal.image} alt="" />
-    <div><span>指定目标路线</span><h3>{pal.nameZh} <small>{pal.name}</small></h3><p>{result.steps.length ? `结合库存与可捕捉种源，需要 ${result.steps.length} 个配种步骤。` : result.source === "captured" ? "当前等级允许直接捕捉。" : "你已经拥有这个目标。"}</p></div>
+    <div><span>指定目标路线</span><h3>{pal.nameZh} <small>{pal.name}</small></h3><p>{result.steps.length ? `结合库存与可捕捉种源，需要 ${result.steps.length} 个配种步骤。` : result.source === "captured" ? "可以直接捕捉这个目标。" : "你已经拥有这个目标。"}</p></div>
     <div className="overview-metrics"><span><b>{result.steps.length}</b>实际步骤</span><span><b>{result.coveredPassives.length}/{desiredCount}</b>词条</span><span><b>{formatNumber(result.expectedEggs)}</b>预计蛋数</span></div>
   </article>;
 }
@@ -833,7 +851,7 @@ function PlanDetails({ result, pal, palById, desiredCount, palLabel, onOpenPal }
     </div>
     {result.missingPassives.length > 0 && <div className="warning-box"><b>还有词条种源缺口</b><span>{result.missingPassives.join("、")} 未在当前库存的可达链中。路线会先给出最接近结果；若想稳定遗传，请先抓到携带这些词条的帕鲁。</span></div>}
     {result.captures.length > 0 && <div className="capture-checklist">
-      <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>下面的帕鲁均已通过“当前等级＋8”限制。点击查看图鉴可打开内置栖息地图。</p></div>
+      <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击查看图鉴可打开内置栖息地图。</p></div>
       <div className="capture-cards">{result.captures.map((requirement) => {
         const capturePal = palById.get(requirement.palId);
         return <article key={requirement.palId} className={requirement.kind === "alpha" ? "alpha-capture" : ""}>
@@ -940,7 +958,7 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
         <aside className="paldex-info">
           <div className="paldex-stats"><span><b>{pal.stats.hp ?? "—"}</b>生命</span><span><b>{pal.stats.attack ?? "—"}</b>攻击</span><span><b>{pal.stats.defense ?? "—"}</b>防御</span></div>
           <section><h3>图鉴说明</h3><p>{habitat?.summary || "暂无说明。"}</p></section>
-          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高，规划时会额外增加难度惩罚。</small></span></div><p>路线会用“常见野生等级”判断是否超过你的等级＋8，不再用极少见的最低等级或跨区域最高等级。</p></section>
+          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高；可在规划条件中完全排除额外捕捉 Boss。</small></span></div><p>高于当前等级的种源不会再导致最短路线消失，但会保留等级信息供你判断执行时机。</p></section>
           <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => { const copy = WORK_COPY[name] ?? { label: name, icon: "◆", color: "#687686" }; return <span key={name} style={{ "--work-color": copy.color } as React.CSSProperties}><i>{copy.icon}</i><b>{copy.label}</b><strong>Lv.{level}</strong></span>; }) : <small>无据点工作数据</small>}</div></section>
           <section className="source-note"><h3>1.0 数据说明</h3><p>点位与等级快照采集于 2026-07-20。野外等级会受世界设置、地下城和特殊事件影响。</p>{habitat?.mapSourceUrl && <a href={habitat.mapSourceUrl} target="_blank" rel="noreferrer">在 PalDB 核对原始分布 ↗</a>}</section>
         </aside>
