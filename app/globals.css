@@ -585,11 +585,30 @@ button { color: inherit; }
   margin-top: 10px;
 }
 
+.route-browser {
+  background: #f4f1e9;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  max-width: 760px;
+  padding: 12px;
+}
+
+.route-browser > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.route-browser > header div { display: flex; flex-direction: column; gap: 2px; }
+.route-browser > header strong { font-size: 12px; }
+.route-browser > header small, .route-browser > header > span { color: var(--muted); font-size: 8px; }
+
 .route-options {
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  margin-bottom: 14px;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .route-options button {
@@ -599,8 +618,9 @@ button { color: inherit; }
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px 10px;
   text-align: left;
 }
 
@@ -610,6 +630,21 @@ button { color: inherit; }
   box-shadow: 0 0 0 2px #0b8d8418;
 }
 
-.route-options b { font-size: 11px; }
-.route-options span { color: var(--teal); font-size: 9px; font-weight: 800; }
-.route-options small { color: var(--muted); font-size: 8px; overflow-wrap: anywhere; }
+.route-card-title { align-items: center; display: flex; justify-content: space-between; width: 100%; }
+.route-card-title b { color: var(--ink); font-size: 11px; }
+.route-card-title em, .route-card-title i { border-radius: 999px; font-size: 7px; font-style: normal; padding: 3px 6px; }
+.route-card-title i { background: #e2f3e8; color: #39744c; }
+.route-card-title em { background: #ffebe4; color: #a14325; }
+.route-card-metrics { display: grid; gap: 4px; grid-template-columns: repeat(4, auto); }
+.route-card-metrics b { color: var(--teal); font-size: 8px; white-space: nowrap; }
+.route-options small { color: var(--muted); font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+
+.route-pagination { align-items: center; display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+.route-pagination button { background: #fff; border: 1px solid var(--line); border-radius: 7px; cursor: pointer; font-size: 8px; min-height: 28px; padding: 0 9px; }
+.route-pagination button:disabled { cursor: default; opacity: .4; }
+.route-pagination span { color: var(--muted); font-size: 8px; }
+
+@media (max-width: 620px) {
+  .route-options { grid-template-columns: 1fr; }
+  .route-browser { max-width: 100%; }
+}

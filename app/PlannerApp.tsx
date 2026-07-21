@@ -22,6 +22,7 @@ import { SaveImportModal } from "./SaveImportModal";
 
 const STORAGE_KEY = "palworld-breeding-lab-v1";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const ROUTES_PER_PAGE = 6;
 
 const PASSIVE_PRESETS = [
   "破坏神",
@@ -242,6 +243,7 @@ export default function PlannerApp() {
   const [allowCapture, setAllowCapture] = useState(true);
   const [maxGenerations, setMaxGenerations] = useState(4);
   const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
+  const [exactPlanPage, setExactPlanPage] = useState(0);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
   const [isPaldexOpen, setPaldexOpen] = useState(false);
@@ -357,10 +359,13 @@ export default function PlannerApp() {
 
   const exactPlans = useMemo(() => {
     if (!search || !exactTargetId || !inventory.length) return [];
-    return findTargetPlans(search, exactTargetId, { requireOwnedAncestry: true, requireFullPassives: true }, 4);
+    return findTargetPlans(search, exactTargetId, { requireOwnedAncestry: true, requireFullPassives: true });
   }, [search, exactTargetId, inventory.length]);
   const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
   const exactPlan = exactPlans[exactPlanIndex] ?? null;
+  const exactPlanPageCount = Math.max(1, Math.ceil(exactPlans.length / ROUTES_PER_PAGE));
+  const exactPlanPageIndex = Math.min(exactPlanPage, exactPlanPageCount - 1);
+  const visibleExactPlans = exactPlans.slice(exactPlanPageIndex * ROUTES_PER_PAGE, (exactPlanPageIndex + 1) * ROUTES_PER_PAGE);
 
   const activeResult: (Recommendation | PlanResult) | null = useMemo(() => {
     if (mode === "exact") return exactPlan;
@@ -417,6 +422,7 @@ export default function PlannerApp() {
     if (mode === "exact") {
       setExactTargetPassives((current) => [...current, value]);
       setSelectedExactPlanIndex(0);
+      setExactPlanPage(0);
     }
     else setDesiredPassives((current) => [...current, value]);
     setDesiredInput("");
@@ -620,14 +626,14 @@ export default function PlannerApp() {
               <small>严格排除常见野生等级或 Boss 等级超过 <strong>{catchLevelLimit}</strong> 的来源；同等级优先普通野怪。</small>
             </div>
             <label className="capture-toggle"><input type="checkbox" checked={allowCapture} onChange={(event) => setAllowCapture(event.target.checked)} /><span><b>允许途中补抓帕鲁</b><small>{allowCapture ? `当前有 ${catchablePalIds.length} 种可作为路线种源` : "仅使用我的现有库存"}</small></span></label>
-            <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
+            <label className="generation-cap"><select value={maxGenerations} onChange={(event) => { setMaxGenerations(Number(event.target.value)); setSelectedExactPlanIndex(0); setExactPlanPage(0); }}>{[1, 2, 3, 4, 5, 6, 8, 10, 12].map((value) => <option key={value} value={value}>{value}</option>)}</select><span>最大繁殖代数<small>按最长亲代链计算，默认 4 代</small></span></label>
           </div>
 
           <div className="goal-builder">
             <div className="goal-block">
               <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "目标词条"} <small>{activeDesiredPassives.length}/4</small></label>
               <div className="tag-input">
-                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setExactPlanPage(0); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
                 {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
               </div>
               {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives)} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
@@ -653,7 +659,7 @@ export default function PlannerApp() {
                   </button> : <>
                     <input id="target-pal-search" value={targetSearch} onChange={(event) => { setTargetSearch(event.target.value); setTargetPickerOpen(true); }} onFocus={() => setTargetPickerOpen(true)} placeholder="搜索中文名、英文名或图鉴编号" autoComplete="off" />
                     {targetPickerOpen && <div className="target-options" role="listbox">
-                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
+                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setExactPlanPage(0); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
                       {!targetOptions.length && <small>没有找到匹配的帕鲁</small>}
                     </div>}
                   </>}
@@ -688,13 +694,23 @@ export default function PlannerApp() {
           ) : (
             <div className="exact-result">
               {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示从已录入帕鲁出发、不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>路线必须包含你的库存起点并完整继承所选词条。可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
-                {exactPlans.length > 1 && <div className="route-options" aria-label="可选繁殖方案">
-                  {exactPlans.map((plan, index) => {
+                {exactPlans.length > 1 && <section className="route-browser" aria-label="全部繁殖方案">
+                  <header><div><strong>全部可行路径</strong><small>共 {exactPlans.length} 条 · 无 Boss、易捕捉、短路线优先</small></div><span>第 {exactPlanPageIndex + 1}/{exactPlanPageCount} 页</span></header>
+                  <div className="route-options">
+                  {visibleExactPlans.map((plan, pageIndex) => {
+                    const index = exactPlanPageIndex * ROUTES_PER_PAGE + pageIndex;
                     const roots = plan.ownedInventoryIds.map((id) => inventory.find((item) => item.id === id)).filter(Boolean) as InventoryPal[];
                     const rootNames = roots.map((item) => item.nickname || palById.get(item.palId)?.nameZh || item.palId).join("＋");
-                    return <button key={`${index}-${plan.steps.map((step) => step.id).join("-")}`} className={index === exactPlanIndex ? "active" : ""} onClick={() => setSelectedExactPlanIndex(index)}><b>方案 {index + 1}</b><span>{plan.generations} 代 · {plan.breedingSteps} 步</span><small>库存起点：{rootNames || "已录入帕鲁"}</small></button>;
+                    const captureCount = plan.captures.reduce((sum, capture) => sum + capture.count, 0);
+                    return <button key={`${index}-${plan.steps.map((step) => step.id).join("-")}`} className={index === exactPlanIndex ? "active" : ""} onClick={() => setSelectedExactPlanIndex(index)}>
+                      <span className="route-card-title"><b>#{index + 1}</b>{plan.bossCaptureCount ? <em>含 Boss</em> : <i>普通捕捉</i>}</span>
+                      <span className="route-card-metrics"><b>{plan.generations}代</b><b>{plan.breedingSteps}步</b><b>{captureCount}补抓</b><b>难度 {Math.round(plan.captureDifficulty)}</b></span>
+                      <small title={rootNames}>起点：{rootNames || "已录入帕鲁"}</small>
+                    </button>;
                   })}
-                </div>}
+                  </div>
+                  {exactPlanPageCount > 1 && <nav className="route-pagination" aria-label="繁殖方案分页"><button disabled={exactPlanPageIndex === 0} onClick={() => { const page = Math.max(0, exactPlanPageIndex - 1); setExactPlanPage(page); setSelectedExactPlanIndex(page * ROUTES_PER_PAGE); }}>← 上一页</button><span>{exactPlanPageIndex + 1} / {exactPlanPageCount}</span><button disabled={exactPlanPageIndex >= exactPlanPageCount - 1} onClick={() => { const page = Math.min(exactPlanPageCount - 1, exactPlanPageIndex + 1); setExactPlanPage(page); setSelectedExactPlanIndex(page * ROUTES_PER_PAGE); }}>下一页 →</button></nav>}
+                </section>}
                 <TargetOverview pal={activePal} result={exactPlan} desiredCount={exactTargetPassives.length} />
               </>}
             </div>

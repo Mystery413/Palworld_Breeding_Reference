@@ -160,6 +160,9 @@ export type PlanResult = {
   missingPassives: string[];
   captures: Array<CaptureSource & { count: number }>;
   ownedInventoryIds: string[];
+  captureDifficulty: number;
+  bossCaptureCount: number;
+  routePriority: number;
 };
 
 export type Recommendation = PlanResult & {
@@ -176,6 +179,9 @@ type SearchResult = {
   statesByPal: Map<string, PlanNode[]>;
   desiredPassives: string[];
   fullMask: number;
+  data: BreedingData;
+  maxGenerations: number;
+  maxBreedingSteps: number;
 };
 
 export type SearchOptions = {
@@ -187,16 +193,6 @@ export type SearchOptions = {
 
 const INHERIT_ROLL: Record<number, number> = { 1: 0.4, 2: 0.3, 3: 0.2, 4: 0.1 };
 const CLEAN_EXACT: Record<number, number> = { 0: 1, 1: 0.4, 2: 0.24, 3: 0.12, 4: 0.1 };
-
-function popcount(value: number): number {
-  let n = value;
-  let count = 0;
-  while (n) {
-    n &= n - 1;
-    count += 1;
-  }
-  return count;
-}
 
 function choose(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
@@ -448,7 +444,7 @@ export function searchBreedingPlans(
     }
   }
 
-  return { states, statesByPal, desiredPassives, fullMask };
+  return { states, statesByPal, desiredPassives, fullMask, data, maxGenerations, maxBreedingSteps };
 }
 
 function parentSummary(node: PlanNode): PlanParent {
@@ -520,6 +516,24 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
       captureCounts.set(palId, Math.max(captureCounts.get(palId) ?? 0, count));
     }
   }
+  const captures = [...captureCounts].map(([palId, count]) => {
+    const source = node.captureSources.find((item) => item.palId === palId) ?? {
+      palId,
+      level: 1,
+      maxLevel: 1,
+      kind: "wild" as const,
+      difficulty: 1,
+    };
+    return { ...source, count };
+  });
+  const captureDifficulty = captures.reduce((sum, capture) => sum + capture.difficulty * capture.count, 0);
+  const bossCaptureCount = captures.reduce((sum, capture) => sum + (capture.kind === "alpha" ? capture.count : 0), 0);
+  const routePriority =
+    bossCaptureCount * 100_000 +
+    captureDifficulty * 12 +
+    node.depth * 24 +
+    node.breedingStepIds.length * 18 +
+    Math.log2(Math.max(1, node.totalExpectedEggs)) * 3;
   return {
     node,
     source: node.kind,
@@ -529,21 +543,15 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     expectedEggs: node.totalExpectedEggs,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),
-    captures: [...captureCounts].map(([palId, count]) => {
-      const source = node.captureSources.find((item) => item.palId === palId) ?? {
-        palId,
-        level: 1,
-        maxLevel: 1,
-        kind: "wild" as const,
-        difficulty: 1,
-      };
-      return { ...source, count };
-    }),
+    captures,
     ownedInventoryIds: unique(
       [node, ...steps.flatMap((step) => [step.parentA, step.parentB])]
         .map((item) => item.inventoryId ?? "")
         .filter(Boolean),
     ),
+    captureDifficulty,
+    bossCaptureCount,
+    routePriority,
   };
 }
 
@@ -552,41 +560,98 @@ export type TargetPlanOptions = {
   requireFullPassives?: boolean;
 };
 
+function compareTargetPlans(a: PlanResult, b: PlanResult): number {
+  const coverage = b.coveredPassives.length - a.coveredPassives.length;
+  if (coverage) return coverage;
+  if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
+  if (Math.abs(a.routePriority - b.routePriority) > 0.001) return a.routePriority - b.routePriority;
+  if (a.generations !== b.generations) return a.generations - b.generations;
+  if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;
+  return a.expectedEggs - b.expectedEggs;
+}
+
+function matchesTargetOptions(node: PlanNode, search: SearchResult, options: TargetPlanOptions): boolean {
+  if (options.requireOwnedAncestry && !node.ownedRootId) return false;
+  if (options.requireFullPassives && node.mask !== search.fullMask) return false;
+  return true;
+}
+
+function enumerateTargetNodes(search: SearchResult, targetPalId: string, options: TargetPlanOptions): PlanNode[] {
+  const candidates = [...(search.statesByPal.get(targetPalId) ?? [])];
+  search.data.combos.forEach((combo, comboIndex) => {
+    if (combo[0] !== targetPalId) return;
+    const leftStates = search.statesByPal.get(combo[1]) ?? [];
+    const rightStates = search.statesByPal.get(combo[2]) ?? [];
+    for (const parentA of leftStates) {
+      for (const parentB of rightStates) {
+        if (!comboCompatible(parentA, parentB, combo)) continue;
+        const mask = parentA.mask | parentB.mask;
+        const ownedRootId = parentA.ownedRootId ?? parentB.ownedRootId;
+        if (options.requireOwnedAncestry && !ownedRootId) continue;
+        if (options.requireFullPassives && mask !== search.fullMask) continue;
+        const depth = Math.max(parentA.depth, parentB.depth) + 1;
+        if (depth > search.maxGenerations) continue;
+        const nodeId = `target:${comboIndex}:${parentA.nodeId}:${parentB.nodeId}`;
+        const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
+        if (breedingStepIds.length > search.maxBreedingSteps) continue;
+        const inheritedPassives = passivesForMask(mask, search.desiredPassives);
+        const chance = passiveInheritanceChance(unique([...parentA.passives, ...parentB.passives]).length, inheritedPassives.length);
+        const potentials = potentialTargets(parentA.potentials, parentB.potentials);
+        const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
+        const combinedChance = chance * ivChance;
+        const duplicateParent = parentA.nodeId === parentB.nodeId;
+        const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
+        candidates.push({
+          nodeId,
+          palId: targetPalId,
+          sex: "A",
+          mask,
+          passives: inheritedPassives,
+          depth,
+          eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
+          totalExpectedEggs:
+            parentA.totalExpectedEggs +
+            parentB.totalExpectedEggs +
+            (combinedChance > 0 ? 1 / combinedChance : 9999) +
+            (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
+          kind: "bred",
+          parents: [parentA, parentB],
+          combo,
+          stepChance: chance,
+          duplicateParent,
+          potentials,
+          captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
+          breedingStepIds,
+          ownedRootId,
+        });
+      }
+    }
+  });
+  return candidates.filter((node) => matchesTargetOptions(node, search, options));
+}
+
 export function findTargetPlans(
   search: SearchResult,
   targetPalId: string,
   options: TargetPlanOptions = {},
-  limit = 4,
+  limit = Number.POSITIVE_INFINITY,
 ): PlanResult[] {
-  const candidates = (search.statesByPal.get(targetPalId) ?? []).filter((node) => {
-    if (options.requireOwnedAncestry && !node.ownedRootId) return false;
-    if (options.requireFullPassives && node.mask !== search.fullMask) return false;
-    return true;
-  });
+  const candidates = enumerateTargetNodes(search, targetPalId, options);
   if (!candidates.length) return [];
-  const sorted = [...candidates].sort((a, b) => {
-    const coverage = popcount(b.mask) - popcount(a.mask);
-    if (coverage) return coverage;
-    const effort = routeEffort(a) - routeEffort(b);
-    if (Math.abs(effort) > 0.001) return effort;
-    if (a.depth !== b.depth) return a.depth - b.depth;
-    if (a.eggSteps !== b.eggSteps) return a.eggSteps - b.eggSteps;
-    return a.totalExpectedEggs - b.totalExpectedEggs;
-  });
   const seen = new Set<string>();
   const results: PlanResult[] = [];
-  for (const node of sorted) {
+  for (const node of candidates) {
     const plan = toPlanResult(node, search.desiredPassives, search.fullMask);
     const signature = plan.steps
-      .map((step) => `${step.childId}:${step.parentA.palId}+${step.parentB.palId}`)
+      .map((step) => `${step.childId}:${step.parentA.source}:${step.parentA.palId}+${step.parentB.source}:${step.parentB.palId}`)
       .join(">");
     const key = `${plan.ownedInventoryIds.join(",")}|${signature || `source:${plan.source}`}`;
     if (seen.has(key)) continue;
     seen.add(key);
     results.push(plan);
-    if (results.length >= Math.max(1, limit)) break;
   }
-  return results;
+  results.sort(compareTargetPlans);
+  return results.slice(0, Math.max(1, limit));
 }
 
 export function findTargetPlan(
@@ -594,7 +659,11 @@ export function findTargetPlan(
   targetPalId: string,
   options: TargetPlanOptions = {},
 ): PlanResult | null {
-  return findTargetPlans(search, targetPalId, options, 1)[0] ?? null;
+  const plans = (search.statesByPal.get(targetPalId) ?? [])
+    .filter((node) => matchesTargetOptions(node, search, options))
+    .map((node) => toPlanResult(node, search.desiredPassives, search.fullMask))
+    .sort(compareTargetPlans);
+  return plans[0] ?? null;
 }
 
 export function palQualityScore(pal: Pal, profile: Profile): number {
