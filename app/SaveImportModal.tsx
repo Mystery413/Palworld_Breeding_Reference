@@ -10,6 +10,9 @@ import { loadSaveImportIndex } from "@/lib/supabase-data";
 import { useSaveFileMonitor } from "@/app/useSaveFileMonitor";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+// Keep the monitor implementation available, but do not expose or start it
+// while imported inventories are persisted as database profiles.
+const AUTO_MONITOR_ENABLED = false;
 
 type ParseResult = {
   pals: SaveImportedPal[];
@@ -21,7 +24,7 @@ type ParseResult = {
 export function SaveImportModal({ pals, onClose, onImport }: {
   pals: Pal[];
   onClose: () => void;
-  onImport: (items: InventoryPal[], mode: "merge" | "replace") => void;
+  onImport: (items: InventoryPal[], mode: "merge" | "replace", meta: { ownerUid: string; fileName: string }) => void | Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -126,12 +129,12 @@ export function SaveImportModal({ pals, onClose, onImport }: {
   };
 
   const formatTime = (value: Date | null) => value?.toLocaleTimeString("zh-CN", { hour12: false }) ?? "尚未刷新";
-  const monitorVisible = monitor.isSupported === true && Boolean(monitor.fileName);
+  const monitorVisible = AUTO_MONITOR_ENABLED && monitor.isSupported === true && Boolean(monitor.fileName);
   const busy = Boolean(status) || monitor.parsing;
 
   return <div className="modal-backdrop save-import-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="save-import-modal" role="dialog" aria-modal="true" aria-labelledby="save-import-title">
-      <header><div><span>LOCAL SAVE · PRIVATE</span><h2 id="save-import-title">从游戏存档读取我的帕鲁</h2><p>解压和解析只在此浏览器标签页中进行，不会上传文件。</p></div><button onClick={onClose} aria-label="关闭">×</button></header>
+      <header><div><span>LOCAL SAVE · PRIVATE</span><h2 id="save-import-title">从游戏存档读取我的帕鲁</h2><p>原始文件只在浏览器内解析；登录后仅把确认导入的帕鲁数据保存到云端。</p></div><button onClick={onClose} aria-label="关闭">×</button></header>
       <div className="save-import-body">
         <aside className="save-path-guide">
           <h3>Windows Steam 存档位置</h3>
@@ -145,11 +148,11 @@ export function SaveImportModal({ pals, onClose, onImport }: {
         </aside>
         <div className="save-import-main">
           <input ref={inputRef} type="file" accept=".sav,.json" onChange={(event: ChangeEvent<HTMLInputElement>) => void parseFallbackFile(event.target.files?.[0])} hidden />
-          <button className={`save-dropzone ${busy ? "loading" : ""}`} onClick={() => monitor.isSupported ? void monitor.pickFile() : inputRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={drop} disabled={busy}>
+          <button className={`save-dropzone ${busy ? "loading" : ""}`} onClick={() => AUTO_MONITOR_ENABLED && monitor.isSupported ? void monitor.pickFile() : inputRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={drop} disabled={busy}>
             <b>{busy ? "◌" : "⇧"}</b><strong>{status || (fileName ? "重新选择存档" : "选择或拖入 Level.sav")}</strong><span>{fileName || "支持 Steam 的 PlZ / PlM 存档，也支持 Level.sav.json"}</span>
           </button>
           <small className="save-default-path">默认路径：<code>%LocalAppData%\Pal\Saved\SaveGames\&lt;SteamID&gt;\&lt;世界ID&gt;\Level.sav</code></small>
-          {monitor.isSupported === false && <small className="save-monitor-unsupported">当前浏览器不支持自动监控，仍可正常手动选择存档。</small>}
+          <small className="save-monitor-unsupported">当前为单次读取模式；30 秒自动更新已暂时关闭。</small>
           {monitorVisible && <div className={`save-monitor ${monitor.status} ${monitorFlash ? "updated" : ""}`}>
             <div className="save-monitor-summary">
               <span className="save-monitor-dot" aria-hidden="true" />
@@ -177,7 +180,7 @@ export function SaveImportModal({ pals, onClose, onImport }: {
           </div>}
         </div>
       </div>
-      <footer><div className="save-mode"><button className={mode === "replace" ? "active" : ""} onClick={() => setMode("replace")}>替换现有库存</button><button className={mode === "merge" ? "active" : ""} onClick={() => setMode("merge")}>合并并去重</button></div><button className="ghost-button" onClick={onClose}>取消</button><button className="primary-button" disabled={!selected.length} onClick={() => onImport(selected, mode)}>{selected.length ? `导入 ${selected.length} 只帕鲁` : "等待读取存档"}</button></footer>
+      <footer><div className="save-mode"><button className={mode === "replace" ? "active" : ""} onClick={() => setMode("replace")}>替换现有库存</button><button className={mode === "merge" ? "active" : ""} onClick={() => setMode("merge")}>合并并去重</button></div><button className="ghost-button" onClick={onClose}>取消</button><button className="primary-button" disabled={!selected.length} onClick={() => void onImport(selected, mode, { ownerUid, fileName })}>{selected.length ? `导入 ${selected.length} 只帕鲁` : "等待读取存档"}</button></footer>
     </section>
   </div>;
 }

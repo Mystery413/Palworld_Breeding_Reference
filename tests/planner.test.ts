@@ -6,6 +6,7 @@ import {
   type BreedingData,
   type InventoryPal,
   calculateOffspring,
+  compactInventoryForPlanning,
   findTargetPlan,
   findTargetPlans,
   findBreedingPartners,
@@ -64,6 +65,22 @@ test("潜力值逐项按父 30%、母 30%、随机 40% 计算", () => {
   const oneStat = 0.6 + 0.4 / 101;
   assert.ok(Math.abs(chance - oneStat ** 3) < 1e-12);
   assert.equal(potentialInheritanceChance({ hp: null, attack: null, defense: null }, { hp: null, attack: null, defense: null }), 1);
+});
+
+test("大库存计算会合并等价个体并保留潜力更好的代表", () => {
+  const inventory: InventoryPal[] = Array.from({ length: 300 }, (_, index) => ({
+    id: `pal-${index}`,
+    palId: index < 200 ? "A" : "B",
+    sex: index % 2 ? "M" as const : "F" as const,
+    passives: index % 3 ? ["目标", "杂词条"] : ["目标"],
+    hp: index % 101,
+    attack: index % 101,
+    defense: index % 101,
+  }));
+  const compacted = compactInventoryForPlanning(inventory, ["目标"]);
+  assert.ok(compacted.length <= 8);
+  assert.equal(new Set(compacted.map((item) => `${item.palId}|${item.sex}|${item.passives.length}`)).size, compacted.length);
+  assert.ok(compacted.every((item) => (item.hp ?? 0) >= 90));
 });
 
 test("一对异性个体可把两个词条传给一步子代", () => {

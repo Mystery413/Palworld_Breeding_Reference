@@ -468,6 +468,28 @@ function passivesForMask(mask: number, desired: string[]): string[] {
   return desired.filter((_, index) => (mask & (1 << index)) !== 0);
 }
 
+/**
+ * Hundreds of save instances often contain breeding-equivalent duplicates.
+ * Keep one strongest representative for each species/sex/target-passive mask
+ * and pollution count before graph search. The complete inventory remains
+ * available for display and database persistence.
+ */
+export function compactInventoryForPlanning(inventory: InventoryPal[], requestedPassives: string[]): InventoryPal[] {
+  const desired = unique(requestedPassives).slice(0, 4);
+  const best = new Map<string, InventoryPal>();
+  const quality = (item: InventoryPal) =>
+    (item.hp ?? 0) + (item.attack ?? 0) + (item.defense ?? 0) + item.passives.length / 100;
+  for (const item of inventory) {
+    const passives = unique(item.passives);
+    const mask = maskFor(passives, desired);
+    const extras = Math.max(0, passives.length - bitCount(mask));
+    const key = `${item.palId}|${item.sex}|${mask}|${extras}`;
+    const current = best.get(key);
+    if (!current || quality(item) > quality(current)) best.set(key, item);
+  }
+  return [...best.values()];
+}
+
 export function searchBreedingPlans(
   data: BreedingData,
   inventory: InventoryPal[],
