@@ -193,6 +193,29 @@ test("全部目标路线优先普通捕捉，含 Boss 的路线排列在后", ()
   assert.ok(plans[0].routePriority < plans[1].routePriority);
 });
 
+test("无 Boss 路线中优先需要新捕捉帕鲁更少的方案", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["E", "X", "Y", "WILDCARD", "WILDCARD"],
+    ["C", "D", "E", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "owned-a", palId: "A", sex: "M", passives: [] },
+    { id: "owned-d", palId: "D", sex: "M", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, [], {
+    captureSources: [
+      { palId: "B", level: 30, maxLevel: 30, kind: "wild", difficulty: 30 },
+      { palId: "X", level: 1, maxLevel: 1, kind: "wild", difficulty: 1 },
+      { palId: "Y", level: 1, maxLevel: 1, kind: "wild", difficulty: 1 },
+    ],
+  });
+  const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true });
+  assert.ok(plans.some((plan) => plan.newCaptureCount === 2));
+  assert.equal(plans[0].newCaptureCount, 1);
+  assert.equal(plans[0].captures[0].palId, "B");
+});
+
 test("捕捉来源严格排除等级上限外目标，并区分普通野生与 Alpha", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const pal = data.pals[0];

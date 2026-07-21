@@ -162,6 +162,7 @@ export type PlanResult = {
   ownedInventoryIds: string[];
   captureDifficulty: number;
   bossCaptureCount: number;
+  newCaptureCount: number;
   routePriority: number;
 };
 
@@ -528,8 +529,10 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
   });
   const captureDifficulty = captures.reduce((sum, capture) => sum + capture.difficulty * capture.count, 0);
   const bossCaptureCount = captures.reduce((sum, capture) => sum + (capture.kind === "alpha" ? capture.count : 0), 0);
+  const newCaptureCount = captures.reduce((sum, capture) => sum + capture.count, 0);
   const routePriority =
     bossCaptureCount * 100_000 +
+    newCaptureCount * 10_000 +
     captureDifficulty * 12 +
     node.depth * 24 +
     node.breedingStepIds.length * 18 +
@@ -551,6 +554,7 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     ),
     captureDifficulty,
     bossCaptureCount,
+    newCaptureCount,
     routePriority,
   };
 }
@@ -564,6 +568,7 @@ function compareTargetPlans(a: PlanResult, b: PlanResult): number {
   const coverage = b.coveredPassives.length - a.coveredPassives.length;
   if (coverage) return coverage;
   if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
+  if (a.newCaptureCount !== b.newCaptureCount) return a.newCaptureCount - b.newCaptureCount;
   if (Math.abs(a.routePriority - b.routePriority) > 0.001) return a.routePriority - b.routePriority;
   if (a.generations !== b.generations) return a.generations - b.generations;
   if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;

@@ -701,10 +701,9 @@ export default function PlannerApp() {
                     const index = exactPlanPageIndex * ROUTES_PER_PAGE + pageIndex;
                     const roots = plan.ownedInventoryIds.map((id) => inventory.find((item) => item.id === id)).filter(Boolean) as InventoryPal[];
                     const rootNames = roots.map((item) => item.nickname || palById.get(item.palId)?.nameZh || item.palId).join("＋");
-                    const captureCount = plan.captures.reduce((sum, capture) => sum + capture.count, 0);
                     return <button key={`${index}-${plan.steps.map((step) => step.id).join("-")}`} className={index === exactPlanIndex ? "active" : ""} onClick={() => setSelectedExactPlanIndex(index)}>
                       <span className="route-card-title"><b>#{index + 1}</b>{plan.bossCaptureCount ? <em>含 Boss</em> : <i>普通捕捉</i>}</span>
-                      <span className="route-card-metrics"><b>{plan.generations}代</b><b>{plan.breedingSteps}步</b><b>{captureCount}补抓</b><b>难度 {Math.round(plan.captureDifficulty)}</b></span>
+                      <span className="route-card-metrics"><b>{plan.generations}代</b><b>{plan.breedingSteps}步</b><b>{plan.newCaptureCount}补抓</b><b>难度 {Math.round(plan.captureDifficulty)}</b></span>
                       <small title={rootNames}>起点：{rootNames || "已录入帕鲁"}</small>
                     </button>;
                   })}
