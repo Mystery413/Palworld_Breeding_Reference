@@ -777,7 +777,7 @@ export default function PlannerApp() {
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
           <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>整条路线一起算难度</h3><p>综合难度等于捕捉成本加预计蛋数 × 30；词条污染、潜力与中间亲代所需性别都会反映在预计蛋数里。</p></article>
+          <article><b>04</b><h3>整条路线一起算难度</h3><p>综合难度等于捕捉成本加预计蛋数 × 30；目标词条齐全就算可用，杂词条只会影响后续遗传，不会把成品直接判废。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
@@ -964,7 +964,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
         return <article className={`method-card ${active ? "active" : ""}`} key={group.key}>
           <header>
             <div className="method-identity"><b>方法 {String(groupIndex + 1).padStart(2, "0")}</b><strong>{plan.breedingSteps} 步 · {plan.newCaptureCount} 补抓</strong>{groupIndex === 0 && <i>当前排序首选</i>}{active && <em>下方正在查看</em>}</div>
-            <div className="method-metrics"><span><b>{plan.breedingSteps}</b>步骤</span><span><b>{plan.newCaptureCount}</b>补抓</span><span title={`捕捉 ${formatNumber(plan.captureDifficulty)} ＋ 孵蛋 ${formatNumber(plan.eggDifficulty)}`}><b>{formatNumber(plan.difficultyScore)}</b>综合难度</span><span><b>{formatNumber(plan.expectedEggs)}</b>预计蛋数</span></div>
+            <div className="method-metrics"><span><b>{plan.breedingSteps}</b>步骤</span><span><b>{plan.newCaptureCount}</b>补抓</span><span title={`捕捉 ${formatNumber(plan.captureDifficulty)} ＋ 孵蛋 ${formatNumber(plan.eggDifficulty)} ＋ 杂词条 ${formatNumber(plan.passivePollutionDifficulty)}`}><b>{formatNumber(plan.difficultyScore)}</b>综合难度</span><span><b>{formatNumber(plan.expectedEggs)}</b>预计蛋数</span></div>
           </header>
           {plan.steps.length > 0 ? <div className="method-flow">
             {plan.steps.slice(0, 3).map((step) => <div className="method-flow-step" key={step.id}>
@@ -989,7 +989,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
                 return <button className={planIndex === selectedPlanIndex ? "active" : ""} key={planIndex} onClick={() => onSelectPlan(planIndex)}>
                   <span><i>仓库</i><b>{rootNames.join("＋") || "已有种源"}</b></span>
                   <span className={captures.length ? "needs-capture" : "owned-only"}><i>{captures.length ? "补抓" : "无需补抓"}</i><b>{captures.join("＋") || "全部已有"}</b></span>
-                  <small title={`捕捉 ${formatNumber(variant.captureDifficulty)} ＋ 孵蛋 ${formatNumber(variant.eggDifficulty)}`}><b>{formatNumber(variant.difficultyScore)}</b> 难度 · 约 {formatNumber(variant.expectedEggs)} 蛋{variant.bossCaptureCount ? " · 含 Boss" : ""}</small>
+                  <small title={`捕捉 ${formatNumber(variant.captureDifficulty)} ＋ 孵蛋 ${formatNumber(variant.eggDifficulty)} ＋ 杂词条 ${formatNumber(variant.passivePollutionDifficulty)}`}><b>{formatNumber(variant.difficultyScore)}</b> 难度 · 约 {formatNumber(variant.expectedEggs)} 蛋{variant.bossCaptureCount ? " · 含 Boss" : ""}</small>
                   <em>{planIndex === selectedPlanIndex ? "已选择 ✓" : "查看详情"}</em>
                 </button>;
               })}
@@ -1022,8 +1022,8 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   const stepById = new Map(result.steps.map((step) => [step.id, step]));
   return <section className="plan-details inline-plan-details" id="steps">
-    <div className="inline-details-title"><div><b>完整操作</b><span>已在当前方法内展开，无需翻到页面底部</span></div><small>{result.steps.length} 步 · {result.newCaptureCount} 补抓 · 约 {formatNumber(result.expectedEggs)} 蛋</small></div>
-    <div className="difficulty-breakdown"><span>捕捉成本 <b>{formatNumber(result.captureDifficulty)}</b></span><i>＋</i><span>孵蛋成本 <b>{formatNumber(result.eggDifficulty)}</b></span><small>预计 {formatNumber(result.expectedEggs)} 枚蛋 × 30</small></div>
+    <div className="inline-details-title"><div><b>完整操作</b><span>已在当前方法内展开，无需翻到页面底部</span></div><small>{result.steps.length} 步 · {result.newCaptureCount} 补抓 · 约 {formatNumber(result.expectedEggs)} 蛋{result.finalExtraPassiveCount >= 0.05 ? ` · 成品平均约 ${formatNumber(result.finalExtraPassiveCount)} 个杂词条` : " · 纯净成品"}</small></div>
+    <div className="difficulty-breakdown"><span>捕捉成本 <b>{formatNumber(result.captureDifficulty)}</b></span><i>＋</i><span>孵蛋成本 <b>{formatNumber(result.eggDifficulty)}</b></span>{result.passivePollutionDifficulty > 0 && <><i>＋</i><span>杂词条修正 <b>{formatNumber(result.passivePollutionDifficulty)}</b></span></>}<small>每枚蛋 × 30；每个预计杂词条仅 × 3</small></div>
     {result.missingPassives.length > 0 && <div className="warning-box"><b>还有词条种源缺口</b><span>{result.missingPassives.join("、")} 未在当前库存的可达链中。路线会先给出最接近结果；若想稳定遗传，请先抓到携带这些词条的帕鲁。</span></div>}
     {result.captures.length > 0 && <div className="capture-checklist">
       <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击任意卡片可打开内置栖息地图。</p></div>
@@ -1053,8 +1053,8 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
               <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>筛选子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong></span></button>
             </div>
             <div className="step-instructions">
-              <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后只保留<strong>{step.inheritedPassives.length ? `带有 ${step.inheritedPassives.join("、")}` : step.sexRequirement ? `性别为${sexRequirementLabel(step.sexRequirement)}` : "符合后续要求"}{step.inheritedPassives.length && step.sexRequirement ? `、性别为${sexRequirementLabel(step.sexRequirement)}` : ""}{potentialTargetLabel(step.potentialTargets) ? `，且 ${potentialTargetLabel(step.potentialTargets)}` : ""}</strong>的 {child?.nameZh}。</p>
-              <div><span>精确词条率 <b>{Math.round(step.chance * 1000) / 10}%</b></span>{potentialTargetLabel(step.potentialTargets) && <span>潜力达标率 <b>{Math.round(step.potentialChance * 1000) / 10}%</b></span>}{step.sexRequirement && <span>需要{sexRequirementLabel(step.sexRequirement)} · 性别效率 <b>{Math.round(step.sexChance * 1000) / 10}%</b></span>}<span>本步平均约 <b>{formatNumber(step.expectedEggs)}</b> 枚蛋</span>{step.duplicateAction === "breed" && <span className="duplicate-note">需额外孵化一只异性副本</span>}{step.duplicateAction === "catch" && <span className="duplicate-note">需捕捉一雄一雌两只</span>}</div>
+              <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后只保留<strong>{step.inheritedPassives.length ? `${step.selectionMode === "pure" ? "只有" : "至少带有"} ${step.inheritedPassives.join("、")}` : step.sexRequirement ? `性别为${sexRequirementLabel(step.sexRequirement)}` : "符合后续要求"}{step.inheritedPassives.length && step.sexRequirement ? `、性别为${sexRequirementLabel(step.sexRequirement)}` : ""}{potentialTargetLabel(step.potentialTargets) ? `，且 ${potentialTargetLabel(step.potentialTargets)}` : ""}</strong>的 {child?.nameZh}{step.selectionMode === "usable" && step.inheritedPassives.length ? "；可以暂时带着其他词条继续下一步" : ""}。</p>
+              <div><span>{step.selectionMode === "pure" ? "纯净词条率" : "可用词条率"} <b>{Math.round(step.chance * 1000) / 10}%</b></span>{step.selectionMode === "usable" && step.exactChance < step.chance && <span>其中纯净约 <b>{Math.round(step.exactChance * 1000) / 10}%</b></span>}{step.expectedExtraPassives >= 0.05 && <span>平均杂词条 <b>{formatNumber(step.expectedExtraPassives)}</b></span>}{potentialTargetLabel(step.potentialTargets) && <span>潜力达标率 <b>{Math.round(step.potentialChance * 1000) / 10}%</b></span>}{step.sexRequirement && <span>需要{sexRequirementLabel(step.sexRequirement)} · 性别效率 <b>{Math.round(step.sexChance * 1000) / 10}%</b></span>}<span>本步平均约 <b>{formatNumber(step.expectedEggs)}</b> 枚蛋</span>{step.duplicateAction === "breed" && <span className="duplicate-note">需额外孵化一只异性副本</span>}{step.duplicateAction === "catch" && <span className="duplicate-note">需捕捉一雄一雌两只</span>}</div>
             </div>
           </div>
         </article>;
@@ -1063,9 +1063,9 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
   </section>;
 }
 
-function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
+function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; extraPassiveCount: number; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}</em></span></button>;
+  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}{parent.source === "bred" && parent.extraPassiveCount >= 0.05 ? ` · 约 ${formatNumber(parent.extraPassiveCount)} 杂词条` : ""}</em></span></button>;
 }
 
 function BreedingCalculator({ data, palById, onOpenPal }: { data: BreedingData; palById: Map<string, Pal>; onOpenPal: (id: string) => void }) {

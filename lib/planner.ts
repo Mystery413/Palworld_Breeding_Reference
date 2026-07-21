@@ -82,6 +82,8 @@ type PlanNode = {
   sex: Sex;
   mask: number;
   passives: string[];
+  /** Expected non-target passives on the selected usable offspring. */
+  extraPassiveCount: number;
   depth: number;
   eggSteps: number;
   totalExpectedEggs: number;
@@ -91,6 +93,8 @@ type PlanNode = {
   parents?: [PlanNode, PlanNode];
   combo?: ComboTuple;
   stepChance?: number;
+  stepExactChance?: number;
+  selectionMode?: "usable" | "pure";
   duplicateParent?: boolean;
   potentials: Potentials;
   captureSources: CaptureSource[];
@@ -107,6 +111,7 @@ export type CaptureSource = {
 };
 
 export const EGG_DIFFICULTY_WEIGHT = 30;
+export const PASSIVE_POLLUTION_DIFFICULTY_WEIGHT = 3;
 
 export function selectCaptureSource(pal: Pal, levelLimit: number, recommendedLevelLimit = levelLimit): CaptureSource | null {
   const habitat = pal.habitat;
@@ -139,6 +144,9 @@ export type PlanStep = {
   genderB: string;
   inheritedPassives: string[];
   chance: number;
+  exactChance: number;
+  expectedExtraPassives: number;
+  selectionMode: "usable" | "pure";
   potentialChance: number;
   combinedChance: number;
   potentialTargets: Potentials;
@@ -157,6 +165,7 @@ export type PlanParent = {
   inventoryId?: string;
   nickname?: string;
   passives: string[];
+  extraPassiveCount: number;
   captureSource?: CaptureSource;
 };
 
@@ -167,12 +176,14 @@ export type PlanResult = {
   generations: number;
   breedingSteps: number;
   expectedEggs: number;
+  finalExtraPassiveCount: number;
   coveredPassives: string[];
   missingPassives: string[];
   captures: Array<CaptureSource & { count: number }>;
   ownedInventoryIds: string[];
   captureDifficulty: number;
   eggDifficulty: number;
+  passivePollutionDifficulty: number;
   difficultyScore: number;
   bossCaptureCount: number;
   newCaptureCount: number;
@@ -262,13 +273,54 @@ function choose(n: number, k: number): number {
   return result;
 }
 
-export function passiveInheritanceChance(poolSize: number, desiredCount: number): number {
+export function passiveExactChance(poolSize: number, desiredCount: number): number {
   if (desiredCount === 0) return 1;
   if (poolSize < desiredCount || desiredCount > 4) return 0;
   if (poolSize === desiredCount) return CLEAN_EXACT[desiredCount] ?? 0;
   const rollChance = INHERIT_ROLL[desiredCount] ?? 0;
   const noRandomExtra = desiredCount === 4 ? 1 : 0.4;
   return rollChance * (1 / choose(poolSize, desiredCount)) * noRandomExtra;
+}
+
+export type PassiveInheritanceOutcome = {
+  usableChance: number;
+  exactChance: number;
+  expectedExtraPassives: number;
+};
+
+/**
+ * Chance that every requested passive is present. Extra passives are accepted.
+ * `exactChance` remains available for routes where purifying now is cheaper
+ * than carrying pollution into later generations.
+ */
+export function passiveInheritanceOutcome(poolSize: number, desiredCount: number): PassiveInheritanceOutcome {
+  if (desiredCount === 0) return { usableChance: 1, exactChance: 1, expectedExtraPassives: 0 };
+  if (poolSize < desiredCount || desiredCount > 4) {
+    return { usableChance: 0, exactChance: 0, expectedExtraPassives: 0 };
+  }
+  let usableChance = 0;
+  let inheritedExtras = 0;
+  for (let inheritedCount = desiredCount; inheritedCount <= Math.min(4, poolSize); inheritedCount += 1) {
+    const combinations = choose(poolSize, inheritedCount);
+    if (!combinations) continue;
+    const containsAllDesired = choose(poolSize - desiredCount, inheritedCount - desiredCount) / combinations;
+    const contribution = (INHERIT_ROLL[inheritedCount] ?? 0) * containsAllDesired;
+    usableChance += contribution;
+    inheritedExtras += contribution * (inheritedCount - desiredCount);
+  }
+  const exactChance = passiveExactChance(poolSize, desiredCount);
+  // Exact-vs-usable also captures random added passives not represented by the
+  // inherited subset. One extra is a conservative expectation for dirty rolls.
+  const dirtyShare = usableChance > 0 ? Math.max(0, 1 - exactChance / usableChance) : 0;
+  const expectedExtraPassives = usableChance > 0
+    ? Math.min(4 - desiredCount, Math.max(dirtyShare, inheritedExtras / usableChance))
+    : 0;
+  return { usableChance, exactChance, expectedExtraPassives };
+}
+
+/** Backwards-compatible name: this now means a usable child, not an exact child. */
+export function passiveInheritanceChance(poolSize: number, desiredCount: number): number {
+  return passiveInheritanceOutcome(poolSize, desiredCount).usableChance;
 }
 
 function sexMatches(actual: Sex, required: "MALE" | "FEMALE"): boolean {
@@ -291,7 +343,7 @@ function comboCompatible(a: PlanNode, b: PlanNode, combo: ComboTuple): boolean {
 }
 
 function stateKey(
-  node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds">,
+  node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds" | "extraPassiveCount">,
 ): string {
   // A directly captured parent and a bred parent of the same species are not
   // interchangeable routes. Preserve acquisition type and route length so a
@@ -302,9 +354,48 @@ function stateKey(
     node.sex,
     node.ownedRootId ?? "capture-only",
     node.kind,
+    `x${Math.round(node.extraPassiveCount * 10)}`,
     `g${node.depth}`,
     `s${node.breedingStepIds.length}`,
   ].join("|");
+}
+
+function bitCount(value: number): number {
+  let count = 0;
+  for (let current = value; current; current >>>= 1) count += current & 1;
+  return count;
+}
+
+function passivePoolSize(parentA: PlanNode, parentB: PlanNode): number {
+  const desiredCount = bitCount(parentA.mask | parentB.mask);
+  const extraCount = parentA.nodeId === parentB.nodeId
+    ? Math.max(parentA.extraPassiveCount, parentB.extraPassiveCount)
+    : parentA.extraPassiveCount + parentB.extraPassiveCount;
+  return desiredCount + Math.min(8 - desiredCount, Math.ceil(extraCount));
+}
+
+function selectionOutcomes(poolSize: number, desiredCount: number): Array<{
+  mode: "usable" | "pure";
+  chance: number;
+  exactChance: number;
+  extraPassiveCount: number;
+}> {
+  const outcome = passiveInheritanceOutcome(poolSize, desiredCount);
+  const usable = {
+    mode: "usable" as const,
+    chance: outcome.usableChance,
+    exactChance: outcome.exactChance,
+    extraPassiveCount: outcome.expectedExtraPassives,
+  };
+  if (outcome.exactChance <= 0 || outcome.expectedExtraPassives < 0.05 || Math.abs(outcome.usableChance - outcome.exactChance) < 1e-9) {
+    return [usable];
+  }
+  return [usable, {
+    mode: "pure" as const,
+    chance: outcome.exactChance,
+    exactChance: outcome.exactChance,
+    extraPassiveCount: 0,
+  }];
 }
 
 function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): CaptureSource[] {
@@ -318,7 +409,8 @@ function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): Cap
 
 function routeEffort(node: PlanNode): number {
   const captureEffort = node.captureSources.reduce((sum, source) => sum + source.difficulty, 0);
-  return captureEffort + node.totalExpectedEggs * EGG_DIFFICULTY_WEIGHT + node.depth / 100;
+  return captureEffort + node.totalExpectedEggs * EGG_DIFFICULTY_WEIGHT
+    + node.extraPassiveCount * PASSIVE_POLLUTION_DIFFICULTY_WEIGHT + node.depth / 100;
 }
 
 function isBetter(next: PlanNode, current?: PlanNode): boolean {
@@ -413,12 +505,14 @@ export function searchBreedingPlans(
 
   inventory.forEach((item) => {
     const passives = unique(item.passives);
+    const mask = maskFor(passives, desiredPassives);
     addState({
       nodeId: `owned:${item.id}`,
       palId: item.palId,
       sex: item.sex,
-      mask: maskFor(passives, desiredPassives),
+      mask,
       passives,
+      extraPassiveCount: Math.max(0, passives.length - bitCount(mask)),
       depth: 0,
       eggSteps: 0,
       totalExpectedEggs: 0,
@@ -451,6 +545,7 @@ export function searchBreedingPlans(
       sex: "A",
       mask: 0,
       passives: [],
+      extraPassiveCount: 0,
       depth: 0,
       eggSteps: 0,
       totalExpectedEggs: 0,
@@ -492,39 +587,43 @@ export function searchBreedingPlans(
           evaluatedCandidates += 1;
           const mask = parentA.mask | parentB.mask;
           const inheritedPassives = passivesForMask(mask, desiredPassives);
-          const parentPool = unique([...parentA.passives, ...parentB.passives]);
-          const chance = passiveInheritanceChance(parentPool.length, inheritedPassives.length);
+          const outcomes = selectionOutcomes(passivePoolSize(parentA, parentB), inheritedPassives.length);
           const potentials = potentialTargets(parentA.potentials, parentB.potentials);
           const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
-          const combinedChance = chance * ivChance;
           const duplicateParent = parentA.nodeId === parentB.nodeId;
           const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
-          const nodeId = `bred:${generatedId++}`;
-          const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
-          if (breedingStepIds.length > maxBreedingSteps) continue;
-          addNextState({
-            nodeId,
-            palId: combo[0],
-            sex: "A",
-            mask,
-            passives: inheritedPassives,
-            depth,
-            eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
-            totalExpectedEggs:
-              parentA.totalExpectedEggs +
-              parentB.totalExpectedEggs +
-              (combinedChance > 0 ? 1 / combinedChance : 9999) +
-              (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
-            kind: "bred",
-            parents: [parentA, parentB],
-            combo,
-            stepChance: chance,
-            duplicateParent,
-            potentials,
-            captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
-            breedingStepIds,
-            ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
-          });
+          for (const outcome of outcomes) {
+            const combinedChance = outcome.chance * ivChance;
+            const nodeId = `bred:${generatedId++}`;
+            const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
+            if (breedingStepIds.length > maxBreedingSteps) continue;
+            addNextState({
+              nodeId,
+              palId: combo[0],
+              sex: "A",
+              mask,
+              passives: inheritedPassives,
+              extraPassiveCount: outcome.extraPassiveCount,
+              depth,
+              eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
+              totalExpectedEggs:
+                parentA.totalExpectedEggs +
+                parentB.totalExpectedEggs +
+                (combinedChance > 0 ? 1 / combinedChance : 9999) +
+                (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
+              kind: "bred",
+              parents: [parentA, parentB],
+              combo,
+              stepChance: outcome.chance,
+              stepExactChance: outcome.exactChance,
+              selectionMode: outcome.mode,
+              duplicateParent,
+              potentials,
+              captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
+              breedingStepIds,
+              ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
+            });
+          }
           if (evaluatedCandidates >= maxCandidateEvaluationsPerGeneration) break generationSearch;
         }
       }
@@ -552,6 +651,7 @@ function parentSummary(node: PlanNode): PlanParent {
     inventoryId: node.inventoryId,
     nickname: node.nickname,
     passives: node.passives,
+    extraPassiveCount: node.extraPassiveCount,
     captureSource: node.kind === "captured" ? node.captureSources[0] : undefined,
   };
 }
@@ -576,6 +676,9 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
       genderB: current.combo[4],
       inheritedPassives: current.passives,
       chance: current.stepChance ?? 1,
+      exactChance: current.stepExactChance ?? current.stepChance ?? 1,
+      expectedExtraPassives: current.extraPassiveCount,
+      selectionMode: current.selectionMode ?? "usable",
       potentialChance: potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
       combinedChance:
         (current.stepChance ?? 1) *
@@ -748,7 +851,8 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
   const newCaptureCount = captures.reduce((sum, capture) => sum + capture.count, 0);
   const expectedEggs = steps.reduce((sum, step) => sum + step.expectedEggs, 0);
   const eggDifficulty = expectedEggs * EGG_DIFFICULTY_WEIGHT;
-  const difficultyScore = captureDifficulty + eggDifficulty;
+  const passivePollutionDifficulty = node.extraPassiveCount * PASSIVE_POLLUTION_DIFFICULTY_WEIGHT;
+  const difficultyScore = captureDifficulty + eggDifficulty + passivePollutionDifficulty;
   const routePriority = difficultyScore + node.depth / 100;
   return {
     node,
@@ -757,6 +861,7 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     generations: node.depth,
     breedingSteps: node.breedingStepIds.length,
     expectedEggs,
+    finalExtraPassiveCount: node.extraPassiveCount,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
     missingPassives: passivesForMask(fullMask & ~node.mask, desiredPassives),
     captures,
@@ -767,6 +872,7 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     ),
     captureDifficulty,
     eggDifficulty,
+    passivePollutionDifficulty,
     difficultyScore,
     bossCaptureCount,
     newCaptureCount,
@@ -785,6 +891,9 @@ function compareTargetPlans(a: PlanResult, b: PlanResult): number {
   if (a.breedingSteps !== b.breedingSteps) return a.breedingSteps - b.breedingSteps;
   if (a.newCaptureCount !== b.newCaptureCount) return a.newCaptureCount - b.newCaptureCount;
   if (Math.abs(a.difficultyScore - b.difficultyScore) > 0.001) return a.difficultyScore - b.difficultyScore;
+  if (Math.abs(a.finalExtraPassiveCount - b.finalExtraPassiveCount) > 0.05) {
+    return a.finalExtraPassiveCount - b.finalExtraPassiveCount;
+  }
   if (a.bossCaptureCount !== b.bossCaptureCount) return a.bossCaptureCount - b.bossCaptureCount;
   if (a.generations !== b.generations) return a.generations - b.generations;
   return a.expectedEggs - b.expectedEggs;
@@ -811,39 +920,44 @@ function enumerateTargetNodes(search: SearchResult, targetPalId: string, options
         if (options.requireFullPassives && mask !== search.fullMask) continue;
         const depth = Math.max(parentA.depth, parentB.depth) + 1;
         if (depth > search.maxGenerations) continue;
-        const nodeId = `target:${comboIndex}:${parentA.nodeId}:${parentB.nodeId}`;
-        const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
-        if (breedingStepIds.length > search.maxBreedingSteps) continue;
         const inheritedPassives = passivesForMask(mask, search.desiredPassives);
-        const chance = passiveInheritanceChance(unique([...parentA.passives, ...parentB.passives]).length, inheritedPassives.length);
+        const outcomes = selectionOutcomes(passivePoolSize(parentA, parentB), inheritedPassives.length);
         const potentials = potentialTargets(parentA.potentials, parentB.potentials);
         const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
-        const combinedChance = chance * ivChance;
         const duplicateParent = parentA.nodeId === parentB.nodeId;
         const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
-        candidates.push({
-          nodeId,
-          palId: targetPalId,
-          sex: "A",
-          mask,
-          passives: inheritedPassives,
-          depth,
-          eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
-          totalExpectedEggs:
-            parentA.totalExpectedEggs +
-            parentB.totalExpectedEggs +
-            (combinedChance > 0 ? 1 / combinedChance : 9999) +
-            (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
-          kind: "bred",
-          parents: [parentA, parentB],
-          combo,
-          stepChance: chance,
-          duplicateParent,
-          potentials,
-          captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
-          breedingStepIds,
-          ownedRootId,
-        });
+        for (const outcome of outcomes) {
+          const nodeId = `target:${comboIndex}:${parentA.nodeId}:${parentB.nodeId}:${outcome.mode}`;
+          const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
+          if (breedingStepIds.length > search.maxBreedingSteps) continue;
+          const combinedChance = outcome.chance * ivChance;
+          candidates.push({
+            nodeId,
+            palId: targetPalId,
+            sex: "A",
+            mask,
+            passives: inheritedPassives,
+            extraPassiveCount: outcome.extraPassiveCount,
+            depth,
+            eggSteps: parentA.eggSteps + parentB.eggSteps + 1 + (duplicateBreedingCost ? 1 : 0),
+            totalExpectedEggs:
+              parentA.totalExpectedEggs +
+              parentB.totalExpectedEggs +
+              (combinedChance > 0 ? 1 / combinedChance : 9999) +
+              (duplicateBreedingCost ? 1 / Math.max(combinedChance, 0.01) : 0),
+            kind: "bred",
+            parents: [parentA, parentB],
+            combo,
+            stepChance: outcome.chance,
+            stepExactChance: outcome.exactChance,
+            selectionMode: outcome.mode,
+            duplicateParent,
+            potentials,
+            captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
+            breedingStepIds,
+            ownedRootId,
+          });
+        }
       }
     }
   });
@@ -858,18 +972,17 @@ export function findTargetPlans(
 ): PlanResult[] {
   const candidates = enumerateTargetNodes(search, targetPalId, options);
   if (!candidates.length) return [];
-  const seen = new Set<string>();
-  const results: PlanResult[] = [];
+  const bestByRoute = new Map<string, PlanResult>();
   for (const node of candidates) {
     const plan = toPlanResult(node, search.desiredPassives, search.fullMask, search.data);
     const signature = plan.steps
       .map((step) => `${step.childId}:${step.parentA.source}:${step.parentA.palId}+${step.parentB.source}:${step.parentB.palId}`)
       .join(">");
     const key = `${plan.ownedInventoryIds.join(",")}|${signature || `source:${plan.source}`}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    results.push(plan);
+    const current = bestByRoute.get(key);
+    if (!current || compareTargetPlans(plan, current) < 0) bestByRoute.set(key, plan);
   }
+  const results = [...bestByRoute.values()];
   results.sort(compareTargetPlans);
   return results.slice(0, Math.max(1, limit));
 }

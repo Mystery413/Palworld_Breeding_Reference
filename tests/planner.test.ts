@@ -12,7 +12,9 @@ import {
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   isWorldTreeOnlyPal,
+  passiveExactChance,
   passiveInheritanceChance,
+  passiveInheritanceOutcome,
   potentialInheritanceChance,
   recommendTargets,
   searchBreedingPlans,
@@ -43,12 +45,17 @@ function fixture(combos: BreedingData["combos"]): BreedingData {
   };
 }
 
-test("词条遗传率采用 1.0 的干净词条池概率", () => {
+test("可用词条率允许目标词条齐全的子代携带额外词条", () => {
   assert.equal(passiveInheritanceChance(1, 1), 0.4);
-  assert.equal(passiveInheritanceChance(2, 2), 0.24);
-  assert.equal(passiveInheritanceChance(3, 3), 0.12);
+  assert.equal(passiveInheritanceChance(2, 2), 0.3);
+  assert.equal(passiveInheritanceChance(3, 3), 0.2);
   assert.equal(passiveInheritanceChance(4, 4), 0.1);
   assert.ok(Math.abs(passiveInheritanceChance(6, 4) - 0.1 / 15) < 1e-12);
+  assert.equal(passiveExactChance(2, 2), 0.24);
+  const polluted = passiveInheritanceOutcome(3, 1);
+  assert.ok(Math.abs(polluted.usableChance - (0.4 / 3 + 0.3 * 2 / 3 + 0.2)) < 1e-12);
+  assert.ok(polluted.usableChance > polluted.exactChance);
+  assert.ok(polluted.expectedExtraPassives > 0);
 });
 
 test("潜力值逐项按父 30%、母 30%、随机 40% 计算", () => {
@@ -70,7 +77,9 @@ test("一对异性个体可把两个词条传给一步子代", () => {
   assert.equal(plan.generations, 1);
   assert.equal(plan.steps.length, 1);
   assert.deepEqual(plan.coveredPassives, ["甲", "乙"]);
-  assert.equal(plan.steps[0].chance, 0.24);
+  assert.equal(plan.steps[0].chance, 0.3);
+  assert.equal(plan.steps[0].exactChance, 0.24);
+  assert.equal(plan.steps[0].selectionMode, "usable");
 });
 
 test("普通配方拒绝同性配对", () => {
@@ -219,7 +228,7 @@ test("同一补抓物种在不同步骤需要两种性别时计为两只", () =>
   assert.equal(plan.captureDifficulty, 20);
 });
 
-test("仓库帕鲁携带的无用词条会降低遗传效率", () => {
+test("杂词条不再把含有目标词条的可用子代判废", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const route = (passives: string[]) => findTargetPlans(
     searchBreedingPlans(data, [{ id: "owned-a", palId: "A", sex: "M", passives }], ["目标词条"], { catchablePalIds: ["B"] }),
@@ -230,8 +239,11 @@ test("仓库帕鲁携带的无用词条会降低遗传效率", () => {
   const polluted = route(["目标词条", "无用词条一", "负面词条"]);
   assert.ok(clean && polluted);
   assert.equal(clean.expectedEggs, 2.5);
-  assert.ok(Math.abs(polluted.expectedEggs - 18.75) < 1e-12);
-  assert.ok(polluted.difficultyScore > clean.difficultyScore);
+  assert.ok(polluted.expectedEggs < 3);
+  assert.ok(polluted.expectedEggs < 18.75 / 4);
+  assert.ok(polluted.finalExtraPassiveCount > 0);
+  assert.ok(polluted.passivePollutionDifficulty > 0);
+  assert.equal(polluted.steps[0].selectionMode, "usable");
 });
 
 test("指定目标路线强制从库存帕鲁出发，并完整满足目标词条", () => {
