@@ -134,7 +134,7 @@ export function SaveImportModal({ pals, onClose, onImport }: {
 
   return <div className="modal-backdrop save-import-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="save-import-modal" role="dialog" aria-modal="true" aria-labelledby="save-import-title">
-      <header><div><span>LOCAL SAVE · PRIVATE</span><h2 id="save-import-title">从游戏存档读取我的帕鲁</h2><p>原始文件只在浏览器内解析；登录后仅把确认导入的帕鲁数据保存到云端。</p></div><button onClick={onClose} aria-label="关闭">×</button></header>
+      <header><div><span>LOCAL SAVE · SHARED DATA</span><h2 id="save-import-title">从游戏存档读取我的帕鲁</h2><p>原始文件只在浏览器内解析；确认导入的帕鲁数据会保存到公开共享用户。</p></div><button onClick={onClose} aria-label="关闭">×</button></header>
       <div className="save-import-body">
         <aside className="save-path-guide">
           <h3>Windows Steam 存档位置</h3>

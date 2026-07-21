@@ -13,14 +13,12 @@
 3. For identity tables (`pal_habitat_locations`, `breeding_combos`), the CSV
    deliberately omits the generated ID column.
 4. Static reference tables are public-read and have no client write policy.
-   User inventory tables require Supabase Auth and are protected by RLS.
-5. Run `user-inventory-rpc.sql` once to enable atomic save-profile imports.
-6. In Supabase Authentication, keep Email/Password enabled. Configure the
-   project's Site URL to the deployed GitHub Pages URL if email confirmation is
-   enabled.
+5. Run `user-inventory-rpc.sql` once to create the public shared-user inventory
+   tables and atomic replacement function. By design, anonymous visitors can
+   read and modify every shared user.
 
 The application reads public reference data from these tables at runtime through
 PostgREST. Configure `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` for development and in the
-deployment environment. Signed-in inventories are stored in the user tables;
-browser `localStorage` remains an offline fallback for signed-out use.
+deployment environment. Shared inventories are stored in Supabase without a
+login requirement; browser `localStorage` remains an offline fallback.

@@ -27,15 +27,10 @@ import {
 } from "@/lib/planner";
 import { loadBreedingData } from "@/lib/supabase-data";
 import {
-  listSaveProfiles,
-  loadProfileInventory,
-  readStoredSession,
-  replaceProfileInventory,
-  SaveProfile,
-  signInUser,
-  signOutUser,
-  signUpUser,
-  UserSession,
+  listSharedSaveUsers,
+  loadSharedUserInventory,
+  replaceSharedUserInventory,
+  SharedSaveUser,
 } from "@/lib/supabase-user-data";
 import { SaveImportModal } from "./SaveImportModal";
 
@@ -293,14 +288,8 @@ export default function PlannerApp() {
   const [isHydrated, setHydrated] = useState(false);
   const [search, setSearch] = useState<ReturnType<typeof searchBreedingPlans> | null>(null);
   const [isCalculating, setCalculating] = useState(false);
-  const [session, setSession] = useState<UserSession | null>(() => readStoredSession());
-  const [saveProfiles, setSaveProfiles] = useState<SaveProfile[]>([]);
-  const [activeWorldId, setActiveWorldId] = useState("");
-  const [isAuthOpen, setAuthOpen] = useState(false);
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [authBusy, setAuthBusy] = useState(false);
+  const [saveUsers, setSaveUsers] = useState<SharedSaveUser[]>([]);
+  const [activeUserId, setActiveUserId] = useState("");
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const skipNextCloudSync = useRef(false);
@@ -328,20 +317,18 @@ export default function PlannerApp() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-    listSaveProfiles(session).then(async (profiles) => {
-      setSaveProfiles(profiles);
-      if (!profiles.length) return;
-      const first = profiles[0];
-      const items = await loadProfileInventory(session, first.world_id);
+    listSharedSaveUsers().then(async (users) => {
+      setSaveUsers(users);
+      if (!users.length) return;
+      const first = users[0];
+      const items = await loadSharedUserInventory(first.user_id);
       skipNextCloudSync.current = true;
-      setActiveWorldId(first.world_id);
+      setActiveUserId(first.user_id);
       setInventory(items);
     }).catch(() => {
-      setSession(null);
-      setNotice("云端登录已过期，请重新登录。");
+      setNotice("共享用户数据库尚未初始化；请先执行最新的 Supabase SQL。");
     });
-  }, [session]);
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -377,16 +364,16 @@ export default function PlannerApp() {
   }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
 
   useEffect(() => {
-    if (!session || !activeWorldId || !isHydrated) return;
+    if (!activeUserId || !isHydrated) return;
     if (skipNextCloudSync.current) {
       skipNextCloudSync.current = false;
       return;
     }
-    const active = saveProfiles.find((profileItem) => profileItem.world_id === activeWorldId);
+    const active = saveUsers.find((user) => user.user_id === activeUserId);
     const timer = window.setTimeout(() => {
       setCloudSyncing(true);
-      replaceProfileInventory(session, {
-        worldId: activeWorldId,
+      replaceSharedUserInventory({
+        userId: activeUserId,
         name: active?.name ?? "我的存档",
         sourceFileName: active?.source_file_name ?? undefined,
       }, inventory)
@@ -397,7 +384,7 @@ export default function PlannerApp() {
         .finally(() => setCloudSyncing(false));
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [inventory, session, activeWorldId, isHydrated, saveProfiles]);
+  }, [inventory, activeUserId, isHydrated, saveUsers]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
   const passiveRanks = data?.passiveRanks ?? {};
@@ -623,15 +610,15 @@ export default function PlannerApp() {
       return [...byId.values()];
     })();
     setInventory(nextInventory);
-    if (session && !activeWorldId) {
+    if (!activeUserId) {
       setCloudSyncing(true);
       try {
-        const worldId = await replaceProfileInventory(session, {
+        const userId = await replaceSharedUserInventory({
           name: `玩家 ${meta.ownerUid.slice(0, 8)}`,
           sourceFileName: meta.fileName,
         }, nextInventory);
-        setActiveWorldId(worldId);
-        setSaveProfiles(await listSaveProfiles(session));
+        setActiveUserId(userId);
+        setSaveUsers(await listSharedSaveUsers());
         skipNextCloudSync.current = true;
       } catch (error) {
         console.error("Initial cloud inventory save failed", error);
@@ -641,98 +628,52 @@ export default function PlannerApp() {
       }
     }
     setSaveImportOpen(false);
-    setNotice(`已从 Level.sav ${importMode === "replace" ? "读取" : "合并"} ${items.length} 只帕鲁；路线计算已自动合并重复种源${session ? "，并保存到当前云端角色" : "。登录后可保存为云端角色"}。`);
+    setNotice(`已从 Level.sav ${importMode === "replace" ? "读取" : "合并"} ${items.length} 只帕鲁；路线计算已自动合并重复种源，并保存到共享用户。`);
   };
 
-  const submitAuth = async () => {
-    if (!authEmail.trim() || authPassword.length < 6) {
-      setNotice("请输入邮箱，密码至少 6 位。");
-      return;
-    }
-    setAuthBusy(true);
-    try {
-      const nextSession = authMode === "login"
-        ? await signInUser(authEmail.trim(), authPassword)
-        : await signUpUser(authEmail.trim(), authPassword);
-      setSession(nextSession);
-      const profiles = await listSaveProfiles(nextSession);
-      setSaveProfiles(profiles);
-      setAuthOpen(false);
-      setAuthPassword("");
-      if (profiles.length) {
-        const items = await loadProfileInventory(nextSession, profiles[0].world_id);
-        skipNextCloudSync.current = true;
-        setActiveWorldId(profiles[0].world_id);
-        setInventory(items);
-      }
-      setNotice(profiles.length ? "已登录并载入最近的云端存档角色。" : "登录成功；下次导入存档时会创建云端角色。");
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "登录失败，请重试。");
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const switchSaveProfile = async (worldId: string) => {
-    if (!session || !worldId || worldId === activeWorldId) return;
+  const switchSaveUser = async (userId: string) => {
+    if (!userId || userId === activeUserId) return;
     setCloudSyncing(true);
     try {
-      if (activeWorldId) {
-        const current = saveProfiles.find((item) => item.world_id === activeWorldId);
-        await replaceProfileInventory(session, {
-          worldId: activeWorldId,
+      if (activeUserId) {
+        const current = saveUsers.find((item) => item.user_id === activeUserId);
+        await replaceSharedUserInventory({
+          userId: activeUserId,
           name: current?.name ?? "我的存档",
           sourceFileName: current?.source_file_name ?? undefined,
         }, inventory);
       }
-      const items = await loadProfileInventory(session, worldId);
+      const items = await loadSharedUserInventory(userId);
       skipNextCloudSync.current = true;
-      setActiveWorldId(worldId);
+      setActiveUserId(userId);
       setInventory(items);
-      setNotice(`已切换到 ${saveProfiles.find((item) => item.world_id === worldId)?.name ?? "云端角色"}。`);
+      setNotice(`已切换到 ${saveUsers.find((item) => item.user_id === userId)?.name ?? "共享用户"}。`);
     } catch {
-      setNotice("云端角色读取失败，请重新登录后再试。");
+      setNotice("共享用户读取失败，请确认数据库 SQL 已执行。");
     } finally {
       setCloudSyncing(false);
     }
   };
 
-  const prepareNewSaveProfile = async () => {
-    if (!session) return;
+  const prepareNewSaveUser = async () => {
     setCloudSyncing(true);
     try {
-      if (activeWorldId) {
-        const current = saveProfiles.find((item) => item.world_id === activeWorldId);
-        await replaceProfileInventory(session, {
-          worldId: activeWorldId,
+      if (activeUserId) {
+        const current = saveUsers.find((item) => item.user_id === activeUserId);
+        await replaceSharedUserInventory({
+          userId: activeUserId,
           name: current?.name ?? "我的存档",
           sourceFileName: current?.source_file_name ?? undefined,
         }, inventory);
       }
-      setActiveWorldId("");
+      setActiveUserId("");
       setInventory([]);
-      setNotice("已准备新存档角色；读取 Level.sav 并确认导入后会自动保存到云端。");
+      setNotice("已准备新用户；读取 Level.sav 并确认导入后会自动保存到共享数据库。");
     } catch {
       setNotice("当前角色保存失败，暂时无法新建角色。");
     } finally {
       setCloudSyncing(false);
     }
-  };
-
-  const logout = async () => {
-    if (session && activeWorldId) {
-      const current = saveProfiles.find((item) => item.world_id === activeWorldId);
-      await replaceProfileInventory(session, {
-        worldId: activeWorldId,
-        name: current?.name ?? "我的存档",
-        sourceFileName: current?.source_file_name ?? undefined,
-      }, inventory).catch(() => undefined);
-    }
-    await signOutUser(session);
-    setSession(null);
-    setSaveProfiles([]);
-    setActiveWorldId("");
-    setNotice("已退出云端账号；当前库存仍保留在本机。");
   };
 
   const palLabel = (palId: string) => {
@@ -762,13 +703,10 @@ export default function PlannerApp() {
           <a href="#mechanics">机制说明</a>
         </nav>
         <div className="topbar-account">
-          {session ? <>
-            <label><span>{cloudSyncing ? "云端保存中…" : "存档角色"}</span><select value={activeWorldId} onChange={(event) => event.target.value ? void switchSaveProfile(event.target.value) : void prepareNewSaveProfile()} disabled={cloudSyncing}>
-              <option value="">＋ 新建存档角色</option>
-              {saveProfiles.map((profileItem) => <option key={profileItem.world_id} value={profileItem.world_id}>{profileItem.name} · {profileItem.source_file_name || "手动库存"}</option>)}
-            </select></label>
-            <button onClick={() => void logout()}>退出</button>
-          </> : <button className="cloud-login" onClick={() => setAuthOpen(true)}>登录并保存存档</button>}
+          <label><span>{cloudSyncing ? "共享库存保存中…" : "当前用户 · 公开可编辑"}</span><select value={activeUserId} onChange={(event) => event.target.value ? void switchSaveUser(event.target.value) : void prepareNewSaveUser()} disabled={cloudSyncing}>
+            <option value="">＋ 新建用户</option>
+            {saveUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.name} · {user.source_file_name || "手动库存"}</option>)}
+          </select></label>
         </div>
       </header>
 
@@ -784,7 +722,7 @@ export default function PlannerApp() {
           </div>
         </div>
         <div className="hero-console" aria-label="规划器概览">
-          <div className="console-header"><span>当前育种盘面</span><small>{session ? "自动同步到云端角色" : "自动保存在本机"}</small></div>
+          <div className="console-header"><span>当前育种盘面</span><small>{activeUserId ? "自动同步到共享用户" : "新用户尚未导入"}</small></div>
           <div className="console-metrics">
             <div><strong>{inventory.length}</strong><span>已有个体</span></div>
             <div><strong>{summary.reachablePals}</strong><span>可达物种</span></div>
@@ -1004,14 +942,6 @@ export default function PlannerApp() {
             </div>
           </div>
           <footer><button className="ghost-button" onClick={() => setInventoryOpen(false)}>取消</button><button className="primary-button" onClick={saveDraft}>保存到库存</button></footer>
-        </section>
-      </div>}
-
-      {isAuthOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setAuthOpen(false)}>
-        <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-          <header><div><span>SUPABASE CLOUD</span><h2 id="auth-title">{authMode === "login" ? "登录云端库存" : "创建云端账号"}</h2></div><button onClick={() => setAuthOpen(false)} aria-label="关闭">×</button></header>
-          <div><p>登录后，存档角色和帕鲁库存会保存到 Supabase；以后只需在右上角切换角色。</p><label>邮箱<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} autoComplete="email" /></label><label>密码<input type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} autoComplete={authMode === "login" ? "current-password" : "new-password"} /></label></div>
-          <footer><button className="ghost-button" onClick={() => setAuthMode((current) => current === "login" ? "signup" : "login")}>{authMode === "login" ? "没有账号？注册" : "已有账号？登录"}</button><button className="primary-button" disabled={authBusy} onClick={() => void submitAuth()}>{authBusy ? "处理中…" : authMode === "login" ? "登录" : "注册"}</button></footer>
         </section>
       </div>}
 

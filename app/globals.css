@@ -51,7 +51,6 @@ button { color: inherit; }
 .topnav a:hover, .topnav button:hover { color: var(--coral); }
 .topbar-account { align-items: center; display: flex; gap: 8px; justify-self: end; }
 .topbar-account > button { background: transparent; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; font-size: 10px; font-weight: 800; min-height: 34px; padding: 0 11px; }
-.topbar-account .cloud-login { background: var(--ink); border-color: var(--ink); color: white; }
 .topbar-account label { display: flex; flex-direction: column; gap: 2px; }
 .topbar-account label span { color: var(--muted); font-size: 8px; font-weight: 800; }
 .topbar-account select { background: rgba(255,255,255,.72); border: 1px solid var(--line); border-radius: 8px; font-size: 10px; max-width: 210px; min-height: 30px; padding: 0 7px; }
@@ -331,16 +330,6 @@ button { color: inherit; }
 .app-shell > footer { align-items: center; background: #09111d; color: #718096; display: flex; font-size: 10px; justify-content: space-between; padding: 20px max(24px, calc((100vw - 1320px) / 2)); }
 
 .modal-backdrop { align-items: center; background: rgba(7, 13, 24, .72); display: flex; inset: 0; justify-content: center; padding: 24px; position: fixed; z-index: 100; backdrop-filter: blur(6px); }
-.auth-modal { background: var(--paper); border-radius: 22px; box-shadow: 0 30px 100px rgba(0,0,0,.4); max-width: 460px; overflow: hidden; width: 100%; }
-.auth-modal > header { align-items: center; background: var(--ink); color: white; display: flex; justify-content: space-between; padding: 22px 24px; }
-.auth-modal > header span { color: var(--lime); font-size: 9px; font-weight: 900; letter-spacing: .18em; }
-.auth-modal > header h2 { font-family: Georgia, "Songti SC", serif; margin: 5px 0 0; }
-.auth-modal > header button { background: rgba(255,255,255,.1); border: 0; border-radius: 50%; color: white; cursor: pointer; font-size: 20px; height: 34px; width: 34px; }
-.auth-modal > div { padding: 24px; }
-.auth-modal > div p { color: var(--muted); font-size: 11px; line-height: 1.7; margin: 0 0 18px; }
-.auth-modal label { display: flex; flex-direction: column; font-size: 11px; font-weight: 800; gap: 7px; margin-top: 14px; }
-.auth-modal input { border: 1px solid var(--line); border-radius: 10px; min-height: 44px; padding: 0 12px; }
-.auth-modal > footer { background: white; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; padding: 16px 22px; }
 .inventory-modal { background: var(--paper); border-radius: 24px; box-shadow: 0 30px 100px rgba(0,0,0,.35); max-height: min(850px, calc(100vh - 48px)); max-width: 950px; overflow: hidden; width: 100%; }
 .inventory-modal > header { align-items: center; background: var(--ink); color: white; display: flex; justify-content: space-between; padding: 24px 28px; }
 .inventory-modal > header span { color: var(--lime); font-size: 9px; font-weight: 900; letter-spacing: .18em; }
