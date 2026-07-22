@@ -157,11 +157,11 @@ function palMatchScore(pal: Pal, rawQuery: string): number | null {
 function passiveTier(rank?: number | null): { className: string; label: string | null } {
   if (rank == null) return { className: "passive-custom", label: null };
   if (rank < 0) return { className: `passive-negative passive-negative-${Math.min(3, Math.abs(rank))}`, label: `负面 ${Math.abs(rank)}` };
-  if (rank >= 5) return { className: "passive-rank-5", label: "顶级" };
-  if (rank === 4) return { className: "passive-rank-4", label: "彩色" };
-  if (rank === 3) return { className: "passive-rank-3", label: "金色" };
-  if (rank === 2) return { className: "passive-rank-2", label: "稀有" };
-  return { className: "passive-rank-1", label: "普通" };
+  if (rank >= 5) return { className: "passive-rank-5", label: null };
+  if (rank === 4) return { className: "passive-rank-4", label: null };
+  if (rank === 3) return { className: "passive-rank-3", label: null };
+  if (rank === 2) return { className: "passive-rank-2", label: null };
+  return { className: "passive-rank-1", label: null };
 }
 
 function captureRangeLabel(source: Pick<CaptureSource, "level" | "maxLevel" | "kind">): string {
