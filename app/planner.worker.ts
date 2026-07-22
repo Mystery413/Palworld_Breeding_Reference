@@ -30,6 +30,7 @@ workerScope.onmessage = (event: MessageEvent<PlannerWorkerRequest>) => {
       maxGenerations: request.maxGenerations,
       maxBreedingSteps: 12,
       captureSources: request.captureSources,
+      targetPalId: request.mode === "exact" ? request.targetPalId : undefined,
     });
     const recommendations: Recommendation[] = request.mode === "recommend"
       ? recommendTargets(breedingData, search, request.profile, 10, {
@@ -37,18 +38,23 @@ workerScope.onmessage = (event: MessageEvent<PlannerWorkerRequest>) => {
           requireFullPassives: request.desiredPassives.length > 0,
         }).map(transferablePlan)
       : [];
-    const exactPlans: PlanResult[] = request.mode === "exact" && request.targetPalId
+    const planLimit = Math.max(50, Math.min(500, request.planLimit ?? 240));
+    const exactPlanCandidates: PlanResult[] = request.mode === "exact" && request.targetPalId
       ? findTargetPlans(search, request.targetPalId, {
           requireOwnedAncestry: true,
           requireFullPassives: true,
-        }).map(transferablePlan)
+        }, planLimit + 1).map(transferablePlan)
       : [];
+    const routesTruncated = exactPlanCandidates.length > planLimit;
+    const exactPlans = exactPlanCandidates.slice(0, planLimit);
     const response: PlannerWorkerResponse = {
       requestId: request.requestId,
       recommendations,
       exactPlans,
       summary: summarizeSearch(search),
       durationMs: Math.round(performance.now() - started),
+      routesTruncated,
+      searchTruncated: search.truncated,
     };
     workerScope.postMessage(response);
   } catch (error) {

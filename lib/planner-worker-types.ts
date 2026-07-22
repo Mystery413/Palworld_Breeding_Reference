@@ -10,6 +10,7 @@ export type PlannerWorkerRequest = {
   mode: "recommend" | "exact";
   profile: Profile;
   targetPalId: string;
+  planLimit?: number;
 };
 
 export type PlannerWorkerResponse = {
@@ -18,5 +19,7 @@ export type PlannerWorkerResponse = {
   exactPlans: PlanResult[];
   summary: { reachablePals: number; fullTraitPals: number };
   durationMs: number;
+  routesTruncated?: boolean;
+  searchTruncated?: boolean;
   error?: string;
 };

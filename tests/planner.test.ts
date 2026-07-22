@@ -544,6 +544,41 @@ test("一代搜索保留姬小兔加燧火鸟直达云海鹿的最短路径", as
     expandedPlans.filter((plan) => plan.breedingSteps === 1).map(signature).sort(),
     plans.map(signature).sort(),
   );
+
+  const directedPlans = findTargetPlans(
+    searchBreedingPlans(data, inventory, [], {
+      maxGenerations: 3,
+      maxBreedingSteps: 12,
+      captureSources,
+      targetPalId: "83:0",
+    }),
+    "83:0",
+    { requireOwnedAncestry: true, requireFullPassives: true },
+  );
+  assert.deepEqual(
+    directedPlans.filter((plan) => plan.breedingSteps === 1).map(signature).sort(),
+    plans.map(signature).sort(),
+  );
+});
+
+test("指定目标搜索只保留能通往目标的分支", () => {
+  const data = fixture([
+    ["T", "A", "B", "WILDCARD", "WILDCARD"],
+    ["X", "A", "C", "WILDCARD", "WILDCARD"],
+    ["Y", "X", "D", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    { id: "a", palId: "A", sex: "M", passives: [] },
+    { id: "b", palId: "B", sex: "F", passives: [] },
+    { id: "c", palId: "C", sex: "F", passives: [] },
+    { id: "d", palId: "D", sex: "F", passives: [] },
+  ];
+  const full = searchBreedingPlans(data, inventory, [], { maxGenerations: 2 });
+  const directed = searchBreedingPlans(data, inventory, [], { maxGenerations: 2, targetPalId: "T" });
+  assert.ok(findTargetPlan(directed, "T", { requireOwnedAncestry: true }));
+  assert.equal(directed.statesByPal.has("X"), false);
+  assert.equal(directed.statesByPal.has("Y"), false);
+  assert.ok(directed.states.size < full.states.size);
 });
 
 test("放宽最大代数不会覆盖原有的一步直达路线", () => {

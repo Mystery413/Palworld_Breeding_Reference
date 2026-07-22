@@ -16,9 +16,16 @@
 5. Run `user-inventory-rpc.sql` once to create the public shared-user inventory
    tables and atomic replacement function. By design, anonymous visitors can
    read and modify every shared user.
+6. If the shared-user tables already exist, run `user-inventory-performance.sql`
+   once. It adds the inventory ordering index and replaces the row-by-row save
+   loop with set-based inserts.
 
-The application reads public reference data from these tables at runtime through
-PostgREST. Configure `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` for development and in the
-deployment environment. Shared inventories are stored in Supabase without a
-login requirement; browser `localStorage` remains an offline fallback.
+The reference tables remain the editable source package, but the deployed site
+does not download all of them on every visit. `npm run build:runtime-data`
+creates a versioned static planning snapshot for GitHub Pages and separates the
+large habitat location list into on-demand files. Runtime Supabase requests are
+therefore limited to the shared-user list and the selected user's inventory.
+Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in
+`.env.local` for development and in the deployment environment. Shared
+inventories are stored in Supabase without a login requirement; browser
+`localStorage` remains an offline fallback.

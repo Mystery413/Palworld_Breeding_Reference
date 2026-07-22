@@ -54,6 +54,8 @@ export type Pal = {
       level?: number;
       boss?: boolean;
     }>;
+    hasPalpagosLocations?: boolean;
+    hasWorldTreeLocations?: boolean;
     mapSourceUrl: string;
   };
 };
@@ -100,6 +102,8 @@ type PlanNode = {
   captureSources: CaptureSource[];
   breedingStepIds: string[];
   ownedRootId?: string;
+  /** Keeps distinct final parent recipes without retaining every equivalent tree. */
+  routeVariant?: string;
 };
 
 export type CaptureSource = {
@@ -130,8 +134,13 @@ export function selectCaptureSource(pal: Pal, levelLimit: number, recommendedLev
 }
 
 export function isWorldTreeOnlyPal(pal: Pal): boolean {
-  const locations = pal.habitat?.locations ?? [];
-  return locations.some((location) => location.world === "worldTree") && !locations.some((location) => location.world === "palpagos");
+  const habitat = pal.habitat;
+  if (!habitat) return false;
+  const hasWorldTree = habitat.hasWorldTreeLocations
+    ?? habitat.locations.some((location) => location.world === "worldTree");
+  const hasPalpagos = habitat.hasPalpagosLocations
+    ?? habitat.locations.some((location) => location.world === "palpagos");
+  return hasWorldTree && !hasPalpagos;
 }
 
 export type PlanStep = {
@@ -252,6 +261,8 @@ type SearchResult = {
   data: BreedingData;
   maxGenerations: number;
   maxBreedingSteps: number;
+  targetPalId?: string;
+  truncated: boolean;
 };
 
 export type SearchOptions = {
@@ -259,6 +270,8 @@ export type SearchOptions = {
   maxBreedingSteps?: number;
   catchablePalIds?: string[];
   captureSources?: CaptureSource[];
+  /** Restrict graph expansion to species that can still lead to this target. */
+  targetPalId?: string;
 };
 
 const INHERIT_ROLL: Record<number, number> = { 1: 0.4, 2: 0.3, 3: 0.2, 4: 0.1 };
@@ -343,7 +356,7 @@ function comboCompatible(a: PlanNode, b: PlanNode, combo: ComboTuple): boolean {
 }
 
 function stateKey(
-  node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds" | "extraPassiveCount">,
+  node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds" | "extraPassiveCount" | "routeVariant">,
 ): string {
   // A directly captured parent and a bred parent of the same species are not
   // interchangeable routes. Preserve acquisition type and route length so a
@@ -357,6 +370,7 @@ function stateKey(
     `x${Math.round(node.extraPassiveCount * 10)}`,
     `g${node.depth}`,
     `s${node.breedingStepIds.length}`,
+    node.routeVariant ?? "best",
   ].join("|");
 }
 
@@ -501,7 +515,11 @@ export function searchBreedingPlans(
   const maxBreedingSteps = Math.max(0, Math.min(12, options.maxBreedingSteps ?? 4));
   const maxGenerations = Math.max(0, Math.min(12, options.maxGenerations ?? maxBreedingSteps));
   const recipesByParent = new Map<string, number[]>();
+  const recipesByChild = new Map<string, number[]>();
   data.combos.forEach((combo, index) => {
+    const childRecipes = recipesByChild.get(combo[0]) ?? [];
+    childRecipes.push(index);
+    recipesByChild.set(combo[0], childRecipes);
     for (const parentId of new Set([combo[1], combo[2]])) {
       const list = recipesByParent.get(parentId) ?? [];
       list.push(index);
@@ -509,10 +527,36 @@ export function searchBreedingPlans(
     }
   });
 
+  // Exact-target planning is dramatically smaller when expanded only through
+  // species that can still reach the requested child within the remaining
+  // generation budget. This preserves every route inside that budget while
+  // avoiding a complete world graph followed by a huge target-side cross join.
+  const targetDistances = new Map<string, number>();
+  if (options.targetPalId) {
+    targetDistances.set(options.targetPalId, 0);
+    let layer = [options.targetPalId];
+    for (let distance = 1; distance <= maxGenerations && layer.length; distance += 1) {
+      const next = new Set<string>();
+      for (const childId of layer) {
+        for (const comboIndex of recipesByChild.get(childId) ?? []) {
+          const combo = data.combos[comboIndex];
+          for (const parentId of [combo[1], combo[2]]) {
+            if (targetDistances.has(parentId)) continue;
+            targetDistances.set(parentId, distance);
+            next.add(parentId);
+          }
+        }
+      }
+      layer = [...next];
+    }
+  }
+
   const states = new Map<string, PlanNode>();
   const statesByPal = new Map<string, PlanNode[]>();
   const queue: PlanNode[] = [];
   let generatedId = 0;
+  let truncated = false;
+  const maxTotalStates = 100_000;
 
   const addState = (node: PlanNode) => {
     const key = stateKey(node);
@@ -606,6 +650,8 @@ export function searchBreedingPlans(
           if (!comboCompatible(parentA, parentB, combo)) continue;
           const depth = Math.max(parentA.depth, parentB.depth) + 1;
           if (depth !== generation) continue;
+          const targetDistance = targetDistances.get(combo[0]);
+          if (options.targetPalId && (targetDistance == null || targetDistance > maxGenerations - depth)) continue;
           evaluatedCandidates += 1;
           const mask = parentA.mask | parentB.mask;
           const inheritedPassives = passivesForMask(mask, desiredPassives);
@@ -644,14 +690,24 @@ export function searchBreedingPlans(
               captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
               breedingStepIds,
               ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
+              routeVariant: options.targetPalId === combo[0] ? `recipe:${comboIndex}` : undefined,
             });
           }
-          if (evaluatedCandidates >= maxCandidateEvaluationsPerGeneration) break generationSearch;
+          if (evaluatedCandidates >= maxCandidateEvaluationsPerGeneration) {
+            truncated = true;
+            break generationSearch;
+          }
         }
       }
     }
 
+    const remainingStateSlots = Math.max(0, maxTotalStates - states.size);
     frontier = [...nextStates.values()];
+    if (frontier.length > remainingStateSlots) {
+      truncated = true;
+      frontier.sort((left, right) => routeEffort(left) - routeEffort(right));
+      frontier = frontier.slice(0, remainingStateSlots);
+    }
     for (const node of frontier) {
       const key = stateKey(node);
       states.set(key, node);
@@ -659,9 +715,10 @@ export function searchBreedingPlans(
       list.push(node);
       statesByPal.set(node.palId, list);
     }
+    if (states.size >= maxTotalStates) break;
   }
 
-  return { states, statesByPal, desiredPassives, fullMask, data, maxGenerations, maxBreedingSteps };
+  return { states, statesByPal, desiredPassives, fullMask, data, maxGenerations, maxBreedingSteps, targetPalId: options.targetPalId, truncated };
 }
 
 function parentSummary(node: PlanNode): PlanParent {
@@ -929,6 +986,13 @@ function matchesTargetOptions(node: PlanNode, search: SearchResult, options: Tar
 
 function enumerateTargetNodes(search: SearchResult, targetPalId: string, options: TargetPlanOptions): PlanNode[] {
   const candidates = [...(search.statesByPal.get(targetPalId) ?? [])];
+  // A target-directed search already materialized every target state while
+  // expanding the graph. Recombining all parent state lists here would repeat
+  // the final generation as a potentially hundreds-of-millions-sized Cartesian
+  // product.
+  if (search.targetPalId === targetPalId) {
+    return candidates.filter((node) => matchesTargetOptions(node, search, options));
+  }
   search.data.combos.forEach((combo, comboIndex) => {
     if (combo[0] !== targetPalId) return;
     const leftStates = search.statesByPal.get(combo[1]) ?? [];

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BreedingData,
   calculateOffspring,
@@ -22,7 +22,7 @@ import {
   TargetPlanSortMode,
 } from "@/lib/planner";
 import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
-import { loadBreedingData } from "@/lib/supabase-data";
+import { loadBreedingData, loadPalHabitatLocations } from "@/lib/supabase-data";
 import {
   listSharedSaveUsers,
   loadSharedUserInventory,
@@ -289,6 +289,8 @@ export default function PlannerApp() {
   const [calculationSummary, setCalculationSummary] = useState({ reachablePals: 0, fullTraitPals: 0 });
   const [calculatedInputKey, setCalculatedInputKey] = useState("");
   const [calculationDurationMs, setCalculationDurationMs] = useState(0);
+  const [routesTruncated, setRoutesTruncated] = useState(false);
+  const [searchTruncated, setSearchTruncated] = useState(false);
   const [saveUsers, setSaveUsers] = useState<SharedSaveUser[]>([]);
   const [activeUserId, setActiveUserId] = useState("");
   const [cloudSyncing, setCloudSyncing] = useState(false);
@@ -312,9 +314,11 @@ export default function PlannerApp() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [detailPalId, isPaldexOpen, isSaveImportOpen, isInventoryOpen]);
 
-  useEffect(() => {
+  const initializePlannerWorker = useCallback(() => {
+    plannerWorkerRef.current?.terminate();
     const worker = new Worker(new URL("./planner.worker.ts", import.meta.url), { type: "module" });
     plannerWorkerRef.current = worker;
+    plannerWorkerHasData.current = false;
     worker.onmessage = (event: MessageEvent<PlannerWorkerResponse>) => {
       const response = event.data;
       if (response.requestId !== plannerRequestId.current) return;
@@ -327,19 +331,26 @@ export default function PlannerApp() {
       setExactPlans(response.exactPlans);
       setCalculationSummary(response.summary);
       setCalculationDurationMs(response.durationMs);
+      setRoutesTruncated(Boolean(response.routesTruncated));
+      setSearchTruncated(Boolean(response.searchTruncated));
       setCalculatedInputKey(pendingCalculationKey.current);
       setSelectedExactPlanIndex(0);
       setVisibleMethodCount(METHODS_PER_BATCH);
     };
     worker.onerror = () => {
       setCalculating(false);
+      plannerWorkerHasData.current = false;
       setNotice("计算线程启动失败，请刷新页面重试。");
     };
+  }, []);
+
+  useEffect(() => {
+    initializePlannerWorker();
     return () => {
-      worker.terminate();
+      plannerWorkerRef.current?.terminate();
       plannerWorkerRef.current = null;
     };
-  }, []);
+  }, [initializePlannerWorker]);
 
   useEffect(() => {
     loadBreedingData()
@@ -475,6 +486,8 @@ export default function PlannerApp() {
     plannerRequestId.current = requestId;
     pendingCalculationKey.current = calculationInputKey;
     setCalculating(true);
+    setRoutesTruncated(false);
+    setSearchTruncated(false);
     const request: PlannerWorkerRequest = {
       requestId,
       ...(plannerWorkerHasData.current ? {} : { data }),
@@ -485,9 +498,16 @@ export default function PlannerApp() {
       mode,
       profile,
       targetPalId: exactTargetId,
+      planLimit: 240,
     };
     plannerWorkerRef.current.postMessage(request);
     plannerWorkerHasData.current = true;
+  };
+  const cancelCalculation = () => {
+    plannerRequestId.current += 1;
+    initializePlannerWorker();
+    setCalculating(false);
+    setNotice("已停止本次路线计算；你可以调整条件后重新开始。");
   };
   const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
   const exactPlan = exactPlans[exactPlanIndex] ?? null;
@@ -795,10 +815,10 @@ export default function PlannerApp() {
           <div className="inventory-list">
             {!inventory.length ? (
               <button className="empty-inventory" onClick={() => setInventoryOpen(true)}><b>＋</b><span>还没有库存</span><small>先录入钓鱼或抓到的帕鲁</small></button>
-            ) : inventory.slice(0, 100).map((item) => {
+            ) : inventory.slice(0, 60).map((item) => {
               const pal = palById.get(item.palId);
               return <article className="inventory-card" key={item.id}>
-                {pal?.image ? <img src={pal.image} alt="" /> : <div className="pal-placeholder">P</div>}
+                {pal?.image ? <img src={pal.image} alt="" loading="lazy" decoding="async" /> : <div className="pal-placeholder">P</div>}
                 <div className="inventory-main">
                   <div><strong>{pal?.nameZh ?? item.palId}</strong><span className={item.sex === "M" ? "male" : "female"}>{item.sex === "M" ? "♂" : "♀"}</span></div>
                   <small>No.{pal?.dex} · {pal?.name}</small>
@@ -807,7 +827,7 @@ export default function PlannerApp() {
                 <button className="remove-button" onClick={() => setInventory((current) => current.filter((entry) => entry.id !== item.id))} aria-label={`删除${pal?.nameZh ?? "帕鲁"}`}>×</button>
               </article>;
             })}
-            {inventory.length > 100 && <div className="inventory-overflow-note">库存共 {inventory.length} 只；列表仅展示前 100 只，全部个体仍已保存。路线计算已合并为 {planningInventory.length} 个有效种源。</div>}
+            {inventory.length > 60 && <div className="inventory-overflow-note">库存共 {inventory.length} 只；列表仅展示前 60 只，全部个体仍已保存。路线计算已合并为 {planningInventory.length} 个有效种源。</div>}
           </div>
           <div className="inventory-tools">
             <input ref={importRef} type="file" accept=".json,.csv" onChange={importInventory} hidden />
@@ -874,7 +894,7 @@ export default function PlannerApp() {
                   </button> : <>
                     <input id="target-pal-search" value={targetSearch} onChange={(event) => { setTargetSearch(event.target.value); setTargetPickerOpen(true); }} onFocus={() => setTargetPickerOpen(true)} placeholder="搜索中文名、英文名或图鉴编号" autoComplete="off" />
                     {targetPickerOpen && <div className="target-options" role="listbox">
-                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
+                      {targetOptions.map((pal) => <button key={pal.id} role="option" aria-selected={pal.id === exactTargetId} onClick={() => { setExactTargetId(pal.id); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); setTargetSearch(""); setTargetPickerOpen(false); }}><img src={pal.image} alt="" loading="lazy" decoding="async" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span>{pal.id === exactTargetId && <i>✓</i>}</button>)}
                       {!targetOptions.length && <small>没有找到匹配的帕鲁</small>}
                     </div>}
                   </>}
@@ -885,7 +905,7 @@ export default function PlannerApp() {
 
           <div className={`calculate-action ${calculationIsDirty ? "dirty" : "ready"}`}>
             <div><strong>{calculationIsDirty ? "条件尚未计算" : "当前结果已是最新"}</strong><small>{calculationIsDirty ? "选完用户、词条、目标和代数后，再统一开始计算。" : `上次计算耗时 ${calculationDurationMs}ms；修改任意条件后需再次点击。`}</small></div>
-            <button className="primary-button" onClick={calculateRoutes} disabled={!data || isCalculating}>{isCalculating ? "后台计算中…" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
+            <button className="primary-button" onClick={isCalculating ? cancelCalculation : calculateRoutes} disabled={!data}>{isCalculating ? "停止计算" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
           </div>
 
           {mode === "exact" && !inventory.length ? (
@@ -897,7 +917,7 @@ export default function PlannerApp() {
               <span>◎</span><h3>暂时没有可用种源</h3><p>录入一只已有帕鲁，或打开“允许途中补抓帕鲁”后再计算路线。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>
           ) : isCalculating ? (
-            <div className="planner-empty"><span className="spinner">◌</span><h3>正在后台计算 {maxGenerations} 代可达图谱</h3><p>计算已移到独立线程，期间仍可正常滚动和操作页面；修改条件不会自动重新触发。</p></div>
+            <div className="planner-empty"><span className="spinner">◌</span><h3>正在后台计算 {maxGenerations} 代可达图谱</h3><p>计算已移到独立线程，指定目标时只搜索能通往目标的物种；需要调整条件时可以立即停止。</p><button className="ghost-button" onClick={cancelCalculation}>停止本次计算</button></div>
           ) : !calculatedInputKey || calculationIsDirty ? (
             <div className="planner-empty"><span>▶</span><h3>{calculatedInputKey ? "条件已经改变" : "准备好后再开始计算"}</h3><p>系统不会在选择过程中自动搜索。确认用户、目标词条、目标帕鲁和最大代数后，点击上方按钮。</p><button className="primary-button" onClick={calculateRoutes}>{calculatedInputKey ? "按新条件重新计算" : "开始计算"}</button></div>
           ) : mode === "recommend" ? (
@@ -936,6 +956,8 @@ export default function PlannerApp() {
                   }}
                   onShowMore={() => setVisibleMethodCount((current) => current + METHODS_PER_BATCH)}
                 />
+                {routesTruncated && <div className="tradeoff-note">为避免浏览器内存过高，本次保留了综合排序最优的 240 条路线。收紧最大代数、等级或 Boss 条件可以查看更聚焦的完整结果。</div>}
+                {searchTruncated && <div className="tradeoff-note">搜索已达到浏览器安全上限，当前展示的是在上限内找到的最优路线。降低最大代数或收紧补抓条件可获得更完整结果。</div>}
               </>}
             </div>
           )}
@@ -966,7 +988,7 @@ export default function PlannerApp() {
               <input id="pal-search" value={palSearch} onChange={(event) => { setPalSearch(event.target.value); setDraft((current) => ({ ...current, palId: "" })); }} placeholder="支持中文、英文、编号及模糊匹配" autoFocus />
               <div className="pal-options">
                 {filteredPals.map((pal) => <button key={pal.id} className={draft.palId === pal.id ? "selected" : ""} onClick={() => { setDraft((current) => ({ ...current, palId: pal.id })); setPalSearch(`${pal.nameZh} · ${pal.name}`); }}>
-                  <img src={pal.image} alt="" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span><i>{draft.palId === pal.id ? "✓" : ""}</i>
+                  <img src={pal.image} alt="" loading="lazy" decoding="async" /><span><strong>{pal.nameZh}</strong><small>No.{pal.dex} · {pal.name}</small></span><i>{draft.palId === pal.id ? "✓" : ""}</i>
                 </button>)}
                 {!filteredPals.length && <p className="pal-search-empty">没有找到匹配帕鲁，试试简称、英文片段或相近拼写。</p>}
               </div>
@@ -1000,12 +1022,14 @@ export default function PlannerApp() {
 
       {isPaldexOpen && <PaldexBrowserModal pals={paldexOptions} total={data?.pals.length ?? 0} query={paldexSearch} onQueryChange={setPaldexSearch} onOpenPal={setDetailPalId} onClose={() => setPaldexOpen(false)} />}
       {isSaveImportOpen && <SaveImportModal pals={data?.pals ?? []} onClose={() => setSaveImportOpen(false)} onImport={importGameSave} />}
-      {detailPal && <PalDetailModal pal={detailPal} onClose={() => setDetailPalId("")} />}
+      {detailPal && <PalDetailModal key={detailPal.id} pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );
 }
 
 function PaldexBrowserModal({ pals, total, query, onQueryChange, onOpenPal, onClose }: { pals: Pal[]; total: number; query: string; onQueryChange: (value: string) => void; onOpenPal: (id: string) => void; onClose: () => void }) {
+  const [visibleCount, setVisibleCount] = useState(60);
+  const visiblePals = pals.slice(0, visibleCount);
   return <div className="modal-backdrop paldex-browser-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="paldex-browser-modal" role="dialog" aria-modal="true" aria-labelledby="paldex-browser-title">
       <header>
@@ -1014,17 +1038,18 @@ function PaldexBrowserModal({ pals, total, query, onQueryChange, onOpenPal, onCl
       </header>
       <div className="paldex-browser-tools">
         <label htmlFor="paldex-search">搜索图鉴</label>
-        <input id="paldex-search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="搜索中文名、英文名或图鉴编号" autoFocus />
+        <input id="paldex-search" value={query} onChange={(event) => { onQueryChange(event.target.value); setVisibleCount(60); }} placeholder="搜索中文名、英文名或图鉴编号" autoFocus />
         <span>显示 <b>{pals.length}</b> / {total} 个条目</span>
       </div>
       <div className="paldex-grid" role="list">
-        {pals.map((pal) => <button key={pal.id} role="listitem" onClick={() => onOpenPal(pal.id)}>
-          <img src={pal.image} alt="" />
+        {visiblePals.map((pal) => <button key={pal.id} role="listitem" onClick={() => onOpenPal(pal.id)}>
+          <img src={pal.image} alt="" loading="lazy" decoding="async" />
           <span><small>No.{pal.dex}</small><strong>{pal.nameZh}</strong><em>{pal.name}</em></span>
           <i>查看图鉴 →</i>
         </button>)}
         {!pals.length && <div className="paldex-empty">没有找到匹配的帕鲁，请换一个名称或编号。</div>}
       </div>
+      {visiblePals.length < pals.length && <button className="show-more-methods" onClick={() => setVisibleCount((count) => count + 60)}>继续加载 {Math.min(60, pals.length - visiblePals.length)} 个条目</button>}
     </section>
   </div>;
 }
@@ -1276,14 +1301,27 @@ const MAP_BOUNDS = {
 
 function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
   const habitat = pal.habitat;
-  const worlds = (["palpagos", "worldTree"] as const).filter((world) => habitat?.locations.some((location) => location.world === world));
+  const [loadedLocations, setLoadedLocations] = useState(habitat?.locations ?? []);
+  const [locationsLoading, setLocationsLoading] = useState(Boolean(habitat));
+  useEffect(() => {
+    if (!habitat) return;
+    let active = true;
+    loadPalHabitatLocations(pal.id)
+      .then((locations) => { if (active) setLoadedLocations(locations); })
+      .catch(() => { if (active) setLoadedLocations([]); })
+      .finally(() => { if (active) setLocationsLoading(false); });
+    return () => { active = false; };
+  }, [pal.id, habitat]);
+  const worlds = (["palpagos", "worldTree"] as const).filter((world) => world === "palpagos"
+    ? habitat?.hasPalpagosLocations ?? loadedLocations.some((location) => location.world === world)
+    : habitat?.hasWorldTreeLocations ?? loadedLocations.some((location) => location.world === world));
   const [world, setWorld] = useState<"palpagos" | "worldTree">(worlds[0] ?? "palpagos");
   const [imageExpanded, setImageExpanded] = useState(false);
   const [mapZoom, setMapZoom] = useState(1);
   const [mapDragging, setMapDragging] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
-  const locations = habitat?.locations.filter((location) => location.world === world) ?? [];
+  const locations = loadedLocations.filter((location) => location.world === world);
   const bounds = MAP_BOUNDS[world];
   const pointStyle = (location: (typeof locations)[number]) => ({
     left: `${Math.max(0, Math.min(100, ((location.y - bounds.minY) / (bounds.maxY - bounds.minY)) * 100))}%`,
@@ -1318,7 +1356,7 @@ function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
       <div className="detail-layout">
         <div className="habitat-map-panel">
           <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss · 放大后按住拖动</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
-          {locations.length ? <div ref={mapRef} className={`habitat-map ${mapZoom > 1 ? "draggable" : ""} ${mapDragging ? "dragging" : ""}`} onPointerDown={startMapDrag} onPointerMove={moveMap} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag}>
+          {locationsLoading ? <div className="no-habitat-map">正在按需加载该帕鲁的栖息点…</div> : locations.length ? <div ref={mapRef} className={`habitat-map ${mapZoom > 1 ? "draggable" : ""} ${mapDragging ? "dragging" : ""}`} onPointerDown={startMapDrag} onPointerMove={moveMap} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag}>
             <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={`${BASE_PATH}/${world === "palpagos" ? "palpagos-map.webp" : "world-tree-map.webp"}`} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
             <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div></div>
           </div> : <div className="no-habitat-map">当前 1.0 数据没有记录普通野外分布；它可能只能通过配种、事件、召唤或其他特殊方式获得。</div>}

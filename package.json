@@ -7,7 +7,11 @@
   },
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
+    "build:runtime-data": "node scripts/build-runtime-data.mjs",
+    "cache:pal-images": "node scripts/cache-pal-images.mjs",
+    "prebuild": "npm run build:runtime-data",
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "prebuild:pages": "npm run build:runtime-data",
     "build:pages": "next build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "node --test tests/*.test.ts",

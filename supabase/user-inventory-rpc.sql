@@ -26,6 +26,7 @@ create table if not exists public.shared_user_pals (
 );
 
 create index if not exists shared_user_pals_user_idx on public.shared_user_pals(user_id);
+create index if not exists shared_user_pals_user_imported_idx on public.shared_user_pals(user_id, imported_at);
 
 create table if not exists public.shared_user_pal_passives (
   user_pal_id uuid not null references public.shared_user_pals(user_pal_id) on delete cascade,
@@ -85,11 +86,6 @@ set search_path = public
 as $$
 declare
   active_user_id uuid := p_user_id;
-  item jsonb;
-  new_user_pal_id uuid;
-  passive_name text;
-  passive_id text;
-  passive_index integer;
 begin
   if active_user_id is null then
     insert into public.shared_save_users (name, source_file_name)
@@ -106,32 +102,37 @@ begin
 
   delete from public.shared_user_pals where user_id = active_user_id;
 
-  for item in select value from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) loop
-    insert into public.shared_user_pals (
-      user_id, source_instance_id, pal_id, sex, nickname,
-      hp_iv, attack_iv, defense_iv
-    ) values (
-      active_user_id,
-      nullif(item->>'id', ''),
-      item->>'pal_id',
-      case when item->>'sex' = 'M' then 'M' else 'F' end,
-      coalesce(item->>'nickname', ''),
-      nullif(item->>'hp', '')::smallint,
-      nullif(item->>'attack', '')::smallint,
-      nullif(item->>'defense', '')::smallint
-    ) returning user_pal_id into new_user_pal_id;
+  -- Insert the complete inventory as one set instead of issuing one INSERT per
+  -- Pal from a PL/pgSQL loop. source_instance_id is the stable client-side id
+  -- used to attach passive rows in the following statement.
+  insert into public.shared_user_pals (
+    user_id, source_instance_id, pal_id, sex, nickname,
+    hp_iv, attack_iv, defense_iv
+  )
+  select
+    active_user_id,
+    nullif(item->>'id', ''),
+    item->>'pal_id',
+    case when item->>'sex' = 'M' then 'M' else 'F' end,
+    coalesce(item->>'nickname', ''),
+    nullif(item->>'hp', '')::smallint,
+    nullif(item->>'attack', '')::smallint,
+    nullif(item->>'defense', '')::smallint
+  from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) as source(item);
 
-    passive_index := 0;
-    for passive_name in select value #>> '{}' from jsonb_array_elements(coalesce(item->'passives', '[]'::jsonb)) loop
-      select asset_id into passive_id from public.passives where name_zh = passive_name limit 1;
-      if passive_id is not null then
-        insert into public.shared_user_pal_passives (user_pal_id, passive_asset_id, slot_index)
-        values (new_user_pal_id, passive_id, least(passive_index, 3))
-        on conflict do nothing;
-      end if;
-      passive_index := passive_index + 1;
-    end loop;
-  end loop;
+  insert into public.shared_user_pal_passives (user_pal_id, passive_asset_id, slot_index)
+  select
+    up.user_pal_id,
+    ps.asset_id,
+    least((passive.position - 1)::smallint, 3::smallint)
+  from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) as source(item)
+  join public.shared_user_pals up
+    on up.user_id = active_user_id
+   and up.source_instance_id = nullif(source.item->>'id', '')
+  cross join lateral jsonb_array_elements_text(coalesce(source.item->'passives', '[]'::jsonb))
+    with ordinality as passive(name, position)
+  join public.passives ps on ps.name_zh = passive.name
+  on conflict do nothing;
 
   update public.shared_save_users set updated_at = now() where user_id = active_user_id;
   return active_user_id;

@@ -38,7 +38,8 @@ export async function listSharedSaveUsers(): Promise<SharedSaveUser[]> {
 }
 
 export async function loadSharedUserInventory(userId: string): Promise<InventoryPal[]> {
-  const response = await publicRequest(`shared_user_inventory?select=*&user_id=eq.${encodeURIComponent(userId)}&order=imported_at.asc`);
+  const columns = "user_pal_id,pal_id,sex,nickname,hp_iv,attack_iv,defense_iv,passive_names_zh";
+  const response = await publicRequest(`shared_user_inventory?select=${columns}&user_id=eq.${encodeURIComponent(userId)}&order=imported_at.asc`);
   const rows = await response.json() as Array<Record<string, unknown>>;
   return rows.map((row) => ({
     id: String(row.user_pal_id),
