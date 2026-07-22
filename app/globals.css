@@ -640,6 +640,7 @@ button { color: inherit; }
 .route-sort-toggle { background: #e8e4db; border-radius: 9px; display: flex; flex: 0 0 auto; gap: 2px !important; padding: 3px; }
 .route-sort-toggle button { background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: 9px; font-weight: 800; padding: 8px 11px; }
 .route-sort-toggle button.active { background: white; box-shadow: 0 3px 10px rgba(16,26,42,.09); color: var(--teal); }
+.route-sort-controls { align-items: flex-end; display: flex; flex-direction: column; gap: 5px; }
 .difficulty-rule { color: var(--muted); font-size: 8px; margin: -7px 0 12px 44px; }
 .difficulty-rule b { color: var(--ink); }
 .tradeoff-note { background: #fff4d9; border: 1px solid #e9cc86; border-radius: 10px; color: #7e5d23; font-size: 9px; line-height: 1.5; margin-bottom: 12px; padding: 9px 11px; }
@@ -653,7 +654,7 @@ button { color: inherit; }
 .method-identity i, .method-identity em { border-radius: 999px; font-size: 7px; font-style: normal; font-weight: 900; padding: 4px 7px; }
 .method-identity i { background: var(--lime); color: #32410f; }
 .method-identity em { background: #dff4f0; color: var(--teal); }
-.method-metrics { display: grid; gap: 14px; grid-template-columns: repeat(4, auto); }
+.method-metrics { display: grid; gap: 14px; grid-template-columns: repeat(5, auto); }
 .method-metrics span { color: var(--muted); font-size: 8px; }
 .method-metrics b { color: var(--ink); font-family: Georgia, serif; font-size: 17px; margin-right: 2px; }
 .method-metrics span:nth-child(3) b { color: var(--coral); font-size: 20px; }
@@ -670,6 +671,8 @@ button { color: inherit; }
 .route-pal span { display: flex; flex-direction: column; min-width: 0; }
 .route-pal small { color: var(--muted); font-size: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-pal strong { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-pal em { color: var(--teal-dark); font-size: 7px; font-style: normal; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.child-chip em { color: var(--teal-dark); font-size: 8px; font-style: normal; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .method-more-steps, .method-direct { background: #f4f1e9; border-radius: 9px; color: var(--muted); font-size: 9px; padding: 8px 10px; text-align: center; }
 .method-variants { background: #f4f1e9; border-radius: 12px; margin-top: 12px; padding: 10px; }
 .variant-heading { align-items: center; display: flex; gap: 8px; justify-content: space-between; }
@@ -814,6 +817,7 @@ button { color: inherit; }
 @media (max-width: 760px) {
   .method-browser-title { align-items: flex-start; flex-direction: column; gap: 10px; }
   .route-sort-toggle { width: 100%; }
+  .route-sort-controls { width: 100%; }
   .route-sort-toggle button { flex: 1; }
   .difficulty-rule { margin-left: 0; }
   .method-card > header { align-items: flex-start; flex-direction: column; gap: 9px; }

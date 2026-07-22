@@ -62,12 +62,6 @@ export type Pal = {
 
 export type ComboTuple = [string, string, string, "WILDCARD" | "MALE" | "FEMALE", "WILDCARD" | "MALE" | "FEMALE"];
 
-export type Potentials = {
-  hp: number | null;
-  attack: number | null;
-  defense: number | null;
-};
-
 export type BreedingData = {
   version: string;
   exportedAt: string;
@@ -98,7 +92,6 @@ type PlanNode = {
   stepExactChance?: number;
   selectionMode?: "usable" | "pure";
   duplicateParent?: boolean;
-  potentials: Potentials;
   captureSources: CaptureSource[];
   breedingStepIds: string[];
   ownedRootId?: string;
@@ -115,7 +108,6 @@ export type CaptureSource = {
 };
 
 export const EGG_DIFFICULTY_WEIGHT = 30;
-export const PASSIVE_POLLUTION_DIFFICULTY_WEIGHT = 3;
 
 export function selectCaptureSource(pal: Pal, levelLimit: number, recommendedLevelLimit = levelLimit): CaptureSource | null {
   const habitat = pal.habitat;
@@ -156,9 +148,8 @@ export type PlanStep = {
   exactChance: number;
   expectedExtraPassives: number;
   selectionMode: "usable" | "pure";
-  potentialChance: number;
-  combinedChance: number;
-  potentialTargets: Potentials;
+  usableExpectedEggs: number;
+  perfectExpectedEggs: number;
   expectedEggs: number;
   sexRequirement: "M" | "F" | "BOTH" | null;
   sexChance: number;
@@ -184,6 +175,8 @@ export type PlanResult = {
   steps: PlanStep[];
   generations: number;
   breedingSteps: number;
+  usableExpectedEggs: number;
+  perfectExpectedEggs: number;
   expectedEggs: number;
   finalExtraPassiveCount: number;
   coveredPassives: string[];
@@ -191,6 +184,8 @@ export type PlanResult = {
   captures: Array<CaptureSource & { count: number }>;
   ownedInventoryIds: string[];
   captureDifficulty: number;
+  usableDifficultyScore: number;
+  perfectDifficultyScore: number;
   eggDifficulty: number;
   passivePollutionDifficulty: number;
   difficultyScore: number;
@@ -213,6 +208,7 @@ export type TargetPlanGroup = {
 };
 
 export type TargetPlanSortMode = "recommended" | "difficulty";
+export type CompletionTarget = "usable" | "perfect";
 
 export type BreedingCalculatorMatch = {
   childId: string;
@@ -364,11 +360,12 @@ export function passiveInheritanceOutcome(poolSize: number, desiredCount: number
   }
   let usableChance = 0;
   let inheritedExtras = 0;
-  for (let inheritedCount = desiredCount; inheritedCount <= Math.min(4, poolSize); inheritedCount += 1) {
+  for (let inheritanceRoll = desiredCount; inheritanceRoll <= 4; inheritanceRoll += 1) {
+    const inheritedCount = Math.min(inheritanceRoll, poolSize);
     const combinations = choose(poolSize, inheritedCount);
     if (!combinations) continue;
     const containsAllDesired = choose(poolSize - desiredCount, inheritedCount - desiredCount) / combinations;
-    const contribution = (INHERIT_ROLL[inheritedCount] ?? 0) * containsAllDesired;
+    const contribution = (INHERIT_ROLL[inheritanceRoll] ?? 0) * containsAllDesired;
     usableChance += contribution;
     inheritedExtras += contribution * (inheritedCount - desiredCount);
   }
@@ -474,8 +471,7 @@ function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): Cap
 
 function routeEffort(node: PlanNode): number {
   const captureEffort = node.captureSources.reduce((sum, source) => sum + source.difficulty, 0);
-  return captureEffort + node.totalExpectedEggs * EGG_DIFFICULTY_WEIGHT
-    + node.extraPassiveCount * PASSIVE_POLLUTION_DIFFICULTY_WEIGHT + node.depth / 100;
+  return captureEffort + node.totalExpectedEggs * EGG_DIFFICULTY_WEIGHT + node.depth / 100;
 }
 
 function isBetter(next: PlanNode, current?: PlanNode): boolean {
@@ -488,36 +484,7 @@ function isBetter(next: PlanNode, current?: PlanNode): boolean {
   if (Math.abs(next.totalExpectedEggs - current.totalExpectedEggs) > 0.001) {
     return next.totalExpectedEggs < current.totalExpectedEggs;
   }
-  return potentialScore(next.potentials) > potentialScore(current.potentials);
-}
-
-function potentialScore(potentials: Potentials): number {
-  return (potentials.hp ?? 0) + (potentials.attack ?? 0) + (potentials.defense ?? 0);
-}
-
-function potentialTargets(a: Potentials, b: Potentials): Potentials {
-  const best = (left: number | null, right: number | null) => {
-    if (left == null) return right;
-    if (right == null) return left;
-    return Math.max(left, right);
-  };
-  return { hp: best(a.hp, b.hp), attack: best(a.attack, b.attack), defense: best(a.defense, b.defense) };
-}
-
-export function potentialInheritanceChance(a: Potentials, b: Potentials, targets = potentialTargets(a, b)): number {
-  const chanceFor = (left: number | null, right: number | null, target: number | null) => {
-    if (target == null) return 1;
-    const threshold = Math.max(0, Math.min(100, Math.ceil(target)));
-    const fromLeft = left != null && left >= threshold ? 0.3 : 0;
-    const fromRight = right != null && right >= threshold ? 0.3 : 0;
-    const fromRandom = 0.4 * ((101 - threshold) / 101);
-    return fromLeft + fromRight + fromRandom;
-  };
-  return (
-    chanceFor(a.hp, b.hp, targets.hp) *
-    chanceFor(a.attack, b.attack, targets.attack) *
-    chanceFor(a.defense, b.defense, targets.defense)
-  );
+  return false;
 }
 
 function unique(values: string[]): string[] {
@@ -542,15 +509,12 @@ function passivesForMask(mask: number, desired: string[]): string[] {
 export function compactInventoryForPlanning(inventory: InventoryPal[], requestedPassives: string[]): InventoryPal[] {
   const desired = unique(requestedPassives).slice(0, 4);
   const best = new Map<string, InventoryPal>();
-  const quality = (item: InventoryPal) =>
-    (item.hp ?? 0) + (item.attack ?? 0) + (item.defense ?? 0) + item.passives.length / 100;
   for (const item of inventory) {
     const passives = unique(item.passives);
     const mask = maskFor(passives, desired);
     const extras = Math.max(0, passives.length - bitCount(mask));
     const key = `${item.palId}|${item.sex}|${mask}|${extras}`;
-    const current = best.get(key);
-    if (!current || quality(item) > quality(current)) best.set(key, item);
+    if (!best.has(key)) best.set(key, item);
   }
   return [...best.values()];
 }
@@ -636,7 +600,6 @@ export function searchBreedingPlans(
       kind: "owned",
       inventoryId: item.id,
       nickname: item.nickname,
-      potentials: { hp: item.hp ?? null, attack: item.attack ?? null, defense: item.defense ?? null },
       captureSources: [],
       breedingStepIds: [],
       ownedRootId: item.id,
@@ -667,7 +630,6 @@ export function searchBreedingPlans(
       eggSteps: 0,
       totalExpectedEggs: 0,
       kind: "captured",
-      potentials: { hp: null, attack: null, defense: null },
       captureSources: [source],
       breedingStepIds: [],
     });
@@ -707,12 +669,10 @@ export function searchBreedingPlans(
           const mask = parentA.mask | parentB.mask;
           const inheritedPassives = passivesForMask(mask, desiredPassives);
           const outcomes = selectionOutcomes(passivePoolSize(parentA, parentB), inheritedPassives.length);
-          const potentials = potentialTargets(parentA.potentials, parentB.potentials);
-          const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
           const duplicateParent = parentA.nodeId === parentB.nodeId;
           const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
           for (const outcome of outcomes) {
-            const combinedChance = outcome.chance * ivChance;
+            const combinedChance = outcome.chance;
             const nodeId = `bred:${generatedId++}`;
             const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
             if (breedingStepIds.length > maxBreedingSteps) continue;
@@ -737,7 +697,6 @@ export function searchBreedingPlans(
               stepExactChance: outcome.exactChance,
               selectionMode: outcome.mode,
               duplicateParent,
-              potentials,
               captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
               breedingStepIds,
               ownedRootId: parentA.ownedRootId ?? parentB.ownedRootId,
@@ -809,18 +768,15 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
       exactChance: current.stepExactChance ?? current.stepChance ?? 1,
       expectedExtraPassives: current.extraPassiveCount,
       selectionMode: current.selectionMode ?? "usable",
-      potentialChance: potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
-      combinedChance:
-        (current.stepChance ?? 1) *
-        potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
-      potentialTargets: current.potentials,
-      expectedEggs:
-        1 /
-        Math.max(
-          0.0001,
-          (current.stepChance ?? 1) *
-            potentialInheritanceChance(current.parents[0].potentials, current.parents[1].potentials, current.potentials),
-        ),
+      usableExpectedEggs: 1 / Math.max(0.0001, passiveInheritanceOutcome(
+        passivePoolSize(current.parents[0], current.parents[1]),
+        current.passives.length,
+      ).usableChance),
+      perfectExpectedEggs: 1 / Math.max(0.0001, passiveInheritanceOutcome(
+        passivePoolSize(current.parents[0], current.parents[1]),
+        current.passives.length,
+      ).exactChance),
+      expectedEggs: 1 / Math.max(0.0001, current.stepChance ?? 1),
       sexRequirement: null,
       sexChance: 1,
       duplicateParent: Boolean(current.duplicateParent),
@@ -912,6 +868,8 @@ function flattenSteps(node: PlanNode, data: BreedingData): PlanStep[] {
       index: index + 1,
       sexRequirement: requiredSex,
       sexChance: 1 / multiplier,
+      usableExpectedEggs: step.usableExpectedEggs * multiplier,
+      perfectExpectedEggs: step.perfectExpectedEggs * multiplier,
       expectedEggs: step.expectedEggs * multiplier,
     };
   });
@@ -979,10 +937,14 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
   const captureDifficulty = captures.reduce((sum, capture) => sum + capture.difficulty * capture.count, 0);
   const bossCaptureCount = captures.reduce((sum, capture) => sum + (capture.kind === "alpha" ? capture.count : 0), 0);
   const newCaptureCount = captures.reduce((sum, capture) => sum + capture.count, 0);
-  const expectedEggs = steps.reduce((sum, step) => sum + step.expectedEggs, 0);
+  const usableExpectedEggs = steps.reduce((sum, step) => sum + step.usableExpectedEggs, 0);
+  const perfectExpectedEggs = steps.reduce((sum, step) => sum + step.perfectExpectedEggs, 0);
+  const expectedEggs = usableExpectedEggs;
   const eggDifficulty = expectedEggs * EGG_DIFFICULTY_WEIGHT;
-  const passivePollutionDifficulty = node.extraPassiveCount * PASSIVE_POLLUTION_DIFFICULTY_WEIGHT;
-  const difficultyScore = captureDifficulty + eggDifficulty + passivePollutionDifficulty;
+  const passivePollutionDifficulty = 0;
+  const usableDifficultyScore = captureDifficulty + usableExpectedEggs * EGG_DIFFICULTY_WEIGHT;
+  const perfectDifficultyScore = captureDifficulty + perfectExpectedEggs * EGG_DIFFICULTY_WEIGHT;
+  const difficultyScore = usableDifficultyScore;
   const routePriority = difficultyScore + node.depth / 100;
   return {
     node,
@@ -990,6 +952,8 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
     steps,
     generations: node.depth,
     breedingSteps: node.breedingStepIds.length,
+    usableExpectedEggs,
+    perfectExpectedEggs,
     expectedEggs,
     finalExtraPassiveCount: node.extraPassiveCount,
     coveredPassives: passivesForMask(node.mask, desiredPassives),
@@ -1001,6 +965,8 @@ function toPlanResult(node: PlanNode, desiredPassives: string[], fullMask: numbe
         .filter(Boolean),
     ),
     captureDifficulty,
+    usableDifficultyScore,
+    perfectDifficultyScore,
     eggDifficulty,
     passivePollutionDifficulty,
     difficultyScore,
@@ -1059,15 +1025,13 @@ function enumerateTargetNodes(search: SearchResult, targetPalId: string, options
         if (depth > search.maxGenerations) continue;
         const inheritedPassives = passivesForMask(mask, search.desiredPassives);
         const outcomes = selectionOutcomes(passivePoolSize(parentA, parentB), inheritedPassives.length);
-        const potentials = potentialTargets(parentA.potentials, parentB.potentials);
-        const ivChance = potentialInheritanceChance(parentA.potentials, parentB.potentials, potentials);
         const duplicateParent = parentA.nodeId === parentB.nodeId;
         const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
         for (const outcome of outcomes) {
           const nodeId = `target:${comboIndex}:${parentA.nodeId}:${parentB.nodeId}:${outcome.mode}`;
           const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
           if (breedingStepIds.length > search.maxBreedingSteps) continue;
-          const combinedChance = outcome.chance * ivChance;
+          const combinedChance = outcome.chance;
           candidates.push({
             nodeId,
             palId: targetPalId,
@@ -1089,7 +1053,6 @@ function enumerateTargetNodes(search: SearchResult, targetPalId: string, options
             stepExactChance: outcome.exactChance,
             selectionMode: outcome.mode,
             duplicateParent,
-            potentials,
             captureSources: mergeCaptureSources(parentA.captureSources, parentB.captureSources),
             breedingStepIds,
             ownedRootId,
@@ -1124,12 +1087,24 @@ export function findTargetPlans(
   return results.slice(0, Math.max(1, limit));
 }
 
+export function planExpectedEggs(plan: PlanResult, target: CompletionTarget): number {
+  return target === "perfect" ? plan.perfectExpectedEggs : plan.usableExpectedEggs;
+}
+
+export function planDifficultyScore(plan: PlanResult, target: CompletionTarget): number {
+  return target === "perfect" ? plan.perfectDifficultyScore : plan.usableDifficultyScore;
+}
+
 /** Groups routes by the two costs users act on first: breeding operations and new captures. */
-export function groupTargetPlans(plans: PlanResult[], sortMode: TargetPlanSortMode = "recommended"): TargetPlanGroup[] {
+export function groupTargetPlans(
+  plans: PlanResult[],
+  sortMode: TargetPlanSortMode = "recommended",
+  completionTarget: CompletionTarget = "usable",
+): TargetPlanGroup[] {
   if (sortMode === "difficulty") {
     return plans
       .map((plan, index) => ({ key: `plan:${index}`, plans: [plan], planIndexes: [index] }))
-      .sort((left, right) => left.plans[0].difficultyScore - right.plans[0].difficultyScore || left.planIndexes[0] - right.planIndexes[0]);
+      .sort((left, right) => planDifficultyScore(left.plans[0], completionTarget) - planDifficultyScore(right.plans[0], completionTarget) || left.planIndexes[0] - right.planIndexes[0]);
   }
   const entriesByKey = new Map<string, Array<{ plan: PlanResult; index: number }>>();
   plans.forEach((plan, index) => {
@@ -1139,23 +1114,23 @@ export function groupTargetPlans(plans: PlanResult[], sortMode: TargetPlanSortMo
     entriesByKey.set(key, entries);
   });
   const groups = [...entriesByKey].map(([key, entries]) => {
-    entries.sort((left, right) => left.plan.difficultyScore - right.plan.difficultyScore || left.index - right.index);
+    entries.sort((left, right) => planDifficultyScore(left.plan, completionTarget) - planDifficultyScore(right.plan, completionTarget) || left.index - right.index);
     return { key, plans: entries.map((entry) => entry.plan), planIndexes: entries.map((entry) => entry.index) };
   });
   return groups.sort((left, right) => {
     const leftPlan = left.plans[0];
     const rightPlan = right.plans[0];
-    return leftPlan.breedingSteps - rightPlan.breedingSteps || leftPlan.newCaptureCount - rightPlan.newCaptureCount || leftPlan.difficultyScore - rightPlan.difficultyScore;
+    return leftPlan.breedingSteps - rightPlan.breedingSteps || leftPlan.newCaptureCount - rightPlan.newCaptureCount || planDifficultyScore(leftPlan, completionTarget) - planDifficultyScore(rightPlan, completionTarget);
   });
 }
 
-export function hasComplexityDifficultyTradeoff(groups: TargetPlanGroup[]): boolean {
+export function hasComplexityDifficultyTradeoff(groups: TargetPlanGroup[], completionTarget: CompletionTarget = "usable"): boolean {
   return groups.some((current, currentIndex) => groups.slice(0, currentIndex).some((earlier) => {
     const currentPlan = current.plans[0];
     const earlierPlan = earlier.plans[0];
     const noSimpler = currentPlan.breedingSteps >= earlierPlan.breedingSteps && currentPlan.newCaptureCount >= earlierPlan.newCaptureCount;
     const strictlyMoreComplex = currentPlan.breedingSteps > earlierPlan.breedingSteps || currentPlan.newCaptureCount > earlierPlan.newCaptureCount;
-    return noSimpler && strictlyMoreComplex && currentPlan.difficultyScore + 0.001 < earlierPlan.difficultyScore;
+    return noSimpler && strictlyMoreComplex && planDifficultyScore(currentPlan, completionTarget) + 0.001 < planDifficultyScore(earlierPlan, completionTarget);
   }));
 }
 

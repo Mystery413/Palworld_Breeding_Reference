@@ -17,7 +17,6 @@ import {
   passiveExactChance,
   passiveInheritanceChance,
   passiveInheritanceOutcome,
-  potentialInheritanceChance,
   recommendTargets,
   searchBreedingPlans,
   selectCaptureSource,
@@ -64,27 +63,19 @@ function fixture(combos: BreedingData["combos"]): BreedingData {
 }
 
 test("可用词条率允许目标词条齐全的子代携带额外词条", () => {
-  assert.equal(passiveInheritanceChance(1, 1), 0.4);
-  assert.equal(passiveInheritanceChance(2, 2), 0.3);
-  assert.equal(passiveInheritanceChance(3, 3), 0.2);
+  assert.ok(Math.abs(passiveInheritanceChance(1, 1) - 1) < 1e-12);
+  assert.ok(Math.abs(passiveInheritanceChance(2, 2) - 0.6) < 1e-12);
+  assert.ok(Math.abs(passiveInheritanceChance(3, 3) - 0.3) < 1e-12);
   assert.equal(passiveInheritanceChance(4, 4), 0.1);
   assert.ok(Math.abs(passiveInheritanceChance(6, 4) - 0.1 / 15) < 1e-12);
   assert.equal(passiveExactChance(2, 2), 0.24);
   const polluted = passiveInheritanceOutcome(3, 1);
-  assert.ok(Math.abs(polluted.usableChance - (0.4 / 3 + 0.3 * 2 / 3 + 0.2)) < 1e-12);
+  assert.ok(Math.abs(polluted.usableChance - (0.4 / 3 + 0.3 * 2 / 3 + 0.2 + 0.1)) < 1e-12);
   assert.ok(polluted.usableChance > polluted.exactChance);
   assert.ok(polluted.expectedExtraPassives > 0);
 });
 
-test("潜力值逐项按父 30%、母 30%、随机 40% 计算", () => {
-  const perfect = { hp: 100, attack: 100, defense: 100 };
-  const chance = potentialInheritanceChance(perfect, perfect);
-  const oneStat = 0.6 + 0.4 / 101;
-  assert.ok(Math.abs(chance - oneStat ** 3) < 1e-12);
-  assert.equal(potentialInheritanceChance({ hp: null, attack: null, defense: null }, { hp: null, attack: null, defense: null }), 1);
-});
-
-test("大库存计算会合并等价个体并保留潜力更好的代表", () => {
+test("大库存计算会合并等价个体且不再用潜力选择代表", () => {
   const inventory: InventoryPal[] = Array.from({ length: 300 }, (_, index) => ({
     id: `pal-${index}`,
     palId: index < 200 ? "A" : "B",
@@ -97,7 +88,7 @@ test("大库存计算会合并等价个体并保留潜力更好的代表", () =>
   const compacted = compactInventoryForPlanning(inventory, ["目标"]);
   assert.ok(compacted.length <= 8);
   assert.equal(new Set(compacted.map((item) => `${item.palId}|${item.sex}|${item.passives.length}`)).size, compacted.length);
-  assert.ok(compacted.every((item) => (item.hp ?? 0) >= 90));
+  assert.ok(compacted.some((item) => item.id === "pal-1"));
 });
 
 test("一对异性个体可把两个词条传给一步子代", () => {
@@ -111,9 +102,9 @@ test("一对异性个体可把两个词条传给一步子代", () => {
   assert.equal(plan.generations, 1);
   assert.equal(plan.steps.length, 1);
   assert.deepEqual(plan.coveredPassives, ["甲", "乙"]);
-  assert.equal(plan.steps[0].chance, 0.3);
+  assert.ok(Math.abs(plan.steps[0].usableExpectedEggs - 1 / 0.6) < 1e-12);
+  assert.ok(Math.abs(plan.steps[0].perfectExpectedEggs - 1 / 0.24) < 1e-12);
   assert.equal(plan.steps[0].exactChance, 0.24);
-  assert.equal(plan.steps[0].selectionMode, "usable");
 });
 
 test("普通配方拒绝同性配对", () => {
@@ -272,12 +263,11 @@ test("杂词条不再把含有目标词条的可用子代判废", () => {
   const clean = route(["目标词条"]);
   const polluted = route(["目标词条", "无用词条一", "负面词条"]);
   assert.ok(clean && polluted);
-  assert.equal(clean.expectedEggs, 2.5);
-  assert.ok(polluted.expectedEggs < 3);
-  assert.ok(polluted.expectedEggs < 18.75 / 4);
-  assert.ok(polluted.finalExtraPassiveCount > 0);
-  assert.ok(polluted.passivePollutionDifficulty > 0);
-  assert.equal(polluted.steps[0].selectionMode, "usable");
+  assert.ok(Math.abs(clean.usableExpectedEggs - 1) < 1e-12);
+  assert.ok(Math.abs(clean.perfectExpectedEggs - 2.5) < 1e-12);
+  assert.ok(polluted.usableExpectedEggs < 3);
+  assert.ok(polluted.perfectExpectedEggs > polluted.usableExpectedEggs);
+  assert.equal(polluted.passivePollutionDifficulty, 0);
 });
 
 test("指定目标路线强制从库存帕鲁出发，并完整满足目标词条", () => {
@@ -336,17 +326,23 @@ test("仅替换同一位置帕鲁的路线合并为一种方法", () => {
   assert.ok(groups.length >= 2);
 
   const recommended = groupTargetPlans([
-    { ...directGroup.plans[0], difficultyScore: 200 },
-    { ...chainedGroup.plans[0], difficultyScore: 100 },
+    { ...directGroup.plans[0], difficultyScore: 200, usableDifficultyScore: 200 },
+    { ...chainedGroup.plans[0], difficultyScore: 100, usableDifficultyScore: 100 },
   ], "recommended");
   const byDifficulty = groupTargetPlans([
-    { ...directGroup.plans[0], difficultyScore: 200 },
-    { ...chainedGroup.plans[0], difficultyScore: 100 },
+    { ...directGroup.plans[0], difficultyScore: 200, usableDifficultyScore: 200 },
+    { ...chainedGroup.plans[0], difficultyScore: 100, usableDifficultyScore: 100 },
   ], "difficulty");
   assert.equal(recommended[0].plans[0].breedingSteps, 1);
   assert.equal(byDifficulty[0].plans[0].breedingSteps, 2);
   assert.equal(byDifficulty.every((group) => group.plans.length === 1), true);
   assert.equal(hasComplexityDifficultyTradeoff(recommended), true);
+
+  const byPerfectDifficulty = groupTargetPlans([
+    { ...directGroup.plans[0], usableDifficultyScore: 80, perfectDifficultyScore: 300 },
+    { ...chainedGroup.plans[0], usableDifficultyScore: 200, perfectDifficultyScore: 100 },
+  ], "difficulty", "perfect");
+  assert.equal(byPerfectDifficulty[0].plans[0].breedingSteps, 2);
 });
 
 test("精简计算器支持 A+B 查子代与 A+? 查目标", () => {

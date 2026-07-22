@@ -7,12 +7,14 @@ import Link from "next/link";
 import {
   BreedingData,
   CaptureSource,
+  CompletionTarget,
   compactInventoryForPlanning,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   InventoryPal,
   isWorldTreeOnlyPal,
   Pal,
+  planDifficultyScore,
   PlanResult,
   Profile,
   Recommendation,
@@ -185,15 +187,6 @@ function sexRequirementLabel(value: PlanResult["steps"][number]["sexRequirement"
   return "";
 }
 
-function potentialTargetLabel(potentials: { hp: number | null; attack: number | null; defense: number | null }): string {
-  const parts = [
-    potentials.hp == null ? "" : `生命≥${potentials.hp}`,
-    potentials.attack == null ? "" : `攻击≥${potentials.attack}`,
-    potentials.defense == null ? "" : `防御≥${potentials.defense}`,
-  ].filter(Boolean);
-  return parts.join("、");
-}
-
 function maskCsvCell(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
@@ -252,6 +245,7 @@ export default function PlannerApp() {
   const [excludeBossCaptures, setExcludeBossCaptures] = useState(false);
   const [maxGenerations, setMaxGenerations] = useState(4);
   const [routeSortMode, setRouteSortMode] = useState<TargetPlanSortMode>("recommended");
+  const [completionTarget, setCompletionTarget] = useState<CompletionTarget>("usable");
   const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
   const [visibleMethodCount, setVisibleMethodCount] = useState(METHODS_PER_BATCH);
   const [selectedPalId, setSelectedPalId] = useState("");
@@ -447,7 +441,7 @@ export default function PlannerApp() {
     restrictCaptureByLevel,
     excludeWorldTreeOnly,
     excludeBossCaptures,
-    inventory: planningInventory.map((item) => [item.id, item.palId, item.sex, item.passives, item.hp, item.attack, item.defense]),
+    inventory: planningInventory.map((item) => [item.id, item.palId, item.sex, item.passives]),
   }), [mode, profile, exactTargetId, activeDesiredPassives, maxGenerations, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, planningInventory]);
   const calculationIsDirty = calculatedInputKey !== calculationInputKey;
 
@@ -493,11 +487,11 @@ export default function PlannerApp() {
   };
   const exactPlanIndex = Math.min(selectedExactPlanIndex, Math.max(0, exactPlans.length - 1));
   const exactPlan = exactPlans[exactPlanIndex] ?? null;
-  const recommendedPlanGroups = useMemo(() => groupTargetPlans(exactPlans, "recommended"), [exactPlans]);
-  const difficultyPlanGroups = useMemo(() => groupTargetPlans(exactPlans, "difficulty"), [exactPlans]);
+  const recommendedPlanGroups = useMemo(() => groupTargetPlans(exactPlans, "recommended", completionTarget), [exactPlans, completionTarget]);
+  const difficultyPlanGroups = useMemo(() => groupTargetPlans(exactPlans, "difficulty", completionTarget), [exactPlans, completionTarget]);
   const exactPlanGroups = routeSortMode === "difficulty" ? difficultyPlanGroups : recommendedPlanGroups;
   const visibleExactPlanGroups = exactPlanGroups.slice(0, visibleMethodCount);
-  const hasComplexityTradeoff = useMemo(() => hasComplexityDifficultyTradeoff(recommendedPlanGroups), [recommendedPlanGroups]);
+  const hasComplexityTradeoff = useMemo(() => hasComplexityDifficultyTradeoff(recommendedPlanGroups, completionTarget), [recommendedPlanGroups, completionTarget]);
 
   const activeResult: (Recommendation | PlanResult) | null = useMemo(() => {
     if (mode === "exact") return exactPlan;
@@ -917,6 +911,7 @@ export default function PlannerApp() {
                   totalGroups={exactPlanGroups.length}
                   totalPlans={exactPlans.length}
                   sortMode={routeSortMode}
+                  completionTarget={completionTarget}
                   hasComplexityTradeoff={hasComplexityTradeoff}
                   selectedPlanIndex={exactPlanIndex}
                   inventory={inventory}
@@ -928,6 +923,12 @@ export default function PlannerApp() {
                     setRouteSortMode(nextMode);
                     setVisibleMethodCount(METHODS_PER_BATCH);
                     const nextGroups = nextMode === "difficulty" ? difficultyPlanGroups : recommendedPlanGroups;
+                    setSelectedExactPlanIndex(nextGroups[0]?.planIndexes[0] ?? 0);
+                  }}
+                  onCompletionTargetChange={(nextTarget) => {
+                    setCompletionTarget(nextTarget);
+                    setVisibleMethodCount(METHODS_PER_BATCH);
+                    const nextGroups = groupTargetPlans(exactPlans, routeSortMode, nextTarget);
                     setSelectedExactPlanIndex(nextGroups[0]?.planIndexes[0] ?? 0);
                   }}
                   onShowMore={() => setVisibleMethodCount((current) => current + METHODS_PER_BATCH)}
@@ -945,8 +946,8 @@ export default function PlannerApp() {
         <div className="mechanic-grid">
           <article><b>01</b><h3>物种先查表</h3><p>特殊配方、同种繁殖和性别限定会覆盖简单平均公式；本工具直接查询当前 1.0 组合表。</p></article>
           <article><b>02</b><h3>词条先合并去重</h3><p>2+2、3+1、4+0 只要最终词条池相同，基础遗传概率相同。杂词条才是真正的污染。</p></article>
-          <article><b>03</b><h3>潜力逐项独立</h3><p>生命、攻击、防御各自约 30% 继承父方、30% 继承母方、40% 重新随机。</p></article>
-          <article><b>04</b><h3>整条路线一起算难度</h3><p>综合难度等于捕捉成本加预计蛋数 × 30；目标词条齐全就算可用，杂词条只会影响后续遗传，不会把成品直接判废。</p></article>
+          <article><b>03</b><h3>可用与完美分开估算</h3><p>包含全部目标词条就是可用；只有目标词条、没有杂词条才是完美。</p></article>
+          <article><b>04</b><h3>整条路线一起比较</h3><p>综合难度只比较捕捉成本和预计蛋数，可以选择按可用成品或完美成品排序。</p></article>
         </div>
         <a className="mechanics-link" href="https://palworld.wiki.gg/wiki/Breeding" target="_blank" rel="noreferrer">查看 1.0 机制来源 ↗</a>
       </section>
@@ -1074,11 +1075,12 @@ function captureSexRequirement(
   return [...labels][0] ?? "任一性别";
 }
 
-function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComplexityTradeoff, selectedPlanIndex, inventory, palById, palLabel, onSelectPlan, onOpenPal, onSortModeChange, onShowMore }: {
+function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, completionTarget, hasComplexityTradeoff, selectedPlanIndex, inventory, palById, palLabel, onSelectPlan, onOpenPal, onSortModeChange, onCompletionTargetChange, onShowMore }: {
   groups: TargetPlanGroup[];
   totalGroups: number;
   totalPlans: number;
   sortMode: TargetPlanSortMode;
+  completionTarget: CompletionTarget;
   hasComplexityTradeoff: boolean;
   selectedPlanIndex: number;
   inventory: InventoryPal[];
@@ -1087,16 +1089,20 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
   onSelectPlan: (index: number) => void;
   onOpenPal: (id: string) => void;
   onSortModeChange: (mode: TargetPlanSortMode) => void;
+  onCompletionTargetChange: (target: CompletionTarget) => void;
   onShowMore: () => void;
 }) {
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   return <section className="method-browser" aria-label="可行繁殖方法">
     <header className="method-browser-title">
       <div><span>03</span><div><h2>{sortMode === "recommended" ? "按推荐顺序选择方法" : "按综合难度选择方法"}</h2><p>{sortMode === "recommended" ? `${totalPlans.toLocaleString("zh-CN")} 条路线按“步骤数＋补抓数”合并为 ${totalGroups} 类；类内难度从低到高。` : `${totalPlans.toLocaleString("zh-CN")} 条路线全部拆开，严格按综合难度从低到高展示。`}</p></div></div>
-      <div className="route-sort-toggle" role="group" aria-label="方法排序方式"><button className={sortMode === "recommended" ? "active" : ""} onClick={() => onSortModeChange("recommended")}>推荐顺序</button><button className={sortMode === "difficulty" ? "active" : ""} onClick={() => onSortModeChange("difficulty")}>综合难度</button></div>
+      <div className="route-sort-controls">
+        <div className="route-sort-toggle" role="group" aria-label="方法排序方式"><button className={sortMode === "recommended" ? "active" : ""} onClick={() => onSortModeChange("recommended")}>推荐顺序</button><button className={sortMode === "difficulty" ? "active" : ""} onClick={() => onSortModeChange("difficulty")}>综合难度</button></div>
+        <div className="route-sort-toggle" role="group" aria-label="综合难度成品目标"><button className={completionTarget === "usable" ? "active" : ""} onClick={() => onCompletionTargetChange("usable")}>目标：可用</button><button className={completionTarget === "perfect" ? "active" : ""} onClick={() => onCompletionTargetChange("perfect")}>目标：完美</button></div>
+      </div>
     </header>
-    <div className="difficulty-rule"><b>综合难度</b> = 捕捉成本 + 预计蛋数 × 30</div>
-    {hasComplexityTradeoff && <div className="tradeoff-note">有些路线虽然步骤或补抓更多，但因为词条更干净、性别更容易，综合难度反而更低。你可以切换到“综合难度”查看。</div>}
+    <div className="difficulty-rule">综合难度当前按获得<b>{completionTarget === "usable" ? "可用成品" : "完美成品"}</b>所需蛋数与捕捉成本排序。</div>
+    {hasComplexityTradeoff && <div className="tradeoff-note">有些路线虽然步骤或补抓更多，但获得当前目标成品所需蛋数更少。你可以切换到“综合难度”查看。</div>}
     <div className="method-list">
       {groups.map((group, groupIndex) => {
         const selectedOffset = group.planIndexes.indexOf(selectedPlanIndex);
@@ -1108,7 +1114,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
         return <article className={`method-card ${active ? "active" : ""}`} key={group.key}>
           <header>
             <div className="method-identity"><b>方法 {String(groupIndex + 1).padStart(2, "0")}</b><strong>{plan.breedingSteps} 步 · {plan.newCaptureCount} 补抓</strong>{groupIndex === 0 && <i>当前排序首选</i>}{active && <em>下方正在查看</em>}</div>
-            <div className="method-metrics"><span><b>{plan.breedingSteps}</b>步骤</span><span><b>{plan.newCaptureCount}</b>补抓</span><span title={`捕捉 ${formatNumber(plan.captureDifficulty)} ＋ 孵蛋 ${formatNumber(plan.eggDifficulty)} ＋ 杂词条 ${formatNumber(plan.passivePollutionDifficulty)}`}><b>{formatNumber(plan.difficultyScore)}</b>综合难度</span><span><b>{formatNumber(plan.expectedEggs)}</b>预计蛋数</span></div>
+            <div className="method-metrics"><span><b>{plan.breedingSteps}</b>步骤</span><span><b>{plan.newCaptureCount}</b>补抓</span><span><b>{formatNumber(planDifficultyScore(plan, completionTarget))}</b>综合难度</span><span><b>{formatNumber(plan.usableExpectedEggs)}</b>可用蛋数</span><span><b>{formatNumber(plan.perfectExpectedEggs)}</b>完美蛋数</span></div>
           </header>
           {plan.steps.length > 0 ? <div className="method-flow">
             {plan.steps.slice(0, 3).map((step) => <div className="method-flow-step" key={step.id}>
@@ -1117,7 +1123,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
               <i>＋</i>
               <RoutePalButton pal={palById.get(step.parentB.palId)} source={step.parentB.source} captureSource={step.parentB.captureSource} sexLabel={effectiveParentSex(step, "B", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <i>→</i>
-              <RoutePalButton pal={palById.get(step.childId)} source="result" onOpenPal={onOpenPal} />
+              <RoutePalButton pal={palById.get(step.childId)} source="result" passives={step.inheritedPassives} onOpenPal={onOpenPal} />
             </div>)}
             {plan.steps.length > 3 && <div className="method-more-steps">下方已展开全部 {plan.steps.length} 步操作</div>}
           </div> : <div className="method-direct">目标已经在库存中，无需继续配种。</div>}
@@ -1133,7 +1139,7 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
                 return <button className={planIndex === selectedPlanIndex ? "active" : ""} key={planIndex} onClick={() => onSelectPlan(planIndex)}>
                   <span><i>仓库</i><b>{rootNames.join("＋") || "已有种源"}</b></span>
                   <span className={captures.length ? "needs-capture" : "owned-only"}><i>{captures.length ? "补抓" : "无需补抓"}</i><b>{captures.join("＋") || "全部已有"}</b></span>
-                  <small title={`捕捉 ${formatNumber(variant.captureDifficulty)} ＋ 孵蛋 ${formatNumber(variant.eggDifficulty)} ＋ 杂词条 ${formatNumber(variant.passivePollutionDifficulty)}`}><b>{formatNumber(variant.difficultyScore)}</b> 难度 · 约 {formatNumber(variant.expectedEggs)} 蛋{variant.bossCaptureCount ? " · 含 Boss" : ""}</small>
+                  <small><b>{formatNumber(planDifficultyScore(variant, completionTarget))}</b> 难度 · 可用约 {formatNumber(variant.usableExpectedEggs)} 蛋 · 完美约 {formatNumber(variant.perfectExpectedEggs)} 蛋{variant.bossCaptureCount ? " · 含 Boss" : ""}</small>
                   <em>{planIndex === selectedPlanIndex ? "已选择 ✓" : "查看详情"}</em>
                 </button>;
               })}
@@ -1148,17 +1154,18 @@ function RouteMethodBrowser({ groups, totalGroups, totalPlans, sortMode, hasComp
   </section>;
 }
 
-function RoutePalButton({ pal, source, captureSource, sexLabel, onOpenPal }: {
+function RoutePalButton({ pal, source, captureSource, sexLabel, passives, onOpenPal }: {
   pal?: Pal;
   source: "owned" | "captured" | "bred" | "result";
   captureSource?: CaptureSource;
   sexLabel?: string;
+  passives?: string[];
   onOpenPal: (id: string) => void;
 }) {
   const sourceLabel = source === "owned" ? `库存已有${sexLabel ? ` · ${sexLabel}` : ""}` : source === "captured" ? `补抓${sexLabel ? ` · ${sexLabel}` : ""} · ${captureSource ? captureRangeLabel(captureSource) : "等级未知"}` : source === "bred" ? `前序子代${sexLabel ? ` · ${sexLabel}` : ""}` : "本步产出";
   return <button className={`route-pal ${source}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>
     {pal?.image && <img src={pal.image} alt="" />}
-    <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong></span>
+    <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong>{source === "result" && <em>{passives?.length ? passives.join(" · ") : "无指定词条"}</em>}</span>
   </button>;
 }
 
@@ -1166,8 +1173,7 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
   const inventoryById = new Map(inventory.map((item) => [item.id, item]));
   const stepById = new Map(result.steps.map((step) => [step.id, step]));
   return <section className="plan-details inline-plan-details" id="steps">
-    <div className="inline-details-title"><div><b>完整操作</b><span>已在当前方法内展开，无需翻到页面底部</span></div><small>{result.steps.length} 步 · {result.newCaptureCount} 补抓 · 约 {formatNumber(result.expectedEggs)} 蛋{result.finalExtraPassiveCount >= 0.05 ? ` · 成品平均约 ${formatNumber(result.finalExtraPassiveCount)} 个杂词条` : " · 纯净成品"}</small></div>
-    <div className="difficulty-breakdown"><span>捕捉成本 <b>{formatNumber(result.captureDifficulty)}</b></span><i>＋</i><span>孵蛋成本 <b>{formatNumber(result.eggDifficulty)}</b></span>{result.passivePollutionDifficulty > 0 && <><i>＋</i><span>杂词条修正 <b>{formatNumber(result.passivePollutionDifficulty)}</b></span></>}<small>每枚蛋 × 30；每个预计杂词条仅 × 3</small></div>
+    <div className="inline-details-title"><div><b>完整操作</b><span>已在当前方法内展开，无需翻到页面底部</span></div><small>{result.steps.length} 步 · {result.newCaptureCount} 补抓 · 可用约 {formatNumber(result.usableExpectedEggs)} 蛋 · 完美约 {formatNumber(result.perfectExpectedEggs)} 蛋</small></div>
     {result.missingPassives.length > 0 && <div className="warning-box"><b>还有词条种源缺口</b><span>{result.missingPassives.join("、")} 未在当前库存的可达链中。路线会先给出最接近结果；若想稳定遗传，请先抓到携带这些词条的帕鲁。</span></div>}
     {result.captures.length > 0 && <div className="capture-checklist">
       <div className="capture-title"><span>出发前补抓</span><h3>这条路线需要先获得 {result.captures.reduce((sum, item) => sum + item.count, 0)} 只野外种源</h3><p>请对照下方常见等级判断当前是否适合捕捉；点击任意卡片可打开内置栖息地图。</p></div>
@@ -1194,11 +1200,11 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
               <span className="breed-plus">＋</span>
               <ParentChip pal={b} parent={step.parentB} gender={effectiveParentSex(step, "B", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <span className="breed-arrow">→</span>
-              <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>筛选子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong></span></button>
+              <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>目标子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong><em>{step.inheritedPassives.length ? `目标词条：${step.inheritedPassives.join(" · ")}` : "无指定词条"}</em></span></button>
             </div>
             <div className="step-instructions">
-              <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后只保留<strong>{step.inheritedPassives.length ? `${step.selectionMode === "pure" ? "只有" : "至少带有"} ${step.inheritedPassives.join("、")}` : step.sexRequirement ? `性别为${sexRequirementLabel(step.sexRequirement)}` : "符合后续要求"}{step.inheritedPassives.length && step.sexRequirement ? `、性别为${sexRequirementLabel(step.sexRequirement)}` : ""}{potentialTargetLabel(step.potentialTargets) ? `，且 ${potentialTargetLabel(step.potentialTargets)}` : ""}</strong>的 {child?.nameZh}{step.selectionMode === "usable" && step.inheritedPassives.length ? "；可以暂时带着其他词条继续下一步" : ""}。</p>
-              <div><span>{step.selectionMode === "pure" ? "纯净词条率" : "可用词条率"} <b>{Math.round(step.chance * 1000) / 10}%</b></span>{step.selectionMode === "usable" && step.exactChance < step.chance && <span>其中纯净约 <b>{Math.round(step.exactChance * 1000) / 10}%</b></span>}{step.expectedExtraPassives >= 0.05 && <span>平均杂词条 <b>{formatNumber(step.expectedExtraPassives)}</b></span>}{potentialTargetLabel(step.potentialTargets) && <span>潜力达标率 <b>{Math.round(step.potentialChance * 1000) / 10}%</b></span>}{step.sexRequirement && <span>需要{sexRequirementLabel(step.sexRequirement)} · 性别效率 <b>{Math.round(step.sexChance * 1000) / 10}%</b></span>}<span>本步平均约 <b>{formatNumber(step.expectedEggs)}</b> 枚蛋</span>{step.duplicateAction === "breed" && <span className="duplicate-note">需额外孵化一只异性副本</span>}{step.duplicateAction === "catch" && <span className="duplicate-note">需捕捉一雄一雌两只</span>}</div>
+              <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后保留<strong>{step.inheritedPassives.length ? `至少带有 ${step.inheritedPassives.join("、")}` : step.sexRequirement ? `性别为${sexRequirementLabel(step.sexRequirement)}` : "符合后续要求"}{step.inheritedPassives.length && step.sexRequirement ? `、性别为${sexRequirementLabel(step.sexRequirement)}` : ""}</strong>的 {child?.nameZh}。</p>
+              <div><span>可用预计 <b>{formatNumber(step.usableExpectedEggs)}</b> 枚蛋</span><span>完美预计 <b>{formatNumber(step.perfectExpectedEggs)}</b> 枚蛋</span>{step.duplicateAction === "breed" && <span className="duplicate-note">需额外孵化一只异性副本</span>}{step.duplicateAction === "catch" && <span className="duplicate-note">需捕捉一雄一雌两只</span>}</div>
             </div>
           </div>
         </article>;
@@ -1209,5 +1215,5 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
 
 function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; extraPassiveCount: number; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}{parent.source === "bred" && parent.extraPassiveCount >= 0.05 ? ` · 约 ${formatNumber(parent.extraPassiveCount)} 杂词条` : ""}</em></span></button>;
+  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "无指定词条")}</em></span></button>;
 }
