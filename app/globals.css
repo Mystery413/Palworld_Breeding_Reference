@@ -201,11 +201,11 @@ button { color: inherit; }
 .passive-tag i { background: rgba(255,255,255,.7); border-radius: 4px; color: inherit; font-size: 7px; font-style: normal; font-weight: 900; letter-spacing: .04em; padding: 2px 4px; white-space: nowrap; }
 .passive-tag.compact { gap: 3px; padding: 3px 5px; }
 .passive-tag.compact i { font-size: 6px; padding: 1px 3px; }
-.passive-rank-1 { --passive-bg: linear-gradient(180deg, #edf4f6, #dce7ea); --passive-border: #93aeb6; --passive-color: #29444d; }
-.passive-rank-2 { --passive-bg: linear-gradient(180deg, #d8f0f8, #b9dce9); --passive-border: #4f9cb7; --passive-color: #16566d; }
-.passive-rank-3 { --passive-bg: linear-gradient(180deg, #f9e56c, #d9b62d); --passive-border: #9e7a05; --passive-color: #4d3b00; box-shadow: inset 0 1px rgba(255,255,255,.55); }
-.passive-rank-4 { --passive-bg: linear-gradient(112deg, #ffe46c 0%, #8be9de 30%, #83b9ff 52%, #d59bff 74%, #ff9dbe 100%); --passive-border: #7763b6; --passive-color: #302454; box-shadow: inset 0 1px rgba(255,255,255,.7); }
-.passive-rank-5 { --passive-bg: linear-gradient(112deg, #fff17a 0%, #75f1d7 24%, #72b7ff 48%, #c68cff 70%, #ff86b4 100%); --passive-border: #59448f; --passive-color: #25183f; box-shadow: inset 0 0 0 1px rgba(255,255,255,.7), 0 1px 4px rgba(93,65,151,.2); }
+.passive-rank-1 { --passive-bg: linear-gradient(180deg, #edf4f6, #dce7ea); --passive-border: #93aeb6; --passive-color: #29444d; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; }
+.passive-rank-2 { --passive-bg: linear-gradient(180deg, #cfeeff, #9fd2ed); --passive-border: #3e91bc; --passive-color: #104c6c; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; }
+.passive-rank-3 { --passive-bg: linear-gradient(180deg, #ffe978, #e2b92d); --passive-border: #9e7400; --passive-color: #493600; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; box-shadow: inset 0 1px rgba(255,255,255,.6); }
+.passive-rank-4 { --passive-bg: linear-gradient(112deg, #ffe35f 0%, #75eadb 27%, #75b8ff 51%, #ce91ff 74%, #ff8eb8 100%); --passive-border: #6d55ad; --passive-color: #2e2052; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; box-shadow: inset 0 1px rgba(255,255,255,.72); }
+.passive-rank-5 { --passive-bg: linear-gradient(112deg, #fff06c 0%, #61efd3 24%, #65b0ff 48%, #bf7fff 70%, #ff78ad 100%); --passive-border: #523b8d; --passive-color: #24153f; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.75), 0 1px 4px rgba(93,65,151,.25); }
 .passive-custom { --passive-bg: #f1eee8; --passive-border: #cfc8bb; --passive-color: #625b50; }
 .passive-negative { --passive-bg: linear-gradient(180deg, #f6d0ce, #e9aba6); --passive-border: #b85b55; --passive-color: #762520; }
 .passive-negative-2 { --passive-bg: linear-gradient(180deg, #efbbb7, #df8e88); --passive-border: #a6413b; --passive-color: #651813; }

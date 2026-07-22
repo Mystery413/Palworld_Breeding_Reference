@@ -24,6 +24,7 @@ import {
 } from "@/lib/planner";
 import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
 import { loadBreedingData } from "@/lib/supabase-data";
+import { bundledPassiveRanks, normalizePassiveName, passiveRankOf } from "@/lib/passive-ranks";
 import {
   listSharedSaveUsers,
   loadSharedUserInventory,
@@ -153,8 +154,8 @@ function palMatchScore(pal: Pal, rawQuery: string): number | null {
   return null;
 }
 
-function passiveTier(rank?: number | null): { className: string; label: string } {
-  if (rank == null) return { className: "passive-custom", label: "自定义" };
+function passiveTier(rank?: number | null): { className: string; label: string | null } {
+  if (rank == null) return { className: "passive-custom", label: null };
   if (rank < 0) return { className: `passive-negative passive-negative-${Math.min(3, Math.abs(rank))}`, label: `负面 ${Math.abs(rank)}` };
   if (rank >= 5) return { className: "passive-rank-5", label: "顶级" };
   if (rank === 4) return { className: "passive-rank-4", label: "彩色" };
@@ -408,11 +409,17 @@ export default function PlannerApp() {
   }, [inventory, activeUserId, isHydrated, saveUsers]);
 
   const palById = useMemo(() => new Map(data?.pals.map((pal) => [pal.id, pal]) ?? []), [data]);
-  const passiveRanks = data?.passiveRanks ?? {};
+  const passiveRanks = useMemo(() => {
+    const ranks: Record<string, number | null> = { ...bundledPassiveRanks };
+    for (const [name, rank] of Object.entries(data?.passiveRanks ?? {})) {
+      ranks[name] = rank;
+      ranks[normalizePassiveName(name)] = rank;
+    }
+    return ranks;
+  }, [data]);
   const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)).sort((left, right) => {
-    const ranks = data?.passiveRanks ?? {};
-    return (ranks[right] ?? -99) - (ranks[left] ?? -99) || left.localeCompare(right, "zh-CN");
-  }), [inventory, data]);
+    return (passiveRankOf(right, passiveRanks) ?? -99) - (passiveRankOf(left, passiveRanks) ?? -99) || left.localeCompare(right, "zh-CN");
+  }), [inventory, passiveRanks]);
   const catchLevelLimit = Math.min(80, playerLevel + 8);
   const captureSources = useMemo(() => {
     if (!data || !allowCapture) return [];
@@ -529,7 +536,7 @@ export default function PlannerApp() {
       : unique([...availablePassives, ...(data?.passives ?? []), ...PASSIVE_PRESETS]);
     return pool
       .filter((passive) => !selected.includes(passive) && fuzzyMatches(passive, normalized))
-      .sort((left, right) => Number(owned.has(right)) - Number(owned.has(left)) || (passiveRanks[right] ?? -99) - (passiveRanks[left] ?? -99) || left.localeCompare(right, "zh-CN"))
+      .sort((left, right) => Number(owned.has(right)) - Number(owned.has(left)) || (passiveRankOf(right, passiveRanks) ?? -99) - (passiveRankOf(left, passiveRanks) ?? -99) || left.localeCompare(right, "zh-CN"))
       .slice(0, 12);
   };
 
@@ -792,7 +799,7 @@ export default function PlannerApp() {
                 <div className="inventory-main">
                   <div><strong>{pal?.nameZh ?? item.palId}</strong><span className={item.sex === "M" ? "male" : "female"}>{item.sex === "M" ? "♂" : "♀"}</span></div>
                   <small>No.{pal?.dex} · {pal?.name}</small>
-                  <div className="mini-passives">{item.passives.length ? item.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} compact />) : <em>无词条</em>}</div>
+                  <div className="mini-passives">{item.passives.length ? item.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} compact />) : <em>无词条</em>}</div>
                 </div>
                 <button className="remove-button" onClick={() => setInventory((current) => current.filter((entry) => entry.id !== item.id))} aria-label={`删除${pal?.nameZh ?? "帕鲁"}`}>×</button>
               </article>;
@@ -837,13 +844,13 @@ export default function PlannerApp() {
             <div className="goal-block">
               <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "目标词条"} <small>{activeDesiredPassives.length}/4</small></label>
               <div className="tag-input">
-                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
                 {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
               </div>
               {mode === "exact" && <small className="passive-library-note">默认仅显示仓库已有词条，并按品质从高到低排列；输入名称可搜索完整词条库。</small>}
-              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />}
+              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车仍可添加未收录词条" />}
               {mode !== "exact" && <div className="quick-passives">
-                {availablePassives.filter((passive) => !activeDesiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRanks[passive]); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}<small>{tier.label}</small></button>; })}
+                {availablePassives.filter((passive) => !activeDesiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRankOf(passive, passiveRanks)); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}{tier.label && <small>{tier.label}</small>}</button>; })}
                 {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
               </div>}
               {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
@@ -980,10 +987,10 @@ export default function PlannerApp() {
               <div className="field-row">
                 <label>已有词条 <small>请把杂词条也录入</small></label>
                 <div className="tag-input draft-tags">
-                  {draft.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRanks[passive]} onRemove={() => setDraft((current) => ({ ...current, passives: current.passives.filter((item) => item !== passive) }))} />)}
-                  <input value={passiveInput} onChange={(event) => setPassiveInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "draft")} placeholder="搜索词条或输入自定义词条" />
+                  {draft.passives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} onRemove={() => setDraft((current) => ({ ...current, passives: current.passives.filter((item) => item !== passive) }))} />)}
+                  <input value={passiveInput} onChange={(event) => setPassiveInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "draft")} placeholder="搜索词条或输入未收录词条" />
                 </div>
-                <SearchSuggestions items={passiveSuggestions(passiveInput, draft.passives)} ranks={passiveRanks} query={passiveInput} onSelect={addDraftPassive} emptyText="没有匹配词条；按回车可添加自定义词条" />
+                <SearchSuggestions items={passiveSuggestions(passiveInput, draft.passives)} ranks={passiveRanks} query={passiveInput} onSelect={addDraftPassive} emptyText="没有匹配词条；按回车仍可添加未收录词条" />
               </div>
               <div className="field-row">
                 <label>潜力值 <small>没有能力眼镜可以留空</small></label>
@@ -1003,12 +1010,12 @@ export default function PlannerApp() {
 
 function PassiveTag({ name, rank, onRemove, compact = false }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean }) {
   const tier = passiveTier(rank);
-  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""}`}><b>{name}</b><i>{tier.label}</i>{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}</span>;
+  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""}`}><b>{name}</b>{tier.label && <i>{tier.label}</i>}{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}</span>;
 }
 
 function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items: string[]; ranks: Record<string, number | null>; query: string; onSelect: (value: string) => void; emptyText: string }) {
   return <div className="search-suggestions" aria-label="匹配选项">
-    {items.map((item) => { const tier = passiveTier(ranks[item]); return <button className={tier.className} key={item} onClick={() => onSelect(item)}><span>{item}</span><small>{tier.label}</small></button>; })}
+    {items.map((item) => { const tier = passiveTier(passiveRankOf(item, ranks)); return <button className={tier.className} key={item} onClick={() => onSelect(item)}><span>{item}</span>{tier.label && <small>{tier.label}</small>}</button>; })}
     {query.trim() && !items.length && <p>{emptyText}</p>}
   </div>;
 }
