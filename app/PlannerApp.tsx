@@ -3,12 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { ChangeEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   BreedingData,
-  calculateOffspring,
   CaptureSource,
   compactInventoryForPlanning,
-  findBreedingPartners,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   InventoryPal,
@@ -22,7 +21,7 @@ import {
   TargetPlanSortMode,
 } from "@/lib/planner";
 import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
-import { loadBreedingData, loadPalHabitatLocations } from "@/lib/supabase-data";
+import { loadBreedingData } from "@/lib/supabase-data";
 import {
   listSharedSaveUsers,
   loadSharedUserInventory,
@@ -30,9 +29,9 @@ import {
   SharedSaveUser,
 } from "@/lib/supabase-user-data";
 import { SaveImportModal } from "./SaveImportModal";
+import { PalDetailModal } from "./PalDetailModal";
 
 const STORAGE_KEY = "palworld-breeding-lab-v1";
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const METHODS_PER_BATCH = 6;
 
 const PASSIVE_PRESETS = [
@@ -68,20 +67,6 @@ const PROFILE_COPY: Record<Profile, { label: string; short: string; icon: string
   balanced: { label: "全能培养", short: "兼顾战斗与据点价值", icon: "◈" },
 };
 
-const WORK_COPY: Record<string, { label: string; icon: string; color: string }> = {
-  Kindling: { label: "生火", icon: "🔥", color: "#db643f" },
-  Watering: { label: "浇水", icon: "💧", color: "#4b9bd8" },
-  Planting: { label: "播种", icon: "🌱", color: "#70a84b" },
-  Electricity: { label: "发电", icon: "⚡", color: "#d4a62e" },
-  Handiwork: { label: "手工作业", icon: "🛠", color: "#c28347" },
-  Gathering: { label: "采集", icon: "🌾", color: "#97a543" },
-  Lumbering: { label: "伐木", icon: "🪵", color: "#8f6546" },
-  Mining: { label: "采矿", icon: "⛏", color: "#687686" },
-  Production: { label: "制药", icon: "🧪", color: "#a06bb1" },
-  Cooling: { label: "冷却", icon: "❄", color: "#62aaca" },
-  Transporting: { label: "搬运", icon: "📦", color: "#a97954" },
-  Farming: { label: "牧场", icon: "🐾", color: "#d18a9d" },
-};
 
 type SavedState = {
   inventory: InventoryPal[];
@@ -271,8 +256,6 @@ export default function PlannerApp() {
   const [visibleMethodCount, setVisibleMethodCount] = useState(METHODS_PER_BATCH);
   const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
-  const [isPaldexOpen, setPaldexOpen] = useState(false);
-  const [paldexSearch, setPaldexSearch] = useState("");
   const [isInventoryOpen, setInventoryOpen] = useState(false);
   const [isSaveImportOpen, setSaveImportOpen] = useState(false);
   const [draft, setDraft] = useState<DraftPal>(EMPTY_DRAFT);
@@ -305,14 +288,13 @@ export default function PlannerApp() {
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (detailPalId) setDetailPalId("");
-      else if (isPaldexOpen) setPaldexOpen(false);
       else if (isSaveImportOpen) setSaveImportOpen(false);
       else if (isInventoryOpen) setInventoryOpen(false);
       else setTargetPickerOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [detailPalId, isPaldexOpen, isSaveImportOpen, isInventoryOpen]);
+  }, [detailPalId, isSaveImportOpen, isInventoryOpen]);
 
   const initializePlannerWorker = useCallback(() => {
     plannerWorkerRef.current?.terminate();
@@ -545,14 +527,6 @@ export default function PlannerApp() {
       .slice(0, 40);
   }, [data, targetSearch]);
 
-  const paldexOptions = useMemo(() => {
-    if (!data) return [];
-    const query = normalizedSearch(paldexSearch);
-    return data.pals
-      .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
-      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }));
-  }, [data, paldexSearch]);
-
   const passiveSuggestions = (query: string, selected: string[], ownedFirst = false) => {
     const normalized = normalizedSearch(query);
     const owned = new Set(availablePassives);
@@ -762,7 +736,8 @@ export default function PlannerApp() {
           <span><strong>帕鲁育种实验室</strong><small>PAL GENETICS · 1.0</small></span>
         </a>
         <nav className="topnav" aria-label="主导航">
-          <button onClick={() => setPaldexOpen(true)}>完整图鉴</button>
+          <Link href="/paldex">完整图鉴</Link>
+          <Link href="/calculator">配种计算器</Link>
           <a href="#inventory">我的帕鲁</a>
           <a href="#planner">智能规划</a>
           <a href="#steps">操作清单</a>
@@ -784,7 +759,8 @@ export default function PlannerApp() {
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setInventoryOpen(true)}>+ 录入第一只帕鲁</button>
             <button className="ghost-button" onClick={loadExample}>用示例体验</button>
-            <button className="ghost-button" onClick={() => setPaldexOpen(true)}>浏览完整图鉴</button>
+            <Link className="ghost-button" href="/paldex">浏览完整图鉴</Link>
+            <Link className="ghost-button" href="/calculator">打开配种计算器</Link>
           </div>
         </div>
         <div className="hero-console" aria-label="规划器概览">
@@ -964,8 +940,6 @@ export default function PlannerApp() {
         </div>
       </section>
 
-      {data && <BreedingCalculator data={data} palById={palById} onOpenPal={setDetailPalId} />}
-
       <section className="mechanics" id="mechanics">
         <div className="section-heading light"><div><span>规则</span><h2>为什么这样规划</h2></div><p>每个结果都基于同一套 1.0 规则。</p></div>
         <div className="mechanic-grid">
@@ -1020,38 +994,10 @@ export default function PlannerApp() {
         </section>
       </div>}
 
-      {isPaldexOpen && <PaldexBrowserModal pals={paldexOptions} total={data?.pals.length ?? 0} query={paldexSearch} onQueryChange={setPaldexSearch} onOpenPal={setDetailPalId} onClose={() => setPaldexOpen(false)} />}
       {isSaveImportOpen && <SaveImportModal pals={data?.pals ?? []} onClose={() => setSaveImportOpen(false)} onImport={importGameSave} />}
       {detailPal && <PalDetailModal key={detailPal.id} pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );
-}
-
-function PaldexBrowserModal({ pals, total, query, onQueryChange, onOpenPal, onClose }: { pals: Pal[]; total: number; query: string; onQueryChange: (value: string) => void; onOpenPal: (id: string) => void; onClose: () => void }) {
-  const [visibleCount, setVisibleCount] = useState(60);
-  const visiblePals = pals.slice(0, visibleCount);
-  return <div className="modal-backdrop paldex-browser-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <section className="paldex-browser-modal" role="dialog" aria-modal="true" aria-labelledby="paldex-browser-title">
-      <header>
-        <div><span>PALDECK · ALL ENTRIES</span><h2 id="paldex-browser-title">完整帕鲁图鉴</h2><p>任意帕鲁都可查看属性、工作适应性与栖息地图。</p></div>
-        <button onClick={onClose} aria-label="关闭完整图鉴">×</button>
-      </header>
-      <div className="paldex-browser-tools">
-        <label htmlFor="paldex-search">搜索图鉴</label>
-        <input id="paldex-search" value={query} onChange={(event) => { onQueryChange(event.target.value); setVisibleCount(60); }} placeholder="搜索中文名、英文名或图鉴编号" autoFocus />
-        <span>显示 <b>{pals.length}</b> / {total} 个条目</span>
-      </div>
-      <div className="paldex-grid" role="list">
-        {visiblePals.map((pal) => <button key={pal.id} role="listitem" onClick={() => onOpenPal(pal.id)}>
-          <img src={pal.image} alt="" loading="lazy" decoding="async" />
-          <span><small>No.{pal.dex}</small><strong>{pal.nameZh}</strong><em>{pal.name}</em></span>
-          <i>查看图鉴 →</i>
-        </button>)}
-        {!pals.length && <div className="paldex-empty">没有找到匹配的帕鲁，请换一个名称或编号。</div>}
-      </div>
-      {visiblePals.length < pals.length && <button className="show-more-methods" onClick={() => setVisibleCount((count) => count + 60)}>继续加载 {Math.min(60, pals.length - visiblePals.length)} 个条目</button>}
-    </section>
-  </div>;
 }
 
 function PassiveTag({ name, rank, onRemove, compact = false }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean }) {
@@ -1264,113 +1210,4 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
 function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; extraPassiveCount: number; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
   return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "优先高潜力")}{parent.source === "bred" && parent.extraPassiveCount >= 0.05 ? ` · 约 ${formatNumber(parent.extraPassiveCount)} 杂词条` : ""}</em></span></button>;
-}
-
-function BreedingCalculator({ data, palById, onOpenPal }: { data: BreedingData; palById: Map<string, Pal>; onOpenPal: (id: string) => void }) {
-  const [calculatorMode, setCalculatorMode] = useState<"offspring" | "partner">("offspring");
-  const [parentAId, setParentAId] = useState("");
-  const [parentBId, setParentBId] = useState("");
-  const [targetId, setTargetId] = useState("");
-  const matches = calculatorMode === "offspring" ? calculateOffspring(data, parentAId, parentBId) : findBreedingPartners(data, parentAId, targetId);
-  const options = [...data.pals].sort((a, b) => (a.dex === "-" ? 1 : b.dex === "-" ? -1 : a.dex.localeCompare(b.dex, "zh-CN", { numeric: true })));
-  const selector = (label: string, value: string, onChange: (value: string) => void) => <label><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}><option value="">请选择帕鲁</option>{options.map((pal) => <option value={pal.id} key={pal.id}>No.{pal.dex} · {pal.nameZh}</option>)}</select></label>;
-  return <section className="breeding-calculator" aria-label="A加B配种计算器">
-    <div className="calculator-heading"><div><span>快速工具</span><h2>A ＋ B ＝ C 配种计算器</h2><p>只查配方，不考虑库存、词条和路线；点击结果即可打开图鉴。</p></div><div className="calculator-mode"><button className={calculatorMode === "offspring" ? "active" : ""} onClick={() => setCalculatorMode("offspring")}>A＋B 得到什么</button><button className={calculatorMode === "partner" ? "active" : ""} onClick={() => setCalculatorMode("partner")}>A＋什么得到 C</button></div></div>
-    <div className="calculator-equation">
-      {selector("亲代 A", parentAId, setParentAId)}<b>＋</b>
-      {calculatorMode === "offspring" ? selector("亲代 B", parentBId, setParentBId) : <div className="calculator-unknown"><span>待查亲代</span><strong>？</strong></div>}
-      <b>＝</b>{calculatorMode === "partner" ? selector("目标 C", targetId, setTargetId) : <div className="calculator-unknown"><span>子代结果</span><strong>？</strong></div>}
-    </div>
-    {(calculatorMode === "offspring" ? parentAId && parentBId : parentAId && targetId) && <div className="calculator-results">
-      {matches.length ? matches.map((match, index) => {
-        const a = palById.get(match.parentAId); const b = palById.get(match.parentBId); const child = palById.get(match.childId);
-        return <div className="calculator-result" key={`${match.parentBId}-${match.childId}-${index}`}>
-          <button onClick={() => onOpenPal(match.parentAId)}>{a?.image && <img src={a.image} alt="" />}<span><small>{genderLabel(match.parentASex)}</small><b>{a?.nameZh}</b></span></button><i>＋</i>
-          <button onClick={() => onOpenPal(match.parentBId)}>{b?.image && <img src={b.image} alt="" />}<span><small>{genderLabel(match.parentBSex)}</small><b>{b?.nameZh}</b></span></button><i>＝</i>
-          <button className="calculator-child" onClick={() => onOpenPal(match.childId)}>{child?.image && <img src={child.image} alt="" />}<span><small>子代</small><b>{child?.nameZh}</b></span></button>
-        </div>;
-      }) : <div className="calculator-empty">当前 1.0 配方表中没有找到这个组合。</div>}
-    </div>}
-  </section>;
-}
-
-const MAP_BOUNDS = {
-  palpagos: { minX: -1099400, minY: -724400, maxX: 349400, maxY: 724400 },
-  worldTree: { minX: 347351.5, minY: -818197, maxX: 689148.5, maxY: -476400 },
-};
-
-function PalDetailModal({ pal, onClose }: { pal: Pal; onClose: () => void }) {
-  const habitat = pal.habitat;
-  const [loadedLocations, setLoadedLocations] = useState(habitat?.locations ?? []);
-  const [locationsLoading, setLocationsLoading] = useState(Boolean(habitat));
-  useEffect(() => {
-    if (!habitat) return;
-    let active = true;
-    loadPalHabitatLocations(pal.id)
-      .then((locations) => { if (active) setLoadedLocations(locations); })
-      .catch(() => { if (active) setLoadedLocations([]); })
-      .finally(() => { if (active) setLocationsLoading(false); });
-    return () => { active = false; };
-  }, [pal.id, habitat]);
-  const worlds = (["palpagos", "worldTree"] as const).filter((world) => world === "palpagos"
-    ? habitat?.hasPalpagosLocations ?? loadedLocations.some((location) => location.world === world)
-    : habitat?.hasWorldTreeLocations ?? loadedLocations.some((location) => location.world === world));
-  const [world, setWorld] = useState<"palpagos" | "worldTree">(worlds[0] ?? "palpagos");
-  const [imageExpanded, setImageExpanded] = useState(false);
-  const [mapZoom, setMapZoom] = useState(1);
-  const [mapDragging, setMapDragging] = useState(false);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
-  const locations = loadedLocations.filter((location) => location.world === world);
-  const bounds = MAP_BOUNDS[world];
-  const pointStyle = (location: (typeof locations)[number]) => ({
-    left: `${Math.max(0, Math.min(100, ((location.y - bounds.minY) / (bounds.maxY - bounds.minY)) * 100))}%`,
-    top: `${Math.max(0, Math.min(100, (1 - (location.x - bounds.minX) / (bounds.maxX - bounds.minX)) * 100))}%`,
-  });
-  const workEntries = Object.entries(pal.work).sort((a, b) => b[1] - a[1]);
-  const range = (min?: number | null, max?: number | null) => min == null ? "无记录" : max != null && max > min ? `Lv.${min}–${max}` : `Lv.${min}`;
-  const wildRange = range(habitat?.commonWildMinLevel ?? habitat?.wildMinLevel, habitat?.commonWildMaxLevel ?? habitat?.wildMaxLevel);
-  const bossRange = range(habitat?.bossMinLevel, habitat?.bossMaxLevel);
-  const startMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (mapZoom <= 1 || !mapRef.current) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { x: event.clientX, y: event.clientY, left: mapRef.current.scrollLeft, top: mapRef.current.scrollTop };
-    setMapDragging(true);
-  };
-  const moveMap = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!mapDragging || !mapRef.current) return;
-    mapRef.current.scrollLeft = dragRef.current.left - (event.clientX - dragRef.current.x);
-    mapRef.current.scrollTop = dragRef.current.top - (event.clientY - dragRef.current.y);
-  };
-  const stopMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    setMapDragging(false);
-  };
-
-  return <div className="modal-backdrop detail-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <section className="pal-detail-modal" role="dialog" aria-modal="true" aria-labelledby="pal-detail-title">
-      <header>
-        <div className="detail-identity">{pal.image && <button className="portrait-button" onClick={() => setImageExpanded(true)} aria-label="放大帕鲁图片"><img src={pal.image} alt={pal.nameZh} /><i>放大</i></button>}<div><span>PALDECK · No.{pal.dex}</span><h2 id="pal-detail-title">{pal.nameZh} <small>{pal.name}</small></h2><p>{pal.elements.join(" · ") || "特殊条目"}</p></div></div>
-        <button onClick={onClose} aria-label="关闭图鉴">×</button>
-      </header>
-      <div className="detail-layout">
-        <div className="habitat-map-panel">
-          <div className="map-toolbar"><div><b>内置栖息地图</b><small>橙色白天 · 紫色夜晚 · 红色昼夜 · 金色 Boss · 放大后按住拖动</small></div><div className="map-tools">{worlds.length > 1 && worlds.map((item) => <button className={world === item ? "active" : ""} onClick={() => { setWorld(item); setMapZoom(1); }} key={item}>{item === "palpagos" ? "群岛" : "世界树"}</button>)}<button onClick={() => setMapZoom((value) => Math.max(1, value - .5))} aria-label="缩小地图">−</button><b>{mapZoom.toFixed(1)}×</b><button onClick={() => setMapZoom((value) => Math.min(3, value + .5))} aria-label="放大地图">＋</button></div></div>
-          {locationsLoading ? <div className="no-habitat-map">正在按需加载该帕鲁的栖息点…</div> : locations.length ? <div ref={mapRef} className={`habitat-map ${mapZoom > 1 ? "draggable" : ""} ${mapDragging ? "dragging" : ""}`} onPointerDown={startMapDrag} onPointerMove={moveMap} onPointerUp={stopMapDrag} onPointerCancel={stopMapDrag}>
-            <div className="map-canvas" style={{ width: `${mapZoom * 100}%`, height: `${mapZoom * 100}%` }}><img src={`${BASE_PATH}/${world === "palpagos" ? "palpagos-map.webp" : "world-tree-map.webp"}`} alt={world === "palpagos" ? "帕洛斯群岛地图" : "世界树地图"} />
-            <div className="map-points">{locations.map((location, index) => <i key={`${location.x}-${location.y}-${index}`} className={`${location.time} ${location.boss ? "boss" : ""}`} style={pointStyle(location)} title={`${location.boss ? "Boss · " : ""}${location.level ? `Lv.${location.level} · ` : ""}${location.time === "day" ? "白天" : location.time === "night" ? "夜晚" : "昼夜"}`} />)}</div></div>
-          </div> : <div className="no-habitat-map">当前 1.0 数据没有记录普通野外分布；它可能只能通过配种、事件、召唤或其他特殊方式获得。</div>}
-          <div className="map-counts"><span>☀ 白天点位 <b>{world === "palpagos" ? habitat?.dayCount ?? 0 : habitat?.worldTreeDayCount ?? 0}</b></span><span>☾ 夜晚点位 <b>{world === "palpagos" ? habitat?.nightCount ?? 0 : habitat?.worldTreeNightCount ?? 0}</b></span><span>常见野生 <b>{wildRange}</b></span><span>Alpha Boss <b>{bossRange}</b></span></div>
-        </div>
-        <aside className="paldex-info">
-          <div className="paldex-stats"><span><b>{pal.stats.hp ?? "—"}</b>生命</span><span><b>{pal.stats.attack ?? "—"}</b>攻击</span><span><b>{pal.stats.defense ?? "—"}</b>防御</span></div>
-          <section><h3>图鉴说明</h3><p>{habitat?.summary || "暂无说明。"}</p></section>
-          <section className="level-guide"><h3>野外等级与捕捉难度</h3><div><span><b>普通野生常见等级</b><strong>{wildRange}</strong><small>按主要栖息点中出现最集中的等级段统计，已排除世界树高等级点等离群值。</small></span><span className="alpha"><b>Alpha Boss</b><strong>{bossRange}</strong><small>体型、血量与战斗压力更高；可在规划条件中完全排除额外捕捉 Boss。</small></span></div><p>开启等级＋8过滤时只保留当前可执行路线；关闭后可查看包含高等级种源的理论最短路线。</p></section>
-          <section><h3>工作适应性</h3><div className="work-tags">{workEntries.length ? workEntries.map(([name, level]) => { const copy = WORK_COPY[name] ?? { label: name, icon: "◆", color: "#687686" }; return <span key={name} style={{ "--work-color": copy.color } as React.CSSProperties}><i>{copy.icon}</i><b>{copy.label}</b><strong>Lv.{level}</strong></span>; }) : <small>无据点工作数据</small>}</div></section>
-          <section className="source-note"><h3>1.0 数据说明</h3><p>点位与等级快照采集于 2026-07-20。野外等级会受世界设置、地下城和特殊事件影响。</p>{habitat?.mapSourceUrl && <a href={habitat.mapSourceUrl} target="_blank" rel="noreferrer">在 PalDB 核对原始分布 ↗</a>}</section>
-        </aside>
-      </div>
-      {imageExpanded && <button className="image-lightbox" onClick={() => setImageExpanded(false)} aria-label="关闭大图"><img src={pal.image} alt={pal.nameZh} /><span>点击任意位置关闭</span></button>}
-    </section>
-  </div>;
 }

@@ -222,6 +222,57 @@ export type BreedingCalculatorMatch = {
   parentBSex: ComboTuple[4];
 };
 
+export type BreedingCalculatorFilters = {
+  parentAId?: string;
+  parentBId?: string;
+  childId?: string;
+};
+
+/**
+ * Filters the full formula table while treating parent order as commutative.
+ * The returned formula is oriented to the boxes the user filled, including
+ * swapping gender requirements with the parent when necessary.
+ */
+export function filterBreedingCombos(data: BreedingData, filters: BreedingCalculatorFilters): BreedingCalculatorMatch[] {
+  const parentAId = filters.parentAId ?? "";
+  const parentBId = filters.parentBId ?? "";
+  const childId = filters.childId ?? "";
+  if (!parentAId && !parentBId && !childId) return [];
+
+  const matches = data.combos.flatMap((combo) => {
+    const [comboChild, leftId, rightId, leftSex, rightSex] = combo;
+    if (childId && comboChild !== childId) return [];
+
+    let swap = false;
+    if (parentAId && parentBId) {
+      if (leftId === parentAId && rightId === parentBId) swap = false;
+      else if (leftId === parentBId && rightId === parentAId) swap = true;
+      else return [];
+    } else if (parentAId) {
+      if (leftId === parentAId) swap = false;
+      else if (rightId === parentAId) swap = true;
+      else return [];
+    } else if (parentBId) {
+      if (rightId === parentBId) swap = false;
+      else if (leftId === parentBId) swap = true;
+      else return [];
+    }
+
+    return [{
+      childId: comboChild,
+      parentAId: swap ? rightId : leftId,
+      parentBId: swap ? leftId : rightId,
+      parentASex: swap ? rightSex : leftSex,
+      parentBSex: swap ? leftSex : rightSex,
+    }];
+  });
+
+  return [...new Map(matches.map((match) => [
+    `${match.parentAId}|${match.parentBId}|${match.childId}|${match.parentASex}|${match.parentBSex}`,
+    match,
+  ])).values()];
+}
+
 export function calculateOffspring(data: BreedingData, parentAId: string, parentBId: string): BreedingCalculatorMatch[] {
   if (!parentAId || !parentBId) return [];
   const matches = data.combos.flatMap((combo) => {

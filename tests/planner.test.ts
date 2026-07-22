@@ -10,6 +10,7 @@ import {
   findTargetPlan,
   findTargetPlans,
   findBreedingPartners,
+  filterBreedingCombos,
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   isWorldTreeOnlyPal,
@@ -22,6 +23,22 @@ import {
   selectCaptureSource,
   summarizeSearch,
 } from "../lib/planner.ts";
+
+test("配种计算器任意框筛选都遵守交换律并同步交换性别要求", () => {
+  const data = fixture([
+    ["C", "A", "B", "MALE", "FEMALE"],
+    ["D", "B", "E", "WILDCARD", "WILDCARD"],
+  ]);
+  assert.deepEqual(filterBreedingCombos(data, { parentAId: "B", childId: "C" }), [{
+    childId: "C", parentAId: "B", parentBId: "A", parentASex: "FEMALE", parentBSex: "MALE",
+  }]);
+  assert.deepEqual(filterBreedingCombos(data, { parentBId: "A", childId: "C" }), [{
+    childId: "C", parentAId: "B", parentBId: "A", parentASex: "FEMALE", parentBSex: "MALE",
+  }]);
+  assert.equal(filterBreedingCombos(data, { parentAId: "B" }).length, 2);
+  assert.equal(filterBreedingCombos(data, { childId: "C" }).length, 1);
+  assert.deepEqual(filterBreedingCombos(data, {}), []);
+});
 
 function fixture(combos: BreedingData["combos"]): BreedingData {
   const ids = [...new Set(combos.flatMap((combo) => combo.slice(0, 3) as string[]))];
