@@ -2,7 +2,6 @@
 
 import {
   findTargetPlans,
-  recommendTargets,
   searchBreedingPlans,
   summarizeSearch,
   type PlanResult,
@@ -30,18 +29,13 @@ workerScope.onmessage = (event: MessageEvent<PlannerWorkerRequest>) => {
       maxGenerations: request.maxGenerations,
       maxBreedingSteps: 12,
       captureSources: request.captureSources,
-      targetPalId: request.mode === "exact" ? request.targetPalId : undefined,
+      targetPalId: request.targetPalId,
     });
-    const recommendations: Recommendation[] = request.mode === "recommend"
-      ? recommendTargets(breedingData, search, request.profile, 10, {
-          requireOwnedAncestry: request.inventory.length > 0,
-          requireFullPassives: request.desiredPassives.length > 0,
-        }).map(transferablePlan)
-      : [];
+    const recommendations: Recommendation[] = [];
     const planLimit = Math.max(50, Math.min(500, request.planLimit ?? 240));
-    const exactPlanCandidates: PlanResult[] = request.mode === "exact" && request.targetPalId
+    const exactPlanCandidates: PlanResult[] = request.targetPalId
       ? findTargetPlans(search, request.targetPalId, {
-          requireOwnedAncestry: true,
+          requireOwnedAncestry: request.mode === "exact",
           requireFullPassives: true,
         }, planLimit + 1).map(transferablePlan)
       : [];

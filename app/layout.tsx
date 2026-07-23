@@ -7,15 +7,15 @@ export const metadata: Metadata = {
     default: "帕鲁育种实验室 1.0",
     template: "%s · 帕鲁育种实验室",
   },
-  description: "基于 Palworld 1.0 数据的中文育种路线规划工具。",
+  description: "按用途与游戏进度选择毕业帕鲁，自由编辑四词条，并从现有库存生成完整孵化路线。",
   openGraph: {
     title: "帕鲁育种实验室 1.0",
-    description: "录入已有帕鲁、性别、词条与潜力，生成最短育种路线。",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "帕鲁育种实验室的遗传路线概念图" }],
+    description: "18 类毕业方案、116 个进度选择与可编辑四词条，一步生成完整孵化路线。",
+    images: [{ url: "/og-graduate.png", width: 1731, height: 909, alt: "帕鲁育种实验室毕业帕鲁孵化助手" }],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og.png"],
+    images: ["/og-graduate.png"],
   },
 };
 

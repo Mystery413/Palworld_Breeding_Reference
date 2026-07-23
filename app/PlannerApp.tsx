@@ -17,11 +17,17 @@ import {
   planDifficultyScore,
   PlanResult,
   Profile,
-  Recommendation,
   selectCaptureSource,
   TargetPlanGroup,
   TargetPlanSortMode,
 } from "@/lib/planner";
+import {
+  GRADUATE_PRESETS,
+  GRADUATE_PRESET_GROUPS,
+  GraduatePreset,
+  GraduatePresetGroup,
+  graduatePassivesFor,
+} from "@/lib/graduate-presets";
 import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
 import { loadBreedingData } from "@/lib/supabase-data";
 import { bundledPassiveRanks, normalizePassiveName, passiveRankOf } from "@/lib/passive-ranks";
@@ -63,18 +69,13 @@ const PASSIVE_PRESETS = [
   "凶猛",
 ];
 
-const PROFILE_COPY: Record<Profile, { label: string; short: string; icon: string }> = {
-  combat: { label: "综合战斗", short: "生命、攻击、防御与稀有度", icon: "⚔" },
-  attack: { label: "极限输出", short: "优先基础攻击和稀有度", icon: "✦" },
-  worker: { label: "据点王牌", short: "工作等级、种类与速度", icon: "⌂" },
-  balanced: { label: "全能培养", short: "兼顾战斗与据点价值", icon: "◈" },
-};
-
-
 type SavedState = {
   inventory: InventoryPal[];
-  desiredPassives: string[];
+  desiredPassives?: string[];
   exactTargetPassives: string[];
+  graduatePassives?: string[];
+  graduatePresetId?: string;
+  graduateTargetId?: string;
   profile: Profile;
   exactTargetId: string;
   playerLevel: number;
@@ -234,8 +235,10 @@ function parseInventoryCsv(text: string, pals: Pal[]): InventoryPal[] {
 export default function PlannerApp() {
   const [data, setData] = useState<BreedingData | null>(null);
   const [inventory, setInventory] = useState<InventoryPal[]>([]);
-  const [desiredPassives, setDesiredPassives] = useState<string[]>([]);
   const [exactTargetPassives, setExactTargetPassives] = useState<string[]>([]);
+  const [graduatePassives, setGraduatePassives] = useState<string[]>(() => [...GRADUATE_PRESETS[0].defaultPassives]);
+  const [graduatePresetId, setGraduatePresetId] = useState(GRADUATE_PRESETS[0].id);
+  const [graduateTargetId, setGraduateTargetId] = useState(GRADUATE_PRESETS[0].candidates[0].palId);
   const [profile, setProfile] = useState<Profile>("combat");
   const [mode, setMode] = useState<"recommend" | "exact">("recommend");
   const [exactTargetId, setExactTargetId] = useState("");
@@ -249,7 +252,6 @@ export default function PlannerApp() {
   const [completionTarget, setCompletionTarget] = useState<CompletionTarget>("usable");
   const [selectedExactPlanIndex, setSelectedExactPlanIndex] = useState(0);
   const [visibleMethodCount, setVisibleMethodCount] = useState(METHODS_PER_BATCH);
-  const [selectedPalId, setSelectedPalId] = useState("");
   const [detailPalId, setDetailPalId] = useState("");
   const [isInventoryOpen, setInventoryOpen] = useState(false);
   const [isSaveImportOpen, setSaveImportOpen] = useState(false);
@@ -262,7 +264,6 @@ export default function PlannerApp() {
   const [notice, setNotice] = useState("");
   const [isHydrated, setHydrated] = useState(false);
   const [isCalculating, setCalculating] = useState(false);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [exactPlans, setExactPlans] = useState<PlanResult[]>([]);
   const [calculationSummary, setCalculationSummary] = useState({ reachablePals: 0, fullTraitPals: 0 });
   const [calculatedInputKey, setCalculatedInputKey] = useState("");
@@ -304,7 +305,6 @@ export default function PlannerApp() {
         setNotice(`计算失败：${response.error}`);
         return;
       }
-      setRecommendations(response.recommendations);
       setExactPlans(response.exactPlans);
       setCalculationSummary(response.summary);
       setCalculationDurationMs(response.durationMs);
@@ -359,8 +359,10 @@ export default function PlannerApp() {
         if (saved) {
           const parsed = JSON.parse(saved) as Partial<SavedState>;
           if (Array.isArray(parsed.inventory)) setInventory(parsed.inventory);
-          if (Array.isArray(parsed.desiredPassives)) setDesiredPassives(parsed.desiredPassives.slice(0, 4));
           if (Array.isArray(parsed.exactTargetPassives)) setExactTargetPassives(parsed.exactTargetPassives.slice(0, 4));
+          if (Array.isArray(parsed.graduatePassives)) setGraduatePassives(parsed.graduatePassives.slice(0, 4));
+          if (typeof parsed.graduatePresetId === "string" && GRADUATE_PRESETS.some((item) => item.id === parsed.graduatePresetId)) setGraduatePresetId(parsed.graduatePresetId);
+          if (typeof parsed.graduateTargetId === "string") setGraduateTargetId(parsed.graduateTargetId);
           if (parsed.profile) setProfile(parsed.profile);
           if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
           if (typeof parsed.playerLevel === "number") setPlayerLevel(Math.max(1, Math.min(80, parsed.playerLevel)));
@@ -381,9 +383,9 @@ export default function PlannerApp() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const saved: SavedState = { inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations };
+    const saved: SavedState = { inventory, exactTargetPassives, graduatePassives, graduatePresetId, graduateTargetId, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-  }, [inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
+  }, [inventory, exactTargetPassives, graduatePassives, graduatePresetId, graduateTargetId, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations, isHydrated]);
 
   useEffect(() => {
     if (!activeUserId || !isHydrated) return;
@@ -432,15 +434,15 @@ export default function PlannerApp() {
   }, [data, allowCapture, restrictCaptureByLevel, catchLevelLimit, excludeWorldTreeOnly, excludeBossCaptures]);
   const catchablePalIds = useMemo(() => captureSources.map((source) => source.palId), [captureSources]);
   const overLevelCaptureCount = useMemo(() => captureSources.filter((source) => source.level > catchLevelLimit).length, [captureSources, catchLevelLimit]);
-  const activeDesiredPassives = mode === "exact" ? exactTargetPassives : desiredPassives;
+  const activeTargetId = mode === "exact" ? exactTargetId : graduateTargetId;
+  const activeDesiredPassives = mode === "exact" ? exactTargetPassives : graduatePassives;
   const planningInventory = useMemo(
     () => compactInventoryForPlanning(inventory, activeDesiredPassives),
     [inventory, activeDesiredPassives],
   );
   const calculationInputKey = useMemo(() => JSON.stringify({
     mode,
-    profile: mode === "recommend" ? profile : "",
-    target: mode === "exact" ? exactTargetId : "",
+    target: activeTargetId,
     desired: activeDesiredPassives,
     maxGenerations,
     playerLevel,
@@ -449,7 +451,7 @@ export default function PlannerApp() {
     excludeWorldTreeOnly,
     excludeBossCaptures,
     inventory: planningInventory.map((item) => [item.id, item.palId, item.sex, item.passives]),
-  }), [mode, profile, exactTargetId, activeDesiredPassives, maxGenerations, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, planningInventory]);
+  }), [mode, activeTargetId, activeDesiredPassives, maxGenerations, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, planningInventory]);
   const calculationIsDirty = calculatedInputKey !== calculationInputKey;
 
   const calculateRoutes = () => {
@@ -457,7 +459,7 @@ export default function PlannerApp() {
       setNotice("配种数据仍在加载，请稍后再计算。");
       return;
     }
-    if (mode === "exact" && !exactTargetId) {
+    if (!activeTargetId) {
       setNotice("请先选择目标帕鲁，再开始计算。");
       return;
     }
@@ -480,7 +482,7 @@ export default function PlannerApp() {
       maxGenerations,
       mode,
       profile,
-      targetPalId: exactTargetId,
+      targetPalId: activeTargetId,
       planLimit: 240,
     };
     plannerWorkerRef.current.postMessage(request);
@@ -500,12 +502,8 @@ export default function PlannerApp() {
   const visibleExactPlanGroups = exactPlanGroups.slice(0, visibleMethodCount);
   const hasComplexityTradeoff = useMemo(() => hasComplexityDifficultyTradeoff(recommendedPlanGroups, completionTarget), [recommendedPlanGroups, completionTarget]);
 
-  const activeResult: (Recommendation | PlanResult) | null = useMemo(() => {
-    if (mode === "exact") return exactPlan;
-    return recommendations.find((item) => item.pal.id === selectedPalId) ?? recommendations[0] ?? null;
-  }, [mode, exactPlan, recommendations, selectedPalId]);
-
-  const activePal = mode === "exact" ? palById.get(exactTargetId) : (activeResult as Recommendation | null)?.pal;
+  const activePal = palById.get(activeTargetId);
+  const activeGraduatePreset = GRADUATE_PRESETS.find((item) => item.id === graduatePresetId) ?? GRADUATE_PRESETS[0];
   const summary = calculatedInputKey ? calculationSummary : { reachablePals: inventory.length ? new Set(inventory.map((item) => item.palId)).size : 0, fullTraitPals: 0 };
   const detailPal = detailPalId ? palById.get(detailPalId) : undefined;
 
@@ -554,8 +552,28 @@ export default function PlannerApp() {
       setSelectedExactPlanIndex(0);
       setVisibleMethodCount(METHODS_PER_BATCH);
     }
-    else setDesiredPassives((current) => [...current, value]);
+    else {
+      setGraduatePassives((current) => [...current, value]);
+      setSelectedExactPlanIndex(0);
+      setVisibleMethodCount(METHODS_PER_BATCH);
+    }
     setDesiredInput("");
+  };
+
+  const selectGraduatePreset = (preset: GraduatePreset) => {
+    const target = preset.candidates[0].palId;
+    setGraduatePresetId(preset.id);
+    setGraduateTargetId(target);
+    setGraduatePassives(graduatePassivesFor(preset, target));
+    setSelectedExactPlanIndex(0);
+    setVisibleMethodCount(METHODS_PER_BATCH);
+  };
+
+  const selectGraduatePal = (preset: GraduatePreset, palId: string) => {
+    setGraduateTargetId(palId);
+    setGraduatePassives(graduatePassivesFor(preset, palId));
+    setSelectedExactPlanIndex(0);
+    setVisibleMethodCount(METHODS_PER_BATCH);
   };
 
   const saveDraft = () => {
@@ -590,8 +608,10 @@ export default function PlannerApp() {
       { id: "demo-5", palId: "6:0", sex: "F", passives: ["传说"], hp: 92, attack: 89, defense: 78 },
     ];
     setInventory(example);
-    setDesiredPassives(["破坏神", "不死之身", "神速", "传说"]);
-    setProfile("combat");
+    const demoPreset = GRADUATE_PRESETS.find((item) => item.id === "pve") ?? GRADUATE_PRESETS[0];
+    setGraduatePresetId(demoPreset.id);
+    setGraduateTargetId("139:0");
+    setGraduatePassives(graduatePassivesFor(demoPreset, "139:0"));
     setPlayerLevel(20);
     setAllowCapture(true);
     setRestrictCaptureByLevel(true);
@@ -599,11 +619,11 @@ export default function PlannerApp() {
     setExcludeBossCaptures(false);
     setMaxGenerations(4);
     setMode("recommend");
-    setNotice("示例已载入：5 只前期帕鲁，各携带一个高阶词条。可以直接查看推荐路线。 ");
+    setNotice("示例已载入：已为中期阿努比斯套用稳定攻坚词条，可以直接计算毕业路线。");
   };
 
   const exportJson = () => {
-    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 6, inventory, desiredPassives, exactTargetPassives, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations }, null, 2), "application/json");
+    downloadFile("palworld-breeding-inventory.json", JSON.stringify({ version: 7, inventory, exactTargetPassives, graduatePassives, graduatePresetId, graduateTargetId, profile, exactTargetId, playerLevel, allowCapture, restrictCaptureByLevel, excludeWorldTreeOnly, excludeBossCaptures, maxGenerations }, null, 2), "application/json");
   };
 
   const exportCsv = () => {
@@ -620,8 +640,10 @@ export default function PlannerApp() {
         const parsed = JSON.parse(text) as Partial<SavedState> & { version?: number };
         if (!Array.isArray(parsed.inventory)) throw new Error("missing inventory");
         setInventory(parsed.inventory);
-        if (Array.isArray(parsed.desiredPassives)) setDesiredPassives(parsed.desiredPassives.slice(0, 4));
         if (Array.isArray(parsed.exactTargetPassives)) setExactTargetPassives(parsed.exactTargetPassives.slice(0, 4));
+        if (Array.isArray(parsed.graduatePassives)) setGraduatePassives(parsed.graduatePassives.slice(0, 4));
+        if (typeof parsed.graduatePresetId === "string" && GRADUATE_PRESETS.some((item) => item.id === parsed.graduatePresetId)) setGraduatePresetId(parsed.graduatePresetId);
+        if (typeof parsed.graduateTargetId === "string") setGraduateTargetId(parsed.graduateTargetId);
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.exactTargetId) setExactTargetId(parsed.exactTargetId);
         if (typeof parsed.playerLevel === "number") setPlayerLevel(parsed.playerLevel);
@@ -740,7 +762,7 @@ export default function PlannerApp() {
           <Link href="/paldex">完整图鉴</Link>
           <Link href="/calculator">配种计算器</Link>
           <a href="#inventory">我的帕鲁</a>
-          <a href="#planner">智能规划</a>
+          <a href="#planner">毕业规划</a>
           <a href="#steps">操作清单</a>
           <a href="#mechanics">机制说明</a>
         </nav>
@@ -816,13 +838,13 @@ export default function PlannerApp() {
 
         <div className="planner-panel">
           <div className="section-heading">
-            <div><span>02</span><h2>定义你的“最强”</h2></div>
-            <p>推荐分数透明可解释，可随目标切换。</p>
+            <div><span>02</span><h2>选择毕业方案</h2></div>
+            <p>从用途、进度与词条出发，得到可执行的孵化路线。</p>
           </div>
 
           <div className="mode-switch" role="tablist" aria-label="规划模式">
-            <button className={mode === "recommend" ? "active" : ""} onClick={() => setMode("recommend")} role="tab">系统推荐</button>
-            <button className={mode === "exact" ? "active" : ""} onClick={() => setMode("exact")} role="tab">指定目标</button>
+            <button className={mode === "recommend" ? "active" : ""} onClick={() => setMode("recommend")} role="tab"><b>毕业方案</b><small>已校验的分类与词条</small></button>
+            <button className={mode === "exact" ? "active" : ""} onClick={() => setMode("exact")} role="tab"><b>自由目标</b><small>指定任意帕鲁与词条</small></button>
           </div>
 
           <div className="capture-policy">
@@ -841,27 +863,15 @@ export default function PlannerApp() {
           </div>
 
           <div className="goal-builder">
-            <div className="goal-block">
-              <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "目标词条"} <small>{activeDesiredPassives.length}/4</small></label>
-              <div className="tag-input">
-                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} onRemove={() => { if (mode === "exact") { setExactTargetPassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); } else setDesiredPassives((current) => current.filter((item) => item !== passive)); }} />)}
-                {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
-              </div>
-              {mode === "exact" && <small className="passive-library-note">默认仅显示仓库已有词条，并按品质从高到低排列；输入名称可搜索完整词条库。</small>}
-              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车仍可添加未收录词条" />}
-              {mode !== "exact" && <div className="quick-passives">
-                {availablePassives.filter((passive) => !activeDesiredPassives.includes(passive)).slice(0, 8).map((passive) => { const tier = passiveTier(passiveRankOf(passive, passiveRanks)); return <button className={tier.className} key={passive} onClick={() => addDesiredPassive(passive)}>+ {passive}{tier.label && <small>{tier.label}</small>}</button>; })}
-                {!availablePassives.length && <small>录入库存后，这里会显示你已经拥有的词条。</small>}
-              </div>}
-              {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
-            </div>
-
             {mode === "recommend" ? (
-              <div className="profile-grid">
-                {(Object.keys(PROFILE_COPY) as Profile[]).map((key) => <button key={key} className={profile === key ? "active" : ""} onClick={() => setProfile(key)}>
-                  <span>{PROFILE_COPY[key].icon}</span><strong>{PROFILE_COPY[key].label}</strong><small>{PROFILE_COPY[key].short}</small>
-                </button>)}
-              </div>
+              <GraduatePresetChooser
+                preset={activeGraduatePreset}
+                targetId={graduateTargetId}
+                palById={palById}
+                onSelectPreset={selectGraduatePreset}
+                onSelectPal={(palId) => selectGraduatePal(activeGraduatePreset, palId)}
+                onOpenPal={setDetailPalId}
+              />
             ) : (
               <div className="exact-target">
                 <label htmlFor="target-pal-search">想要孵化的帕鲁</label>
@@ -878,11 +888,26 @@ export default function PlannerApp() {
                 </div>
               </div>
             )}
+
+            <div className="goal-block">
+              <div className="goal-block-heading">
+                <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "毕业四词条"} <small>{activeDesiredPassives.length}/4</small></label>
+                {mode === "recommend" && <button onClick={() => selectGraduatePal(activeGraduatePreset, graduateTargetId)}>恢复推荐</button>}
+              </div>
+              <div className="tag-input">
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} onRemove={() => { if (mode === "exact") setExactTargetPassives((current) => current.filter((item) => item !== passive)); else setGraduatePassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); }} />)}
+                {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
+              </div>
+              {mode === "exact" && <small className="passive-library-note">默认仅显示仓库已有词条，并按品质从高到低排列；输入名称可搜索完整词条库。</small>}
+              {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车仍可添加未收录词条" />}
+              {mode === "recommend" && <small className="graduate-passive-note">{activeGraduatePreset.passiveNote} 点击词条右侧 × 后即可按喜好替换。</small>}
+              {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
+            </div>
           </div>
 
           <div className={`calculate-action ${calculationIsDirty ? "dirty" : "ready"}`}>
             <div><strong>{calculationIsDirty ? "条件尚未计算" : "当前结果已是最新"}</strong><small>{calculationIsDirty ? "选完用户、词条、目标和代数后，再统一开始计算。" : `上次计算耗时 ${calculationDurationMs}ms；修改任意条件后需再次点击。`}</small></div>
-            <button className="primary-button" onClick={isCalculating ? cancelCalculation : calculateRoutes} disabled={!data}>{isCalculating ? "停止计算" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
+            <button className="primary-button" onClick={isCalculating ? cancelCalculation : calculateRoutes} disabled={!data}>{isCalculating ? "停止计算" : mode === "recommend" ? calculatedInputKey ? "重新生成路线" : "生成毕业路线" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
           </div>
 
           {mode === "exact" && !inventory.length ? (
@@ -896,23 +921,10 @@ export default function PlannerApp() {
           ) : isCalculating ? (
             <div className="planner-empty"><span className="spinner">◌</span><h3>正在后台计算 {maxGenerations} 代可达图谱</h3><p>计算已移到独立线程，指定目标时只搜索能通往目标的物种；需要调整条件时可以立即停止。</p><button className="ghost-button" onClick={cancelCalculation}>停止本次计算</button></div>
           ) : !calculatedInputKey || calculationIsDirty ? (
-            <div className="planner-empty"><span>▶</span><h3>{calculatedInputKey ? "条件已经改变" : "准备好后再开始计算"}</h3><p>系统不会在选择过程中自动搜索。确认用户、目标词条、目标帕鲁和最大代数后，点击上方按钮。</p><button className="primary-button" onClick={calculateRoutes}>{calculatedInputKey ? "按新条件重新计算" : "开始计算"}</button></div>
-          ) : mode === "recommend" ? (
-            <div className="recommendations">
-              <div className="result-title"><div><span>03</span><h2>当前最值得孵化</h2></div><small>综合强度 − 路线成本 − 缺失词条</small></div>
-              {recommendations.length ? <><div className="recommendation-grid">
-                {recommendations.map((item, index) => <button key={item.pal.id} className={`recommend-card ${(activeResult as Recommendation | null)?.pal?.id === item.pal.id ? "active" : ""}`} onClick={() => setSelectedPalId(item.pal.id)}>
-                  <span className="rank">#{index + 1}</span>
-                  <img src={item.pal.image} alt="" />
-                  <div className="recommend-name"><strong>{item.pal.nameZh}</strong><small>{item.pal.name} · No.{item.pal.dex}</small></div>
-                  <div className="recommend-stats"><span><b>{Math.round(item.qualityScore)}</b>强度</span><span><b>{item.steps.length}</b>步</span><span><b>{item.captures.reduce((sum, capture) => sum + capture.count, 0)}</b>补抓</span><span><b>{item.coveredPassives.length}/{desiredPassives.length || 0}</b>词条</span></div>
-                  <div className="scorebar"><i style={{ width: `${Math.max(8, Math.min(100, item.score / 2.1))}%` }} /></div>
-                </button>)}
-              </div>{activeResult && <PlanExecutionDetails result={activeResult} palById={palById} inventory={inventory} palLabel={palLabel} onOpenPal={setDetailPalId} />}</> : <div className="no-route">没有找到满足当前性别条件的配种入口。补录另一性别个体，或先指定一个已有帕鲁作为目标。</div>}
-            </div>
+            <div className="planner-empty"><span>▶</span><h3>{calculatedInputKey ? "条件已经改变" : mode === "recommend" ? "方案已选好，生成毕业路线" : "准备好后再开始计算"}</h3><p>系统不会在选择过程中自动搜索。确认用户、目标词条、目标帕鲁和最大代数后，再统一生成路线。</p><button className="primary-button" onClick={calculateRoutes}>{mode === "recommend" ? calculatedInputKey ? "按新条件生成路线" : "生成毕业路线" : calculatedInputKey ? "按新条件重新计算" : "开始计算"}</button></div>
           ) : (
             <div className="exact-result">
-              {!exactTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示从已录入帕鲁出发、不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>路线必须包含你的库存起点并完整继承所选词条。可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
+              {!activeTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>{mode === "exact" ? "路线必须包含你的库存起点并完整继承所选词条。" : "当前库存与可补抓种源还无法完整继承所选词条。"} 可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
                 <RouteMethodBrowser
                   groups={visibleExactPlanGroups}
                   totalGroups={exactPlanGroups.length}
@@ -1006,6 +1018,55 @@ export default function PlannerApp() {
       {detailPal && <PalDetailModal key={detailPal.id} pal={detailPal} onClose={() => setDetailPalId("")} />}
     </main>
   );
+}
+
+function GraduatePresetChooser({ preset, targetId, palById, onSelectPreset, onSelectPal, onOpenPal }: {
+  preset: GraduatePreset;
+  targetId: string;
+  palById: Map<string, Pal>;
+  onSelectPreset: (preset: GraduatePreset) => void;
+  onSelectPal: (palId: string) => void;
+  onOpenPal: (palId: string) => void;
+}) {
+  const selectGroup = (group: GraduatePresetGroup) => {
+    const first = GRADUATE_PRESETS.find((item) => item.group === group);
+    if (first) onSelectPreset(first);
+  };
+  return <section className="graduate-picker" aria-label="毕业帕鲁预设">
+    <div className="graduate-group-tabs" role="tablist" aria-label="毕业方案大类">
+      {GRADUATE_PRESET_GROUPS.map((group) => <button key={group.id} className={preset.group === group.id ? "active" : ""} onClick={() => selectGroup(group.id)} role="tab" aria-selected={preset.group === group.id}>
+        <b>{group.label}</b><small>{group.short}</small>
+      </button>)}
+    </div>
+    <div className="graduate-purpose-list" role="tablist" aria-label={`${GRADUATE_PRESET_GROUPS.find((item) => item.id === preset.group)?.label}用途`}>
+      {GRADUATE_PRESETS.filter((item) => item.group === preset.group).map((item) => <button key={item.id} className={item.id === preset.id ? "active" : ""} onClick={() => onSelectPreset(item)} role="tab" aria-selected={item.id === preset.id}>
+        <span>{item.icon}</span><b>{item.title}</b>
+      </button>)}
+    </div>
+    <header className="graduate-preset-title">
+      <div><span>{preset.eyebrow}</span><h3>{preset.title}毕业选择</h3></div>
+      <p>{preset.summary}</p>
+    </header>
+    <div className="graduate-candidate-grid">
+      {preset.candidates.map((candidate) => {
+        const pal = palById.get(candidate.palId);
+        const active = candidate.palId === targetId;
+        return <article className={`graduate-candidate ${active ? "active" : ""}`} key={candidate.palId}>
+          <button className="graduate-candidate-select" onClick={() => onSelectPal(candidate.palId)} aria-pressed={active}>
+            <span className="graduate-rank">#{candidate.rank}</span>
+            {pal?.image ? <img src={pal.image} alt="" loading="lazy" decoding="async" /> : <span className="pal-placeholder">P</span>}
+            <span className="graduate-candidate-copy">
+              <span><i>{candidate.stage}</i><em>{candidate.stats}</em></span>
+              <strong>{pal?.nameZh ?? candidate.palId}</strong>
+              <small>{candidate.note}</small>
+            </span>
+            <b className="graduate-check">{active ? "✓" : "选择"}</b>
+          </button>
+          <button className="graduate-paldex-link" onClick={() => onOpenPal(candidate.palId)} aria-label={`查看${pal?.nameZh ?? "帕鲁"}图鉴`}>图鉴 ↗</button>
+        </article>;
+      })}
+    </div>
+  </section>;
 }
 
 function PassiveTag({ name, rank, onRemove, compact = false }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean }) {
