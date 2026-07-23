@@ -91,6 +91,46 @@ test("大库存计算会合并等价个体且不再用潜力选择代表", () =>
   assert.ok(compacted.some((item) => item.id === "pal-1"));
 });
 
+test("大量库存根不会重复膨胀已孵化状态，较高代数仍保留短路线", () => {
+  const data = fixture([
+    ["C", "A", "B", "WILDCARD", "WILDCARD"],
+    ["T", "C", "D", "WILDCARD", "WILDCARD"],
+  ]);
+  const inventory: InventoryPal[] = [
+    ...Array.from({ length: 100 }, (_, index) => ({ id: `a-${index}`, palId: "A", sex: "M" as const, passives: [] })),
+    ...Array.from({ length: 100 }, (_, index) => ({ id: `b-${index}`, palId: "B", sex: "F" as const, passives: [] })),
+    { id: "d", palId: "D", sex: "F", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, [], {
+    maxGenerations: 10,
+    maxBreedingSteps: 12,
+    targetPalId: "T",
+  });
+  const plan = findTargetPlans(search, "T", { requireOwnedAncestry: true }, 1)[0];
+  assert.ok(plan);
+  assert.equal(plan.generations, 2);
+  assert.equal(plan.breedingSteps, 2);
+  assert.ok((search.statesByPal.get("C")?.length ?? 0) <= 10);
+});
+
+test("1.0 数据明确包含焰煌加腾炎龙孵化燎火舞伶", async () => {
+  const data = JSON.parse(await readFile(new URL("../public/data/runtime/planner-core.json", import.meta.url), "utf8")) as BreedingData;
+  const inventory: InventoryPal[] = [
+    { id: "blazamut", palId: "137:0", sex: "M", passives: [] },
+    { id: "jormuntide-ignis", palId: "121:1", sex: "F", passives: [] },
+  ];
+  const search = searchBreedingPlans(data, inventory, [], {
+    maxGenerations: 10,
+    maxBreedingSteps: 12,
+    targetPalId: "183:0",
+  });
+  const plan = findTargetPlans(search, "183:0", { requireOwnedAncestry: true }, 1)[0];
+  assert.ok(plan);
+  assert.equal(plan.generations, 1);
+  assert.equal(plan.steps[0].childId, "183:0");
+  assert.deepEqual(new Set([plan.steps[0].parentA.palId, plan.steps[0].parentB.palId]), new Set(["137:0", "121:1"]));
+});
+
 test("一对异性个体可把两个词条传给一步子代", () => {
   const data = fixture([["C", "A", "B", "WILDCARD", "WILDCARD"]]);
   const inventory: InventoryPal[] = [

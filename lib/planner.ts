@@ -407,13 +407,18 @@ function stateKey(
   node: Pick<PlanNode, "palId" | "mask" | "sex" | "ownedRootId" | "kind" | "depth" | "breedingStepIds" | "extraPassiveCount" | "routeVariant">,
 ): string {
   // A directly captured parent and a bred parent of the same species are not
-  // interchangeable routes. Preserve acquisition type and route length so a
-  // deeper search cannot overwrite a shorter route discovered earlier.
+  // interchangeable routes. For bred states, however, the exact inventory root
+  // does not change future breeding compatibility: only whether the route has
+  // owned ancestry matters. Collapsing those equivalent roots prevents a large
+  // save from multiplying every intermediate species hundreds of times.
+  const ancestryKey = node.kind === "bred"
+    ? (node.ownedRootId ? "owned-ancestry" : "capture-only")
+    : (node.ownedRootId ?? "capture-only");
   return [
     node.palId,
     node.mask,
     node.sex,
-    node.ownedRootId ?? "capture-only",
+    ancestryKey,
     node.kind,
     `x${Math.round(node.extraPassiveCount * 10)}`,
     `g${node.depth}`,
@@ -564,6 +569,17 @@ export function searchBreedingPlans(
       }
       layer = [...next];
     }
+    // Evaluate formulas closest to the requested child first. The search has a
+    // safety cap per generation; without this ordering a dense high-generation
+    // graph could spend the whole budget on distant formulas and miss a short
+    // route that was already present in the inventory.
+    for (const recipeIndexes of recipesByParent.values()) {
+      recipeIndexes.sort((leftIndex, rightIndex) => {
+        const leftDistance = targetDistances.get(data.combos[leftIndex][0]) ?? Number.POSITIVE_INFINITY;
+        const rightDistance = targetDistances.get(data.combos[rightIndex][0]) ?? Number.POSITIVE_INFINITY;
+        return leftDistance - rightDistance || leftIndex - rightIndex;
+      });
+    }
   }
 
   const states = new Map<string, PlanNode>();
@@ -644,6 +660,15 @@ export function searchBreedingPlans(
     data.pals.length * Math.max(1, 1 << desiredPassives.length) * 20,
   );
   for (let generation = 1; generation <= maxGenerations && frontier.length; generation += 1) {
+    if (options.targetPalId) {
+      frontier.sort((left, right) => {
+        const leftDistance = targetDistances.get(left.palId) ?? Number.POSITIVE_INFINITY;
+        const rightDistance = targetDistances.get(right.palId) ?? Number.POSITIVE_INFINITY;
+        return Number(!left.ownedRootId) - Number(!right.ownedRootId)
+          || leftDistance - rightDistance
+          || routeEffort(left) - routeEffort(right);
+      });
+    }
     const nextStates = new Map<string, PlanNode>();
     let evaluatedCandidates = 0;
     const addNextState = (node: PlanNode) => {

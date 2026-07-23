@@ -26,6 +26,7 @@ import {
   GRADUATE_PRESET_GROUPS,
   GraduatePreset,
   GraduatePresetGroup,
+  graduatePassiveAlternativesFor,
   graduatePassivesFor,
 } from "@/lib/graduate-presets";
 import type { PlannerWorkerRequest, PlannerWorkerResponse } from "@/lib/planner-worker-types";
@@ -422,6 +423,7 @@ export default function PlannerApp() {
   const availablePassives = useMemo(() => unique(inventory.flatMap((item) => item.passives)).sort((left, right) => {
     return (passiveRankOf(right, passiveRanks) ?? -99) - (passiveRankOf(left, passiveRanks) ?? -99) || left.localeCompare(right, "zh-CN");
   }), [inventory, passiveRanks]);
+  const ownedPassiveSet = useMemo(() => new Set(availablePassives), [availablePassives]);
   const catchLevelLimit = Math.min(80, playerLevel + 8);
   const captureSources = useMemo(() => {
     if (!data || !allowCapture) return [];
@@ -436,6 +438,10 @@ export default function PlannerApp() {
   const overLevelCaptureCount = useMemo(() => captureSources.filter((source) => source.level > catchLevelLimit).length, [captureSources, catchLevelLimit]);
   const activeTargetId = mode === "exact" ? exactTargetId : graduateTargetId;
   const activeDesiredPassives = mode === "exact" ? exactTargetPassives : graduatePassives;
+  const missingDesiredPassives = useMemo(
+    () => activeDesiredPassives.filter((passive) => !ownedPassiveSet.has(passive)),
+    [activeDesiredPassives, ownedPassiveSet],
+  );
   const planningInventory = useMemo(
     () => compactInventoryForPlanning(inventory, activeDesiredPassives),
     [inventory, activeDesiredPassives],
@@ -465,6 +471,20 @@ export default function PlannerApp() {
     }
     if (!planningInventory.length && !captureSources.length) {
       setNotice("请先录入库存，或允许途中补抓帕鲁。");
+      return;
+    }
+    if (missingDesiredPassives.length) {
+      plannerRequestId.current += 1;
+      setCalculating(false);
+      setExactPlans([]);
+      setCalculationSummary({ reachablePals: 0, fullTraitPals: 0 });
+      setCalculationDurationMs(0);
+      setRoutesTruncated(false);
+      setSearchTruncated(false);
+      setCalculatedInputKey(calculationInputKey);
+      setSelectedExactPlanIndex(0);
+      setVisibleMethodCount(METHODS_PER_BATCH);
+      setNotice(`无需计算：当前仓库缺少 ${missingDesiredPassives.join("、")}，无法完成词条继承。`);
       return;
     }
     const requestId = plannerRequestId.current + 1;
@@ -504,6 +524,10 @@ export default function PlannerApp() {
 
   const activePal = palById.get(activeTargetId);
   const activeGraduatePreset = GRADUATE_PRESETS.find((item) => item.id === graduatePresetId) ?? GRADUATE_PRESETS[0];
+  const activePassiveAlternatives = useMemo(
+    () => mode === "recommend" ? graduatePassiveAlternativesFor(activeGraduatePreset, graduateTargetId) : [],
+    [mode, activeGraduatePreset, graduateTargetId],
+  );
   const summary = calculatedInputKey ? calculationSummary : { reachablePals: inventory.length ? new Set(inventory.map((item) => item.palId)).size : 0, fullTraitPals: 0 };
   const detailPal = detailPalId ? palById.get(detailPalId) : undefined;
 
@@ -558,6 +582,15 @@ export default function PlannerApp() {
       setVisibleMethodCount(METHODS_PER_BATCH);
     }
     setDesiredInput("");
+  };
+
+  const replaceDesiredPassive = (replaces: string, passive: string) => {
+    if (activeDesiredPassives.includes(passive)) return;
+    const replace = (current: string[]) => current.map((item) => item === replaces ? passive : item);
+    if (mode === "exact") setExactTargetPassives(replace);
+    else setGraduatePassives(replace);
+    setSelectedExactPlanIndex(0);
+    setVisibleMethodCount(METHODS_PER_BATCH);
   };
 
   const selectGraduatePreset = (preset: GraduatePreset) => {
@@ -895,12 +928,33 @@ export default function PlannerApp() {
                 {mode === "recommend" && <button onClick={() => selectGraduatePal(activeGraduatePreset, graduateTargetId)}>恢复推荐</button>}
               </div>
               <div className="tag-input">
-                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} onRemove={() => { if (mode === "exact") setExactTargetPassives((current) => current.filter((item) => item !== passive)); else setGraduatePassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); }} />)}
+                {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} availability={ownedPassiveSet.has(passive) ? "owned" : "missing"} onRemove={() => { if (mode === "exact") setExactTargetPassives((current) => current.filter((item) => item !== passive)); else setGraduatePassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); }} />)}
                 {activeDesiredPassives.length < 4 && <input value={desiredInput} onChange={(event) => setDesiredInput(event.target.value)} onKeyDown={(event) => passiveKeyDown(event, "desired")} placeholder={activeDesiredPassives.length ? "搜索并继续添加…" : mode === "exact" ? "留空则只查询目标物种" : "搜索词条，支持模糊匹配"} />}
               </div>
+              {!!activeDesiredPassives.length && <div className={`passive-availability-summary ${missingDesiredPassives.length ? "has-missing" : "complete"}`}>
+                <span>{missingDesiredPassives.length ? "!" : "✓"}</span>
+                <p>{missingDesiredPassives.length
+                  ? <>仓库缺少 <strong>{missingDesiredPassives.join("、")}</strong>。按当前规则，新补抓帕鲁不自带目标词条，因此无需计算即可判定词条方案不可达。</>
+                  : <>所选词条都已在当前仓库中找到，可继续计算继承路线。</>}</p>
+              </div>}
               {mode === "exact" && <small className="passive-library-note">默认仅显示仓库已有词条，并按品质从高到低排列；输入名称可搜索完整词条库。</small>}
               {activeDesiredPassives.length < 4 && <SearchSuggestions items={passiveSuggestions(desiredInput, activeDesiredPassives, mode === "exact")} ranks={passiveRanks} query={desiredInput} onSelect={addDesiredPassive} emptyText="没有匹配词条；按回车仍可添加未收录词条" />}
               {mode === "recommend" && <small className="graduate-passive-note">{activeGraduatePreset.passiveNote} 点击词条右侧 × 后即可按喜好替换。</small>}
+              {mode === "recommend" && !!activePassiveAlternatives.length && <div className="passive-alternatives">
+                <div><strong>可替换 / 降级方案</strong><small>点击即可替换对应毕业词条</small></div>
+                <div className="passive-alternative-list">
+                  {activePassiveAlternatives.filter((alternative) => activeDesiredPassives.includes(alternative.replaces)).map((alternative) => {
+                    const owned = ownedPassiveSet.has(alternative.passive);
+                    return <button key={`${alternative.replaces}-${alternative.passive}`} className={owned ? "owned" : "missing"} onClick={() => replaceDesiredPassive(alternative.replaces, alternative.passive)} disabled={activeDesiredPassives.includes(alternative.passive)} title={alternative.note}>
+                      <span>{owned ? "✓" : "○"}</span>
+                      <b>{alternative.passive}</b>
+                      <small>{alternative.label} · 替换{alternative.replaces}</small>
+                      <em>{alternative.note}</em>
+                    </button>;
+                  })}
+                </div>
+                <p>✓ 仓库已有　○ 当前缺少；替代方案会降低部分极限收益，但能显著减少稀有词条门槛。</p>
+              </div>}
               {mode === "exact" && <small className="goal-hint">不选择词条时，只查询目标帕鲁物种；选择后则要求最终子代完整带有这些词条。</small>}
             </div>
           </div>
@@ -924,7 +978,12 @@ export default function PlannerApp() {
             <div className="planner-empty"><span>▶</span><h3>{calculatedInputKey ? "条件已经改变" : mode === "recommend" ? "方案已选好，生成毕业路线" : "准备好后再开始计算"}</h3><p>系统不会在选择过程中自动搜索。确认用户、目标词条、目标帕鲁和最大代数后，再统一生成路线。</p><button className="primary-button" onClick={calculateRoutes}>{mode === "recommend" ? calculatedInputKey ? "按新条件生成路线" : "生成毕业路线" : calculatedInputKey ? "按新条件重新计算" : "开始计算"}</button></div>
           ) : (
             <div className="exact-result">
-              {!activeTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className="no-route"><strong>{activePal?.nameZh} 当前 {maxGenerations} 代内不可达</strong><span>{mode === "exact" ? "路线必须包含你的库存起点并完整继承所选词条。" : "当前库存与可补抓种源还无法完整继承所选词条。"} 可以提高代数、等级、补录库存或调整目标词条后重试。</span></div> : <>
+              {!activeTargetId ? <div className="no-route">选择一个目标帕鲁后，这里会显示不超过 {maxGenerations} 代的路线；目标词条可以留空。</div> : !exactPlan ? <div className={`no-route ${missingDesiredPassives.length ? "missing-passives" : "species-path"}`}>
+                <strong>{missingDesiredPassives.length ? "目标词条不可继承" : `${activePal?.nameZh} 当前 ${maxGenerations} 代内物种路径不可达`}</strong>
+                {missingDesiredPassives.length
+                  ? <span>原因不是配种公式：当前仓库没有 <b>{missingDesiredPassives.join("、")}</b>。新补抓种源按无目标词条处理，请先补录携带这些词条的帕鲁，或使用上方替代方案。</span>
+                  : <span>所选词条均已在仓库中，当前失败发生在帕鲁配种路径。{mode === "exact" ? "路线必须从至少一只现有库存帕鲁出发；" : ""}可提高代数、放宽捕捉限制或补录可用亲代后重试。</span>}
+              </div> : <>
                 <RouteMethodBrowser
                   groups={visibleExactPlanGroups}
                   totalGroups={exactPlanGroups.length}
@@ -1040,7 +1099,7 @@ function GraduatePresetChooser({ preset, targetId, palById, onSelectPreset, onSe
     </div>
     <div className="graduate-purpose-list" role="tablist" aria-label={`${GRADUATE_PRESET_GROUPS.find((item) => item.id === preset.group)?.label}用途`}>
       {GRADUATE_PRESETS.filter((item) => item.group === preset.group).map((item) => <button key={item.id} className={item.id === preset.id ? "active" : ""} onClick={() => onSelectPreset(item)} role="tab" aria-selected={item.id === preset.id}>
-        <span>{item.icon}</span><b>{item.title}</b>
+        <span>{item.workIcon ? <img src={`data/work-icons/${item.workIcon}.webp`} alt="" /> : item.icon}</span><b>{item.title}</b>
       </button>)}
     </div>
     <header className="graduate-preset-title">
@@ -1069,9 +1128,12 @@ function GraduatePresetChooser({ preset, targetId, palById, onSelectPreset, onSe
   </section>;
 }
 
-function PassiveTag({ name, rank, onRemove, compact = false }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean }) {
+function PassiveTag({ name, rank, onRemove, compact = false, availability }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean; availability?: "owned" | "missing" }) {
   const tier = passiveTier(rank);
-  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""}`}><b>{name}</b>{tier.label && <i>{tier.label}</i>}{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}</span>;
+  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""} ${availability ? `availability-${availability}` : ""}`}>
+    {availability && <em className="passive-availability" title={availability === "owned" ? "仓库已有" : "仓库缺少"}>{availability === "owned" ? "✓" : "!"}</em>}
+    <b>{name}</b>{tier.label && <i>{tier.label}</i>}{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}
+  </span>;
 }
 
 function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items: string[]; ranks: Record<string, number | null>; query: string; onSelect: (value: string) => void; emptyText: string }) {

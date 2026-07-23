@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   GRADUATE_PRESETS,
   GRADUATE_PRESET_GROUPS,
+  graduatePassiveAlternativesFor,
   graduatePassivesFor,
 } from "../lib/graduate-presets.ts";
 
@@ -42,3 +43,21 @@ test("每个预设帕鲁与词条都能被当前 1.0 路线数据识别", async 
   }
 });
 
+test("每个据点工种都有有效的游戏图标和至少三个可点击替代词条", async () => {
+  const data = JSON.parse(await readFile(new URL("../public/data/runtime/planner-core.json", import.meta.url), "utf8")) as RuntimeData;
+  const passives = new Set(data.passives);
+  for (const preset of GRADUATE_PRESETS.filter((item) => item.group === "base")) {
+    assert.match(preset.workIcon ?? "", /^\d{2}$/, `${preset.title} 缺少工作适应性图标`);
+    await readFile(new URL(`../public/data/work-icons/${preset.workIcon}.webp`, import.meta.url));
+    for (const candidate of preset.candidates) {
+      const selected = graduatePassivesFor(preset, candidate.palId);
+      const alternatives = graduatePassiveAlternativesFor(preset, candidate.palId);
+      assert.ok(alternatives.length >= 3, `${preset.title} 应提供至少三个替代词条`);
+      for (const alternative of alternatives) {
+        assert.ok(selected.includes(alternative.replaces), `${preset.title} 的替代目标 ${alternative.replaces} 不在毕业词条内`);
+        assert.ok(passives.has(alternative.passive), `${preset.title} 使用了未知替代词条 ${alternative.passive}`);
+        assert.ok(alternative.note.length >= 8, `${preset.title} 的替代说明过短`);
+      }
+    }
+  }
+});

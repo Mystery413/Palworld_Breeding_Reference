@@ -13,12 +13,20 @@ export type GraduatePreset = {
   id: string;
   group: GraduatePresetGroup;
   icon: string;
+  workIcon?: string;
   title: string;
   eyebrow: string;
   summary: string;
   defaultPassives: string[];
   passiveNote: string;
   candidates: GraduatePalCandidate[];
+};
+
+export type GraduatePassiveAlternative = {
+  passive: string;
+  replaces: string;
+  label: string;
+  note: string;
 };
 
 const WORK = ["恶魔之手", "卓绝技艺", "工匠精神", "社畜"];
@@ -29,6 +37,30 @@ const SPEED = ["次元跳跃", "神速", "运动健将", "灵活"];
 const ENDURANCE = ["次元跳跃", "神速", "运动健将", "永动机"];
 const GLIDER = ["神速", "运动健将", "灵活", "永动机"];
 
+const WORK_ALTERNATIVES: GraduatePassiveAlternative[] = [
+  { passive: "认真", replaces: "恶魔之手", label: "稳定降级", note: "工作速度 +20%；不需要世界树词条，也没有额外 SAN 压力。" },
+  { passive: "稀有", replaces: "恶魔之手", label: "泛用降级", note: "工作速度 +20%，同时兼顾战斗面板。" },
+  { passive: "认真", replaces: "社畜", label: "无减攻替代", note: "工作速度比社畜低 10%，但不会降低攻击。" },
+];
+
+const NIGHT_WORK_ALTERNATIVES: GraduatePassiveAlternative[] = [
+  { passive: "社畜", replaces: "恶魔之手", label: "白班高效", note: "工作速度 +30%；放弃世界树词条，但保留不眠的全天工作能力。" },
+  { passive: "认真", replaces: "恶魔之手", label: "稳定降级", note: "工作速度 +20%；容易并入旧配种链且没有 SAN 副作用。" },
+  { passive: "社畜", replaces: "不眠", label: "只做白班", note: "如果夜间停工可以接受，用额外工作速度换掉全天在线。" },
+];
+
+const TRANSPORT_ALTERNATIVES: GraduatePassiveAlternative[] = [
+  { passive: "运动健将", replaces: "卓绝技艺", label: "偏移动", note: "移动速度 +20%；牺牲装卸工作速度，适合动线较长的仓储。" },
+  { passive: "灵活", replaces: "工匠精神", label: "易得速度", note: "移动速度 +10%；成本低，适合中期物流帕鲁。" },
+  { passive: "社畜", replaces: "不眠", label: "白班装卸", note: "夜间允许休息时，用工作速度换取更快的拾取与装卸。" },
+];
+
+const RANCH_ALTERNATIVES: GraduatePassiveAlternative[] = [
+  { passive: "牧场之子", replaces: "牧场之主", label: "等级降级", note: "放牧适应性 +1；比牧场之主少一级，但更容易先做成可用个体。" },
+  { passive: "认真", replaces: "卓绝技艺", label: "低成本产出", note: "工作速度 +20%；保留稳定增益，大幅降低稀有词条门槛。" },
+  { passive: "不眠", replaces: "社畜", label: "全天放牧", note: "用白天工作速度换取非暗属性帕鲁夜间继续产出。" },
+];
+
 export const GRADUATE_PRESET_GROUPS: Array<{ id: GraduatePresetGroup; label: string; short: string }> = [
   { id: "base", label: "据点专家", short: "12 类生产岗位" },
   { id: "combat", label: "战斗主力", short: "输出与前排" },
@@ -37,7 +69,7 @@ export const GRADUATE_PRESET_GROUPS: Array<{ id: GraduatePresetGroup; label: str
 
 export const GRADUATE_PRESETS: GraduatePreset[] = [
   {
-    id: "kindling", group: "base", icon: "火", title: "生火", eyebrow: "KINDLING",
+    id: "kindling", group: "base", icon: "火", workIcon: "00", title: "生火", eyebrow: "KINDLING",
     summary: "熔炼与料理的固定工位专家，优先单项工作等级。",
     defaultPassives: WORK, passiveNote: "最高工作速度模板；使用恶魔之手时请配套优质食物、床与温泉。",
     candidates: [
@@ -50,7 +82,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "watering", group: "base", icon: "水", title: "浇水", eyebrow: "WATERING",
+    id: "watering", group: "base", icon: "水", workIcon: "01", title: "浇水", eyebrow: "WATERING",
     summary: "磨粉、农田与流水线的持续岗位，夜间不停工更实用。",
     defaultPassives: NIGHT_WORK, passiveNote: "默认采用非暗属性夜班模板；若只在白天工作，可把不眠换回社畜。",
     candidates: [
@@ -63,7 +95,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "planting", group: "base", icon: "芽", title: "播种", eyebrow: "PLANTING",
+    id: "planting", group: "base", icon: "芽", workIcon: "02", title: "播种", eyebrow: "PLANTING",
     summary: "大型农场的播种专家，综合型帕鲁需要锁定工作优先级。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；大型农场可另放花丽娜提供播种光环。",
     candidates: [
@@ -76,7 +108,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "electricity", group: "base", icon: "电", title: "发电", eyebrow: "ELECTRICITY",
+    id: "electricity", group: "base", icon: "电", workIcon: "03", title: "发电", eyebrow: "ELECTRICITY",
     summary: "为高耗电流水线提供稳定电力，优先高等级固定工位。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；高耗电基地可用电汪汪提供发电光环。",
     candidates: [
@@ -89,7 +121,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "handiwork", group: "base", icon: "工", title: "手工作业", eyebrow: "HANDIWORK",
+    id: "handiwork", group: "base", icon: "工", workIcon: "04", title: "手工作业", eyebrow: "HANDIWORK",
     summary: "流水线制造岗位，同时兼顾体型、寻路与配种难度。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；重视寻路与体型时，阿努比斯往往更省心。",
     candidates: [
@@ -102,7 +134,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "gathering", group: "base", icon: "收", title: "采集", eyebrow: "GATHERING",
+    id: "gathering", group: "base", icon: "收", workIcon: "05", title: "采集", eyebrow: "GATHERING",
     summary: "农田采收岗位，夜间工作能力会直接影响完整生产周期。",
     defaultPassives: NIGHT_WORK, passiveNote: "非暗属性默认采用夜班模板；选择唤夜兽时会自动换为最高速模板。",
     candidates: [
@@ -115,7 +147,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "lumbering", group: "base", icon: "木", title: "伐木", eyebrow: "LUMBERING",
+    id: "lumbering", group: "base", icon: "木", workIcon: "06", title: "伐木", eyebrow: "LUMBERING",
     summary: "木材基地的专职岗位，高等级与稳定寻路同样重要。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；织夜鹿为暗属性，无需额外配置不眠。",
     candidates: [
@@ -128,7 +160,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "mining", group: "base", icon: "矿", title: "采矿", eyebrow: "MINING",
+    id: "mining", group: "base", icon: "矿", workIcon: "07", title: "采矿", eyebrow: "MINING",
     summary: "矿石流水线核心，终局专家与现实可得性需要平衡。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；不攻克世界树时，魔渊龙与泰锋是长期答案。",
     candidates: [
@@ -141,7 +173,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "medicine", group: "base", icon: "药", title: "制药", eyebrow: "MEDICINE",
+    id: "medicine", group: "base", icon: "药", workIcon: "08", title: "制药", eyebrow: "MEDICINE",
     summary: "非高频但关键的生产岗位，可优先考虑兼任能力。",
     defaultPassives: WORK, passiveNote: "固定工位生产模板；制药空闲时，综合型帕鲁能继续承担其他工作。",
     candidates: [
@@ -154,7 +186,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "cooling", group: "base", icon: "冰", title: "冷却", eyebrow: "COOLING",
+    id: "cooling", group: "base", icon: "冰", workIcon: "10", title: "冷却", eyebrow: "COOLING",
     summary: "冰箱等持续在线岗位，夜间不停工的收益尤其高。",
     defaultPassives: NIGHT_WORK, passiveNote: "默认采用非暗属性夜班模板，确保冰箱与流水线全天在线。",
     candidates: [
@@ -167,7 +199,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "transporting", group: "base", icon: "运", title: "搬运", eyebrow: "TRANSPORTING",
+    id: "transporting", group: "base", icon: "运", workIcon: "11", title: "搬运", eyebrow: "TRANSPORTING",
     summary: "物流岗位同时受工作等级、移动速度、体型与动线影响。",
     defaultPassives: TRANSPORT, passiveNote: "兼顾工作效率、移动速度与夜班；紧凑布局往往比纸面等级更重要。",
     candidates: [
@@ -180,7 +212,7 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
     ],
   },
   {
-    id: "farming", group: "base", icon: "牧", title: "放牧", eyebrow: "FARMING",
+    id: "farming", group: "base", icon: "牧", workIcon: "12", title: "放牧", eyebrow: "FARMING",
     summary: "先按所需掉落选择物种，不同物资之间没有绝对替代关系。",
     defaultPassives: RANCH, passiveNote: "牧场之主与工作速度共同提高产出节奏；夜班需求可将社畜换为不眠。",
     candidates: [
@@ -282,4 +314,12 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
 
 export function graduatePassivesFor(preset: GraduatePreset, palId: string): string[] {
   return [...(preset.candidates.find((candidate) => candidate.palId === palId)?.passives ?? preset.defaultPassives)];
+}
+
+export function graduatePassiveAlternativesFor(preset: GraduatePreset, palId: string): GraduatePassiveAlternative[] {
+  if (preset.group !== "base") return [];
+  if (preset.id === "transporting") return TRANSPORT_ALTERNATIVES;
+  if (preset.id === "farming") return RANCH_ALTERNATIVES;
+  const selected = graduatePassivesFor(preset, palId);
+  return selected.includes("不眠") ? NIGHT_WORK_ALTERNATIVES : WORK_ALTERNATIVES;
 }
