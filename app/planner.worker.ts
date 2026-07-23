@@ -35,7 +35,10 @@ workerScope.onmessage = (event: MessageEvent<PlannerWorkerRequest>) => {
     const planLimit = Math.max(50, Math.min(500, request.planLimit ?? 240));
     const exactPlanCandidates: PlanResult[] = request.targetPalId
       ? findTargetPlans(search, request.targetPalId, {
-          requireOwnedAncestry: request.mode === "exact",
+          // Without requested passives, directly catching the target is a valid
+          // zero-step exact route. Trait-bearing targets must still inherit
+          // their passives from the user's recorded inventory.
+          requireOwnedAncestry: request.mode === "exact" && request.desiredPassives.length > 0,
           requireFullPassives: true,
         }, planLimit + 1).map(transferablePlan)
       : [];

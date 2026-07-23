@@ -477,6 +477,20 @@ function selectionOutcomes(poolSize: number, desiredCount: number): Array<{
   }];
 }
 
+function isRedundantSameSpeciesOutcome(
+  parentA: PlanNode,
+  parentB: PlanNode,
+  childId: string,
+  childMask: number,
+): boolean {
+  if (childId !== parentA.palId || childId !== parentB.palId) return false;
+  // Once either same-species parent already carries the complete desired mask,
+  // another self-breed adds no target trait. Exact/pure offspring are already
+  // represented as an outcome of the first useful breed (and by its expected
+  // egg count), so adding another generation would double-count rerolling.
+  return parentA.mask === childMask || parentB.mask === childMask;
+}
+
 function mergeCaptureSources(left: CaptureSource[], right: CaptureSource[]): CaptureSource[] {
   const sources = new Map<string, CaptureSource>();
   for (const source of [...left, ...right]) {
@@ -709,6 +723,7 @@ export function searchBreedingPlans(
           const duplicateParent = parentA.nodeId === parentB.nodeId;
           const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
           for (const outcome of outcomes) {
+            if (isRedundantSameSpeciesOutcome(parentA, parentB, combo[0], mask)) continue;
             const combinedChance = outcome.chance;
             const nodeId = `bred:${generatedId++}`;
             const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
@@ -1065,6 +1080,7 @@ function enumerateTargetNodes(search: SearchResult, targetPalId: string, options
         const duplicateParent = parentA.nodeId === parentB.nodeId;
         const duplicateBreedingCost = duplicateParent && parentA.kind === "bred";
         for (const outcome of outcomes) {
+          if (isRedundantSameSpeciesOutcome(parentA, parentB, targetPalId, mask)) continue;
           const nodeId = `target:${comboIndex}:${parentA.nodeId}:${parentB.nodeId}:${outcome.mode}`;
           const breedingStepIds = unique([...parentA.breedingStepIds, ...parentB.breedingStepIds, nodeId]);
           if (breedingStepIds.length > search.maxBreedingSteps) continue;

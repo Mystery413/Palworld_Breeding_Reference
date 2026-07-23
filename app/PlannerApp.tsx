@@ -979,7 +979,7 @@ export default function PlannerApp() {
 
           {selfOnlyCombo && activePal ? (
             <SelfBreedingOnlyResult pal={activePal} parents={selfOnlyParents} desiredPassives={activeDesiredPassives} />
-          ) : mode === "exact" && !inventory.length ? (
+          ) : mode === "exact" && !inventory.length && activeDesiredPassives.length > 0 ? (
             <div className="planner-empty">
               <span>◎</span><h3>请先录入至少一只帕鲁</h3><p>指定目标路线必须从你的已录入帕鲁开始，途中可以按设置补抓其他亲代。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>

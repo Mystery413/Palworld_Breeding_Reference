@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   type BreedingData,
+  type CaptureSource,
   type InventoryPal,
   calculateOffspring,
   compactInventoryForPlanning,
@@ -351,6 +352,82 @@ test("目标词条留空时仍可查询库存起点路线，并返回多个库�
   const plans = findTargetPlans(search, "C", { requireOwnedAncestry: true, requireFullPassives: true }, 4);
   assert.equal(plans.length, 2);
   assert.deepEqual(plans.map((plan) => plan.ownedInventoryIds[0]).sort(), ["owned-a", "owned-d"]);
+});
+
+test("同种繁殖集齐目标词条后不会继续生成无意义的重复自交链", () => {
+  const data = fixture([["T", "T", "T", "WILDCARD", "WILDCARD"]]);
+  const inventory: InventoryPal[] = [
+    { id: "artisan", palId: "T", sex: "M", passives: ["工匠精神"] },
+    { id: "nocturnal", palId: "T", sex: "F", passives: ["不眠"] },
+  ];
+  const plans = findTargetPlans(
+    searchBreedingPlans(data, inventory, ["工匠精神", "不眠"], {
+      maxGenerations: 6,
+      maxBreedingSteps: 12,
+      targetPalId: "T",
+    }),
+    "T",
+    { requireOwnedAncestry: true, requireFullPassives: true },
+    50,
+  );
+  assert.equal(plans.length, 1);
+  assert.equal(plans[0].steps.length, 1);
+  assert.deepEqual(plans[0].coveredPassives, ["工匠精神", "不眠"]);
+});
+
+test("1.0 冥灯鱼的工匠精神加不眠路线只保留一次有效自交", async () => {
+  const data = JSON.parse(await readFile(new URL("../public/data/runtime/planner-core.json", import.meta.url), "utf8")) as BreedingData;
+  const ghangler = data.pals.find((pal) => pal.nameZh === "冥灯鱼");
+  assert.ok(ghangler);
+  const plans = findTargetPlans(
+    searchBreedingPlans(data, [
+      { id: "artisan-ghangler", palId: ghangler.id, sex: "M", passives: ["工匠精神"] },
+      { id: "nocturnal-ghangler", palId: ghangler.id, sex: "F", passives: ["不眠"] },
+    ], ["工匠精神", "不眠"], {
+      maxGenerations: 6,
+      maxBreedingSteps: 12,
+      targetPalId: ghangler.id,
+    }),
+    ghangler.id,
+    { requireOwnedAncestry: true, requireFullPassives: true },
+    50,
+  );
+  assert.ok(plans.length > 0);
+  assert.ok(plans.every((plan) => plan.steps.filter((step) =>
+    step.parentA.palId === ghangler.id
+    && step.parentB.palId === ghangler.id
+    && step.childId === ghangler.id
+  ).length <= 1));
+});
+
+test("没有目标词条时可直接捕捉目标，有目标词条时捕捉态不能冒充成品", () => {
+  const data = fixture([]);
+  data.pals.push({
+    id: "T",
+    dex: "097",
+    name: "Ghangler",
+    nameZh: "冥灯鱼",
+    comboCount: 0,
+    genderSpecificComboCount: 0,
+    stats: { hp: 90, attack: 125, defense: 105, workSpeed: 100, rarity: 5, breedingPower: 880, maleRate: 50 },
+    work: {},
+    elements: ["Dark", "Water"],
+    image: "",
+    sourceUrl: "",
+  });
+  const source: CaptureSource = { palId: "T", level: 30, maxLevel: 30, kind: "wild", difficulty: 30 };
+  const direct = findTargetPlans(
+    searchBreedingPlans(data, [], [], { captureSources: [source], targetPalId: "T" }),
+    "T",
+    { requireOwnedAncestry: false, requireFullPassives: true },
+  )[0];
+  assert.ok(direct);
+  assert.equal(direct.source, "captured");
+  assert.equal(direct.steps.length, 0);
+  assert.deepEqual(direct.captures, [{ ...source, count: 1 }]);
+
+  const traitSearch = searchBreedingPlans(data, [], ["工匠精神"], { captureSources: [source], targetPalId: "T" });
+  assert.equal(findTargetPlans(traitSearch, "T", { requireFullPassives: true }).length, 0);
 });
 
 test("仅替换同一位置帕鲁的路线合并为一种方法", () => {
