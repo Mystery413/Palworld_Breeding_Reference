@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { buildRuntimeDataUrl } from "../lib/supabase-data.ts";
+
 type Habitat = {
   minLevel: number | null;
   maxLevel: number | null;
@@ -63,4 +65,15 @@ test("线上静态快照包含已核验的栖息地修正", async () => {
       assert.equal(habitat[field as keyof Habitat], value, `${palId}.${field} 已回归为错误数据`);
     }
   }
+});
+
+test("线上静态数据 URL 携带构建版本，避免复用旧快照", () => {
+  assert.equal(
+    buildRuntimeDataUrl("data/runtime/planner-core.json", "/Palworld_Breeding_Reference", "commit 371a98b"),
+    "/Palworld_Breeding_Reference/data/runtime/planner-core.json?v=commit%20371a98b",
+  );
+  assert.equal(
+    buildRuntimeDataUrl("data/runtime/planner-core.json", "/Palworld_Breeding_Reference", ""),
+    "/Palworld_Breeding_Reference/data/runtime/planner-core.json",
+  );
 });

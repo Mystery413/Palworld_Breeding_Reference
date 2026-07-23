@@ -61,4 +61,6 @@ npm run build:pages
 查询结果作为线上数据已更新的证明。
 
 GitHub Pages 工作流在每次构建时还会再次执行 `build:runtime-data`，因此最终部署以
-提交中的静态源数据和修正层为准。
+提交中的静态源数据和修正层为准。工作流同时把 Git commit SHA 写入
+`NEXT_PUBLIC_DATA_VERSION`；浏览器会用 `?v=<commit>` 请求静态 JSON，并进行缓存
+校验，避免文件名不变时继续使用上一次部署的旧快照。

@@ -39,6 +39,7 @@ jobs:
         run: npm run build:pages
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_DATA_VERSION: ${{ github.sha }}
           NEXT_PUBLIC_SUPABASE_URL: https://yidmwbijmccmbakykxwk.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_kc268PpxGV3xE_UBHmkzWQ_PBuHyA3E
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
