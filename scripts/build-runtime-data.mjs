@@ -4,12 +4,21 @@ import path from "node:path";
 const root = process.cwd();
 const sourcePath = path.join(root, "public/data/breeding-data.json");
 const saveIndexPath = path.join(root, "public/data/save-import-index.json");
+const habitatCorrectionsPath = path.join(root, "data/habitat-corrections.json");
 const outputDir = path.join(root, "public/data/runtime");
 const habitatDir = path.join(outputDir, "habitats");
 
 const data = JSON.parse(await fs.readFile(sourcePath, "utf8"));
 const saveIndex = JSON.parse(await fs.readFile(saveIndexPath, "utf8"));
+const habitatCorrections = JSON.parse(await fs.readFile(habitatCorrectionsPath, "utf8"));
 await fs.mkdir(habitatDir, { recursive: true });
+
+const palsById = new Map(data.pals.map((pal) => [pal.id, pal]));
+for (const [palId, correction] of Object.entries(habitatCorrections)) {
+  const pal = palsById.get(palId);
+  if (!pal?.habitat) throw new Error(`栖息地修正目标不存在或没有栖息地：${palId}`);
+  Object.assign(pal.habitat, correction);
+}
 
 // breeding-data.json contains the display names, while the save import index
 // is the authoritative source for passive ranks. Join them by localized name

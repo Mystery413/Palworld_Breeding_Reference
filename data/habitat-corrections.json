@@ -1,0 +1,32 @@
+{
+  "122:0": {
+    "minLevel": 40,
+    "maxLevel": 80,
+    "wildMinLevel": 40,
+    "wildMaxLevel": 80,
+    "commonWildMinLevel": 40,
+    "commonWildMaxLevel": 44,
+    "bossMinLevel": 45,
+    "bossMaxLevel": 45
+  },
+  "174:0": {
+    "minLevel": 68,
+    "maxLevel": 80,
+    "wildMinLevel": 75,
+    "wildMaxLevel": 80,
+    "commonWildMinLevel": 75,
+    "commonWildMaxLevel": 80,
+    "bossMinLevel": 68,
+    "bossMaxLevel": 68
+  },
+  "186:1": {
+    "minLevel": 58,
+    "maxLevel": 80,
+    "wildMinLevel": 75,
+    "wildMaxLevel": 80,
+    "commonWildMinLevel": 75,
+    "commonWildMaxLevel": 80,
+    "bossMinLevel": 58,
+    "bossMaxLevel": 59
+  }
+}

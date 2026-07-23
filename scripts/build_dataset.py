@@ -11,6 +11,7 @@ from pathlib import Path
 WEB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = WEB_ROOT.parent
 META_PATH = WEB_ROOT / "data" / "pal-metadata-1.0.json"
+HABITAT_CORRECTIONS_PATH = WEB_ROOT / "data" / "habitat-corrections.json"
 OUTPUT_PATH = WEB_ROOT / "public" / "data" / "breeding-data.json"
 
 
@@ -21,6 +22,16 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 def main() -> None:
     metadata = json.loads(META_PATH.read_text(encoding="utf-8"))
+    habitat_corrections = json.loads(HABITAT_CORRECTIONS_PATH.read_text(encoding="utf-8"))
+    pals_by_id = {pal["id"]: pal for pal in metadata["pals"]}
+    unknown_ids = sorted(set(habitat_corrections) - set(pals_by_id))
+    if unknown_ids:
+        raise ValueError(f"unknown habitat correction pal ids: {', '.join(unknown_ids)}")
+    for pal_id, correction in habitat_corrections.items():
+        habitat = pals_by_id[pal_id].get("habitat")
+        if habitat is None:
+            raise ValueError(f"habitat correction target has no habitat: {pal_id}")
+        habitat.update(correction)
     combos = read_csv(REPO_ROOT / "breeding_combos.csv")
 
     compact_combos = [

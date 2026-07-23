@@ -47,9 +47,9 @@ pal_id,catchable,min_level,max_level,wild_min_level,wild_max_level,common_wild_m
 74:0,true,13,80,13,80,30,30,27,29,67,67,0,0,它会用不同的节奏敲击地面与同伴沟通。 每种节奏所对应的意思会根据族群有所差异， 但人类至今仍未能完全理解其具体分类。,https://paldb.cc/cn/Palpagos_Islands?pal=Gorilla&t=dayTimeLocations
 82:0,true,25,49,25,49,25,25,35,45,64,64,0,0,要是不小心和它对视，就会被操纵。 大部分带着秘斯媞雅的人 都以为自己才是主人。,https://paldb.cc/cn/Palpagos_Islands?pal=Mutant&t=dayTimeLocations
 124:0,true,40,80,40,80,40,40,42,45,423,423,0,0,将天羽龙当作抱枕一同入睡， 就能体验如同身处天堂一般的舒适感。 但如果个体的睡相很差，那么会因被压扁而进入天堂。,https://paldb.cc/cn/Palpagos_Islands?pal=SkyDragon&t=dayTimeLocations
-122:0,true,16,80,16,80,16,16,45,45,14,14,0,0,过去人们认为它是带来旱季的使者。 只要前一年发生干旱，人们就会全力驱逐这种帕鲁， 祈祷今年能够获得丰收。,https://paldb.cc/cn/Palpagos_Islands?pal=Suzaku&t=dayTimeLocations
+122:0,true,40,80,40,80,40,44,45,45,14,14,0,0,过去人们认为它是带来旱季的使者。 只要前一年发生干旱，人们就会全力驱逐这种帕鲁， 祈祷今年能够获得丰收。,https://paldb.cc/cn/Palpagos_Islands?pal=Suzaku&t=dayTimeLocations
 181:0,true,66,78,76,78,76,78,66,66,1,1,40,40,当其生命走到尽头时，夜空中的某处便会多出一颗星星。 一生中的回忆越多，其光芒越是璀璨。,https://paldb.cc/cn/Palpagos_Islands?pal=MoonChild&t=dayTimeLocations
-174:0,true,13,80,13,80,13,13,68,68,1,1,26,26,聚精会神，从火焰中窥探未来。 要是看见了不合心意的未来，就会一直重抽，直到抽出满意的结果。 所以昭炎狐的未来一直都是一片光明！,https://paldb.cc/cn/Palpagos_Islands?pal=FoxExorcist&t=dayTimeLocations
+174:0,true,68,80,75,80,75,80,68,68,1,1,26,26,聚精会神，从火焰中窥探未来。 要是看见了不合心意的未来，就会一直重抽，直到抽出满意的结果。 所以昭炎狐的未来一直都是一片光明！,https://paldb.cc/cn/Palpagos_Islands?pal=FoxExorcist&t=dayTimeLocations
 152:0,true,29,53,29,53,52,52,35,35,84,84,0,0,踏春兔跑过的地面会变得土质肥沃，草木也会长得很茂盛。 但如果喷上除草剂后， 它们就不会在这里跑动了。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassRabbitMan&t=dayTimeLocations
 154:0,true,53,66,53,66,53,55,56,63,352,352,0,0,在岛上还盛行炼金术的时候， 它持续闪耀的金色毛发作为炼金的触媒很受欢迎。 不久之后，人们提出了跨时代的见解。 既然同是金色的，那么炼金就只加工金毛不就好了嘛。,https://paldb.cc/cn/Palpagos_Islands?pal=GoldenHorse&t=dayTimeLocations
 75:0,true,12,35,12,35,24,24,17,19,285,313,0,0,它流线型的外形很适合在水上活动。 因此经常被非法捕鱼团捕捉， 并被拿来代替冲浪板使用。,https://paldb.cc/cn/Palpagos_Islands?pal=Serpent&t=dayTimeLocations
@@ -233,7 +233,7 @@ pal_id,catchable,min_level,max_level,wild_min_level,wild_max_level,common_wild_m
 159:1,true,65,73,65,73,65,65,,,36,36,22,22,即便被拆解，只要再拼装到一起， 便又能完好如初正常活动的神奇帕鲁。 如果拼装过程中混进其他个体的零件，其思维就会发生致命错误， 最终导致过热。,https://paldb.cc/cn/Palpagos_Islands?pal=WingGolem_Fire&t=dayTimeLocations
 73:1,true,10,38,10,36,28,28,36,38,50,50,0,0,这种帕鲁对站姿的讲究异常执着。 它总是在寻找最热血的姿势， 因此它的饲主会被迫整天欣赏热血到让人烦躁的姿势。,https://paldb.cc/cn/Palpagos_Islands?pal=LizardMan_Fire&t=dayTimeLocations
 56:1,true,13,66,13,65,40,46,56,66,123,462,0,0,它头上的角是绝对不会融化的，不可思议的冰。 用它折断的角制成的刨冰，那可真称的上是绝顶美味， 无论是吃刨冰的人，还是霜镰魔，头都很疼。,https://paldb.cc/cn/Palpagos_Islands?pal=Werewolf_Ice&t=dayTimeLocations
-186:1,true,50,80,50,80,50,50,58,59,1,1,42,42,这是一种风度翩翩且行为优雅的帕鲁。 会使用超强巴掌对付无礼之人。 但偶尔也会出现以此为乐的帕鲁。,https://paldb.cc/cn/Palpagos_Islands?pal=LilyQueen_Dark&t=dayTimeLocations
+186:1,true,58,80,75,80,75,80,58,59,1,1,42,42,这是一种风度翩翩且行为优雅的帕鲁。 会使用超强巴掌对付无礼之人。 但偶尔也会出现以此为乐的帕鲁。,https://paldb.cc/cn/Palpagos_Islands?pal=LilyQueen_Dark&t=dayTimeLocations
 87:1,true,35,80,35,80,36,38,42,45,84,84,0,0,这种帕鲁背部的植被因个体而异。 在雪猛犸的背上曾发现过被认为已经灭绝的冰冻植物种子， 在冷冻状态下保存良好。,https://paldb.cc/cn/Palpagos_Islands?pal=GrassMammoth_Ice&t=dayTimeLocations
 27:1,true,30,45,30,41,41,41,42,45,3,3,0,0,它尾部的结晶非常美丽，但它死去时结晶也会随之崩解。 人们迷信大量饲养它能够招来财运， 于是冰丝特通常都会得到悉心的照料。,https://paldb.cc/cn/Palpagos_Islands?pal=Bastet_Ice&t=dayTimeLocations
 99:1,true,35,55,35,52,48,48,55,55,12,12,0,0,它的本体是一种能量体，内部是空的。 通过将砂石和矿物填充进外壳，得以实现了压倒性的质量。 被其击中的生物只能发出如地狱般的呻吟声。,https://paldb.cc/cn/Palpagos_Islands?pal=DarkScorpion_Ground&t=dayTimeLocations

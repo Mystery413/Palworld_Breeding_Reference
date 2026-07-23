@@ -29,6 +29,14 @@ PALPAGOS_BOUNDS = (-1_099_400.0, -724_400.0, 349_400.0, 724_400.0)
 WORLD_TREE_BOUNDS = (347_351.5, -818_197.0, 689_148.5, -476_400.0)
 MAX_POINTS_PER_WORLD = 72
 ALPHA_LOOKUP: dict[str, list[dict[str, Any]]] = {}
+NON_WILD_SPAWNER_MARKERS = (
+    "帕鲁中介",
+    "Captured Cage",
+    "帕鲁蛋",
+    "袭击",
+    "IncidentSpawner",
+    "垂钓池",
+)
 
 
 def fetch_text(url: str) -> str:
@@ -65,11 +73,17 @@ def parse_spawner_levels(page: str) -> tuple[list[int], list[int]]:
     boss_levels: list[int] = []
     for row in re.findall(r"<tr>(.*?)(?=<tr>|$)", section.group(1), re.S | re.I):
         text = clean_text(row)
-        if any(blocked in text for blocked in ("帕鲁中介", "Captured Cage", "帕鲁蛋")):
+        # The PalDB spawner table mixes true habitats with acquisition methods
+        # such as raids, incidents and fishing. Only true wild/Alpha rows belong
+        # in habitat level fields; special acquisition methods need their own
+        # source type before the planner may offer them as capture roots.
+        if any(blocked in text for blocked in NON_WILD_SPAWNER_MARKERS):
             continue
         match = re.search(r"Lv\.\s*(\d+)(?:\s*[–—-]\s*(\d+))?", text)
         if match:
-            row_levels = [int(value) for value in match.groups() if value and 0 < int(value) <= 100]
+            start = int(match.group(1))
+            end = int(match.group(2) or start)
+            row_levels = list(range(start, end + 1)) if 0 < start <= end <= 100 else []
             if "palAlpha" in row or "border-danger" in row:
                 boss_levels.extend(row_levels)
             else:
