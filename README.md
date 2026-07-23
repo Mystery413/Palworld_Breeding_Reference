@@ -54,7 +54,7 @@ npm run build:runtime-data
 
 `public/data/runtime/planner-core.json` 只包含规划所需核心字段；299 个栖息点文件位于 `public/data/runtime/habitats/`，打开对应图鉴时才加载。帕鲁缩略图缓存位于 `public/data/pal-icons/`，需要从数据源重新抓取时执行 `npm run cache:pal-images`。
 
-重要：GitHub Pages 读取上述静态运行时文件，不会实时查询 Supabase 的帕鲁参考表。经过人工核验的栖息地修正记录在 `data/habitat-corrections.json`，构建时会强制应用；Supabase 运行时只用于共享用户库存。完整的数据权威、生成顺序和发布检查见 [DATA_PIPELINE.md](DATA_PIPELINE.md)。
+重要：GitHub Pages 读取上述静态运行时文件，不会实时查询 Supabase 的帕鲁参考表。经过人工核验的栖息地修正记录在 `data/habitat-corrections.json`，构建时会强制应用；Supabase 运行时只用于共享用户库存。调整帕鲁数据必须执行 `npm run data:verify`，再用 `npm run data:inspect -- <pal_id>` 检查三层数据同步，最后到线上图鉴弹窗验收。完整 SOP 见 [DATA_PIPELINE.md](DATA_PIPELINE.md)。
 
 ## 规则边界
 

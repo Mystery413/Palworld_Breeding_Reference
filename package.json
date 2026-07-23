@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
     "build:runtime-data": "node scripts/build-runtime-data.mjs",
+    "data:rebuild": "python3 scripts/build_dataset.py && npm run build:runtime-data",
+    "data:inspect": "node scripts/inspect-pal-data.mjs",
+    "data:verify": "npm run data:rebuild && npm test && npm run build:pages",
     "cache:pal-images": "node scripts/cache-pal-images.mjs",
     "prebuild": "npm run build:runtime-data",
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
