@@ -217,7 +217,9 @@ button { color: inherit; }
 .goal-block-heading { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
 .goal-block-heading label { font-size: 12px; font-weight: 900; }
 .goal-block-heading label small { color: var(--muted); margin-left: 5px; }
-.goal-block-heading > button { background: transparent; border: 0; color: var(--teal); cursor: pointer; font-size: 8px; font-weight: 900; padding: 4px; }
+.goal-block-heading > div { display: flex; gap: 5px; }
+.goal-block-heading > div button { background: transparent; border: 0; color: var(--teal); cursor: pointer; font-size: 8px; font-weight: 900; padding: 4px 6px; }
+.goal-block-heading > div .clear-passives { border-right: 1px solid var(--line); color: #a34738; }
 .graduate-passive-note { color: var(--muted); display: block; font-size: 8px; line-height: 1.65; margin-top: 9px; }
 .calculate-action { align-items: center; background: white; border: 1px solid var(--line); border-radius: 16px; display: flex; gap: 18px; justify-content: space-between; margin: -18px 0 28px; padding: 15px 17px; }
 .calculate-action.dirty { border-color: rgba(238, 108, 75, .45); box-shadow: 0 8px 24px rgba(238, 108, 75, .08); }
@@ -252,6 +254,11 @@ button { color: inherit; }
 .passive-tag i { background: rgba(255,255,255,.7); border-radius: 4px; color: inherit; font-size: 7px; font-style: normal; font-weight: 900; letter-spacing: .04em; padding: 2px 4px; white-space: nowrap; }
 .passive-tag.compact { gap: 3px; padding: 3px 5px; }
 .passive-tag.compact i { font-size: 6px; padding: 1px 3px; }
+.passive-hover { position: relative; }
+.passive-hover::after { background: #17212b; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; bottom: calc(100% + 8px); box-shadow: 0 10px 28px rgba(0,0,0,.24); color: #f7f4ec; content: attr(data-passive-effect); font-size: 9px; font-style: normal; font-weight: 600; left: 50%; line-height: 1.55; max-width: min(300px, 70vw); min-width: 170px; opacity: 0; padding: 8px 10px; pointer-events: none; position: absolute; text-align: left; transform: translate(-50%, 4px); transition: opacity .12s ease, transform .12s ease; white-space: pre-line; width: max-content; z-index: 100; }
+.passive-hover::before { border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #17212b; bottom: calc(100% + 2px); content: ""; left: 50%; opacity: 0; pointer-events: none; position: absolute; transform: translateX(-50%); z-index: 101; }
+.passive-hover:hover::after, .passive-hover:focus-visible::after, .passive-hover:hover::before, .passive-hover:focus-visible::before { opacity: 1; transform: translate(-50%, 0); }
+.passive-hover:hover::before, .passive-hover:focus-visible::before { transform: translateX(-50%); }
 .passive-rank-1 { --passive-bg: linear-gradient(180deg, #edf4f6, #dce7ea); --passive-border: #93aeb6; --passive-color: #29444d; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; }
 .passive-rank-2 { --passive-bg: linear-gradient(180deg, #cfeeff, #9fd2ed); --passive-border: #3e91bc; --passive-color: #104c6c; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; }
 .passive-rank-3 { --passive-bg: linear-gradient(180deg, #ffe978, #e2b92d); --passive-border: #9e7400; --passive-color: #493600; background: var(--passive-bg) !important; border-color: var(--passive-border) !important; color: var(--passive-color) !important; box-shadow: inset 0 1px rgba(255,255,255,.6); }
@@ -337,6 +344,28 @@ button { color: inherit; }
 .no-route span b { color: #8f2f27; }
 .no-route.missing-passives { background: #fff3ef; border-color: #d99d91; }
 .no-route.species-path { background: #f4f6f6; border-color: #9aafad; }
+.calculate-action.self-only { background: #eef8f6; border-color: #9bcfc8; }
+.calculate-action.self-only .primary-button:disabled { cursor: default; }
+.self-breeding-result { background: linear-gradient(145deg, #f7fbfa, #eef7f5); border: 1px solid #a8d3cd; border-radius: 18px; box-shadow: 0 10px 30px rgba(11,141,132,.07); margin-bottom: 26px; padding: 20px; }
+.self-breeding-heading { align-items: center; display: flex; gap: 12px; }
+.self-breeding-heading > span, .self-breeding-notice > span { background: var(--teal); border-radius: 999px; color: white; flex: 0 0 auto; font-size: 8px; font-weight: 1000; letter-spacing: .08em; padding: 6px 9px; }
+.self-breeding-heading > div { display: flex; flex-direction: column; gap: 3px; }
+.self-breeding-heading strong { font-family: Georgia, "Songti SC", serif; font-size: 17px; }
+.self-breeding-heading small { color: var(--muted); font-size: 9px; }
+.self-breeding-formula { align-items: stretch; display: grid; gap: 10px; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); margin-top: 16px; }
+.self-breeding-formula > div { align-items: center; background: white; border: 1px solid var(--line); border-radius: 13px; display: flex; gap: 9px; min-width: 0; padding: 10px; }
+.self-breeding-formula > div.result { background: #e4f4f1; border-color: #9bcfc8; }
+.self-breeding-formula > b { align-self: center; color: var(--coral); font-family: Georgia, serif; font-size: 18px; }
+.self-breeding-formula img { background: #eef0f3; border-radius: 9px; height: 48px; object-fit: contain; width: 48px; }
+.self-breeding-formula div > span { display: flex; flex-direction: column; min-width: 0; }
+.self-breeding-formula small { color: var(--muted); font-size: 8px; }
+.self-breeding-formula strong { font-size: 12px; margin: 2px 0; }
+.self-breeding-formula em { color: var(--teal-dark); font-size: 8px; font-style: normal; }
+.self-passive-status { background: rgba(255,255,255,.72); border: 1px solid #afd5ce; border-radius: 12px; margin-top: 13px; padding: 12px; }
+.self-passive-status.missing { background: #fff4ef; border-color: #dfb0a6; }
+.self-passive-status > strong { display: block; font-size: 10px; margin-bottom: 7px; }
+.self-passive-status > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.self-passive-status > small { color: var(--muted); display: block; font-size: 8px; line-height: 1.6; margin-top: 8px; }
 .plan-details { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 36px; }
 .plan-summary { align-items: center; display: grid; gap: 20px; grid-template-columns: 1fr auto; }
 .plan-target { align-items: center; background: transparent; border: 0; border-radius: 15px; cursor: pointer; display: flex; gap: 14px; padding: 0; text-align: left; }
@@ -863,6 +892,10 @@ button { color: inherit; }
 .formula-summary > span b { color: var(--coral); font-family: Georgia, serif; font-size: 20px; }
 .formula-summary small { color: var(--muted); font-size: 9px; }
 .formula-summary button { background: transparent; border: 0; color: var(--teal); cursor: pointer; font-size: 10px; font-weight: 900; }
+.self-breeding-notice { align-items: center; background: #eaf6f3; border: 1px solid #a9d4cd; border-radius: 13px; display: flex; gap: 11px; margin: 2px 0 14px; padding: 11px 13px; }
+.self-breeding-notice > div { display: flex; flex-direction: column; gap: 2px; }
+.self-breeding-notice strong { font-size: 10px; }
+.self-breeding-notice small { color: var(--muted); font-size: 8px; line-height: 1.5; }
 .formula-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0,1fr)); }
 .formula-row { align-items: center; background: rgba(255,255,255,.76); border: 1px solid var(--line); border-radius: 13px; display: grid; gap: 5px; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); min-width: 0; padding: 8px; }
 .formula-row > i { color: var(--teal); font-family: Georgia, serif; font-size: 17px; font-style: normal; font-weight: 800; }
@@ -905,6 +938,9 @@ button { color: inherit; }
 
 @media (max-width: 760px) {
   .passive-alternative-list { grid-template-columns: 1fr; }
+  .self-breeding-formula { grid-template-columns: 1fr; }
+  .self-breeding-formula > b { justify-self: center; line-height: 1; }
+  .self-breeding-result { padding: 15px; }
   .passive-alternatives > div:first-child { align-items: flex-start; flex-direction: column; gap: 2px; }
   .method-browser-title { align-items: flex-start; flex-direction: column; gap: 10px; }
   .route-sort-toggle { width: 100%; }

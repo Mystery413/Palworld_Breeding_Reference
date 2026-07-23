@@ -4,52 +4,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { BreedingCalculatorMatch, BreedingData, Pal } from "@/lib/planner";
-import { filterBreedingCombos } from "@/lib/planner";
+import { filterBreedingCombos, selfBreedingOnlyCombo } from "@/lib/planner";
 import { loadBreedingData } from "@/lib/supabase-data";
+import { calculatorPalOptions, compareCalculatorPals } from "@/lib/calculator-pal-options";
 import { PalDetailModal } from "./PalDetailModal";
 import { ToolHeader } from "./ToolHeader";
 
 const RESULT_BATCH = 100;
 
-function normalize(value: string): string {
-  return value.trim().toLocaleLowerCase("zh-CN").replaceAll(/\s+/g, "");
-}
-
-function fuzzyMatches(value: string, rawQuery: string): boolean {
-  const haystack = normalize(value);
-  const query = normalize(rawQuery);
-  if (!query || haystack.includes(query)) return true;
-  let cursor = 0;
-  for (const char of haystack) if (char === query[cursor]) cursor += 1;
-  return cursor === query.length;
-}
-
-function palSearchScore(pal: Pal, rawQuery: string): number | null {
-  const query = normalize(rawQuery);
-  if (!query) return 0;
-  const fields = [pal.dex.replace(/^0+/, ""), pal.dex, pal.nameZh, pal.name].map(normalize);
-  if (fields.some((field) => field === query)) return 0;
-  if (fields.some((field) => field.startsWith(query))) return 1;
-  if (fields.some((field) => field.includes(query))) return 2;
-  if (fields.some((field) => fuzzyMatches(field, query))) return 3;
-  return null;
-}
-
-function comparePals(left: Pal, right: Pal): number {
-  if (left.dex === "-" && right.dex !== "-") return 1;
-  if (right.dex === "-" && left.dex !== "-") return -1;
-  return left.dex.localeCompare(right.dex, "zh-CN", { numeric: true });
-}
-
 function PalCombobox({ label, value, pals, onChange }: { label: string; value: string; pals: Pal[]; onChange: (id: string) => void }) {
   const selected = pals.find((pal) => pal.id === value);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const options = useMemo(() => pals
-    .map((pal) => ({ pal, score: palSearchScore(pal, query) }))
-    .filter((item): item is { pal: Pal; score: number } => item.score != null)
-    .sort((left, right) => left.score - right.score || comparePals(left.pal, right.pal))
-    .slice(0, 16), [pals, query]);
+  const options = useMemo(() => calculatorPalOptions(pals, query), [pals, query]);
   const text = open ? query : selected ? `${selected.nameZh} · No.${selected.dex}` : query;
 
   return <label className="formula-combobox">
@@ -58,7 +25,7 @@ function PalCombobox({ label, value, pals, onChange }: { label: string; value: s
       <input value={text} onFocus={() => { setQuery(selected ? selected.nameZh : query); setOpen(true); }} onBlur={() => window.setTimeout(() => setOpen(false), 120)} onChange={(event) => { setQuery(event.target.value); onChange(""); setOpen(true); }} placeholder="任意帕鲁 · 模糊搜索" autoComplete="off" />
       {(value || query) && <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { onChange(""); setQuery(""); setOpen(false); }} aria-label={`清除${label}`}>×</button>}
       {open && <div className="formula-options">
-        {options.map(({ pal }) => <button type="button" key={pal.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { onChange(pal.id); setQuery(pal.nameZh); setOpen(false); }}>
+        {options.map((pal) => <button type="button" key={pal.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { onChange(pal.id); setQuery(pal.nameZh); setOpen(false); }}>
           <img src={pal.image} alt="" loading="lazy" decoding="async" /><span><b>{pal.nameZh}</b><small>No.{pal.dex} · {pal.name}</small></span>
         </button>)}
         {!options.length && <p>没有匹配帕鲁，请换个名称或编号。</p>}
@@ -110,7 +77,7 @@ export default function BreedingCalculatorPage() {
     return () => window.removeEventListener("keydown", close);
   }, []);
 
-  const pals = useMemo(() => [...(data?.pals ?? [])].sort(comparePals), [data]);
+  const pals = useMemo(() => [...(data?.pals ?? [])].sort(compareCalculatorPals), [data]);
   const palById = useMemo(() => new Map(pals.map((pal) => [pal.id, pal])), [pals]);
   const matches = useMemo(() => data ? filterBreedingCombos(data, { parentAId, parentBId, childId })
     .sort((left, right) => {
@@ -124,6 +91,7 @@ export default function BreedingCalculatorPage() {
       const idsRight = [right.parentAId, right.parentBId, right.childId].map((id) => palById.get(id)?.dex ?? id).join("|");
       return idsLeft.localeCompare(idsRight, "zh-CN", { numeric: true });
     }) : [], [data, parentAId, parentBId, childId, palById]);
+  const selfOnly = useMemo(() => data && childId ? selfBreedingOnlyCombo(data, childId) : null, [data, childId]);
   const hasFilter = Boolean(parentAId || parentBId || childId);
   const visibleMatches = matches.slice(0, visibleCount);
   const detailPal = palById.get(detailPalId);
@@ -146,6 +114,10 @@ export default function BreedingCalculatorPage() {
         <small>亲代遵守交换律：A＋B 与 B＋A 会得到同一结果，性别限定也会随位置正确交换。</small>
         {hasFilter && <button onClick={() => { setParentAId(""); setParentBId(""); setChildId(""); setVisibleCount(RESULT_BATCH); }}>清除全部</button>}
       </div>
+      {selfOnly && <div className="self-breeding-notice compact">
+        <span>同种限定</span>
+        <div><strong>{palById.get(childId)?.nameZh} 仅能通过同种配种获得</strong><small>配种表中没有其他亲代组合：准备一雄一雌两只 {palById.get(childId)?.nameZh}，即可直接自交，不需要计算多代路径。</small></div>
+      </div>}
       {error ? <div className="tool-error">{error}</div> : !data ? <div className="tool-loading"><i />正在加载 1.0 配方表…</div> : !hasFilter ? <div className="formula-empty"><span>A</span><i>＋</i><span>B</span><i>＝</i><span>C</span><p>例如只选“子代 C”，就能查看它的全部配方；选择“亲代 B＋子代 C”，也能反查另一个亲代。</p></div> : matches.length ? <>
         <div className="formula-grid" role="list">
           {visibleMatches.map((match) => <article className="formula-row" role="listitem" key={`${match.parentAId}|${match.parentBId}|${match.childId}|${match.parentASex}|${match.parentBSex}`}>

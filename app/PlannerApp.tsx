@@ -12,6 +12,7 @@ import {
   groupTargetPlans,
   hasComplexityDifficultyTradeoff,
   InventoryPal,
+  selfBreedingOnlyCombo,
   isWorldTreeOnlyPal,
   Pal,
   planDifficultyScore,
@@ -21,6 +22,7 @@ import {
   TargetPlanGroup,
   TargetPlanSortMode,
 } from "@/lib/planner";
+import { passiveEffect } from "@/lib/passive-effects";
 import {
   GRADUATE_PRESETS,
   GRADUATE_PRESET_GROUPS,
@@ -438,6 +440,8 @@ export default function PlannerApp() {
   const overLevelCaptureCount = useMemo(() => captureSources.filter((source) => source.level > catchLevelLimit).length, [captureSources, catchLevelLimit]);
   const activeTargetId = mode === "exact" ? exactTargetId : graduateTargetId;
   const activeDesiredPassives = mode === "exact" ? exactTargetPassives : graduatePassives;
+  const selfOnlyCombo = useMemo(() => data && activeTargetId ? selfBreedingOnlyCombo(data, activeTargetId) : null, [data, activeTargetId]);
+  const selfOnlyParents = useMemo(() => inventory.filter((item) => item.palId === activeTargetId), [inventory, activeTargetId]);
   const missingDesiredPassives = useMemo(
     () => activeDesiredPassives.filter((passive) => !ownedPassiveSet.has(passive)),
     [activeDesiredPassives, ownedPassiveSet],
@@ -537,8 +541,7 @@ export default function PlannerApp() {
       .map((pal) => ({ pal, score: palMatchScore(pal, palSearch) }))
       .filter((item): item is { pal: Pal; score: number } => item.score != null)
       .sort((a, b) => a.score - b.score || a.pal.dex.localeCompare(b.pal.dex, undefined, { numeric: true }))
-      .map((item) => item.pal)
-      .slice(0, 80);
+      .map((item) => item.pal);
   }, [data, palSearch]);
 
   const targetOptions = useMemo(() => {
@@ -546,8 +549,7 @@ export default function PlannerApp() {
     const query = normalizedSearch(targetSearch);
     return data.pals
       .filter((pal) => fuzzyMatches(`${pal.dex}${pal.name}${pal.nameZh}`, query))
-      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }))
-      .slice(0, 40);
+      .sort((a, b) => a.dex.localeCompare(b.dex, undefined, { numeric: true }));
   }, [data, targetSearch]);
 
   const passiveSuggestions = (query: string, selected: string[], ownedFirst = false) => {
@@ -589,6 +591,14 @@ export default function PlannerApp() {
     const replace = (current: string[]) => current.map((item) => item === replaces ? passive : item);
     if (mode === "exact") setExactTargetPassives(replace);
     else setGraduatePassives(replace);
+    setSelectedExactPlanIndex(0);
+    setVisibleMethodCount(METHODS_PER_BATCH);
+  };
+
+  const clearDesiredPassives = () => {
+    if (mode === "exact") setExactTargetPassives([]);
+    else setGraduatePassives([]);
+    setDesiredInput("");
     setSelectedExactPlanIndex(0);
     setVisibleMethodCount(METHODS_PER_BATCH);
   };
@@ -828,7 +838,7 @@ export default function PlannerApp() {
           </div>
           <div className="gene-track">
             <span>目标基因组</span>
-            <div>{activeDesiredPassives.length ? activeDesiredPassives.map((passive, index) => <b key={passive} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>未指定词条（仅匹配目标物种）</i>}</div>
+            <div>{activeDesiredPassives.length ? activeDesiredPassives.map((passive, index) => <b key={passive} className="passive-hover" title={passiveEffect(passive)} data-passive-effect={passiveEffect(passive)} style={{ "--gene-index": index } as React.CSSProperties}>{passive}</b>) : <i>未指定词条（仅匹配目标物种）</i>}</div>
           </div>
           <div className="console-status"><i className={data && !isCalculating ? "ready" : ""} />{!data ? "正在装载配种图谱…" : isCalculating ? `后台搜索 ${maxGenerations} 代路线…` : calculationIsDirty ? "条件已更新 · 点击开始计算" : `计算完成 · ${calculationDurationMs}ms`}</div>
         </div>
@@ -925,7 +935,10 @@ export default function PlannerApp() {
             <div className="goal-block">
               <div className="goal-block-heading">
                 <label>{mode === "exact" ? "目标帕鲁词条（可不选）" : "毕业四词条"} <small>{activeDesiredPassives.length}/4</small></label>
-                {mode === "recommend" && <button onClick={() => selectGraduatePal(activeGraduatePreset, graduateTargetId)}>恢复推荐</button>}
+                <div>
+                  {!!activeDesiredPassives.length && <button className="clear-passives" onClick={clearDesiredPassives}>一键清空</button>}
+                  {mode === "recommend" && <button onClick={() => selectGraduatePal(activeGraduatePreset, graduateTargetId)}>恢复推荐</button>}
+                </div>
               </div>
               <div className="tag-input">
                 {activeDesiredPassives.map((passive) => <PassiveTag key={passive} name={passive} rank={passiveRankOf(passive, passiveRanks)} availability={ownedPassiveSet.has(passive) ? "owned" : "missing"} onRemove={() => { if (mode === "exact") setExactTargetPassives((current) => current.filter((item) => item !== passive)); else setGraduatePassives((current) => current.filter((item) => item !== passive)); setSelectedExactPlanIndex(0); setVisibleMethodCount(METHODS_PER_BATCH); }} />)}
@@ -945,7 +958,7 @@ export default function PlannerApp() {
                 <div className="passive-alternative-list">
                   {activePassiveAlternatives.filter((alternative) => activeDesiredPassives.includes(alternative.replaces)).map((alternative) => {
                     const owned = ownedPassiveSet.has(alternative.passive);
-                    return <button key={`${alternative.replaces}-${alternative.passive}`} className={owned ? "owned" : "missing"} onClick={() => replaceDesiredPassive(alternative.replaces, alternative.passive)} disabled={activeDesiredPassives.includes(alternative.passive)} title={alternative.note}>
+                    return <button key={`${alternative.replaces}-${alternative.passive}`} className={owned ? "owned" : "missing"} onClick={() => replaceDesiredPassive(alternative.replaces, alternative.passive)} disabled={activeDesiredPassives.includes(alternative.passive)} title={`${passiveEffect(alternative.passive)}；${alternative.note}`}>
                       <span>{owned ? "✓" : "○"}</span>
                       <b>{alternative.passive}</b>
                       <small>{alternative.label} · 替换{alternative.replaces}</small>
@@ -959,12 +972,14 @@ export default function PlannerApp() {
             </div>
           </div>
 
-          <div className={`calculate-action ${calculationIsDirty ? "dirty" : "ready"}`}>
-            <div><strong>{calculationIsDirty ? "条件尚未计算" : "当前结果已是最新"}</strong><small>{calculationIsDirty ? "选完用户、词条、目标和代数后，再统一开始计算。" : `上次计算耗时 ${calculationDurationMs}ms；修改任意条件后需再次点击。`}</small></div>
-            <button className="primary-button" onClick={isCalculating ? cancelCalculation : calculateRoutes} disabled={!data}>{isCalculating ? "停止计算" : mode === "recommend" ? calculatedInputKey ? "重新生成路线" : "生成毕业路线" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
+          <div className={`calculate-action ${selfOnlyCombo ? "self-only" : calculationIsDirty ? "dirty" : "ready"}`}>
+            <div><strong>{selfOnlyCombo ? "该帕鲁只有同种配种公式" : calculationIsDirty ? "条件尚未计算" : "当前结果已是最新"}</strong><small>{selfOnlyCombo ? "无需搜索多代可达性，下面已直接给出同种繁殖要求。" : calculationIsDirty ? "选完用户、词条、目标和代数后，再统一开始计算。" : `上次计算耗时 ${calculationDurationMs}ms；修改任意条件后需再次点击。`}</small></div>
+            <button className="primary-button" onClick={isCalculating ? cancelCalculation : calculateRoutes} disabled={!data || !!selfOnlyCombo}>{selfOnlyCombo ? "无需计算" : isCalculating ? "停止计算" : mode === "recommend" ? calculatedInputKey ? "重新生成路线" : "生成毕业路线" : calculatedInputKey ? "重新计算" : "开始计算"}</button>
           </div>
 
-          {mode === "exact" && !inventory.length ? (
+          {selfOnlyCombo && activePal ? (
+            <SelfBreedingOnlyResult pal={activePal} parents={selfOnlyParents} desiredPassives={activeDesiredPassives} />
+          ) : mode === "exact" && !inventory.length ? (
             <div className="planner-empty">
               <span>◎</span><h3>请先录入至少一只帕鲁</h3><p>指定目标路线必须从你的已录入帕鲁开始，途中可以按设置补抓其他亲代。</p><button className="primary-button" onClick={() => setInventoryOpen(true)}>录入帕鲁</button>
             </div>
@@ -1130,7 +1145,8 @@ function GraduatePresetChooser({ preset, targetId, palById, onSelectPreset, onSe
 
 function PassiveTag({ name, rank, onRemove, compact = false, availability }: { name: string; rank?: number | null; onRemove?: () => void; compact?: boolean; availability?: "owned" | "missing" }) {
   const tier = passiveTier(rank);
-  return <span className={`passive-tag ${tier.className} ${compact ? "compact" : ""} ${availability ? `availability-${availability}` : ""}`}>
+  const effect = passiveEffect(name);
+  return <span className={`passive-tag passive-hover ${tier.className} ${compact ? "compact" : ""} ${availability ? `availability-${availability}` : ""}`} title={effect} data-passive-effect={effect}>
     {availability && <em className="passive-availability" title={availability === "owned" ? "仓库已有" : "仓库缺少"}>{availability === "owned" ? "✓" : "!"}</em>}
     <b>{name}</b>{tier.label && <i>{tier.label}</i>}{onRemove && <button onClick={onRemove} aria-label={`移除词条${name}`}>×</button>}
   </span>;
@@ -1138,9 +1154,35 @@ function PassiveTag({ name, rank, onRemove, compact = false, availability }: { n
 
 function SearchSuggestions({ items, ranks, query, onSelect, emptyText }: { items: string[]; ranks: Record<string, number | null>; query: string; onSelect: (value: string) => void; emptyText: string }) {
   return <div className="search-suggestions" aria-label="匹配选项">
-    {items.map((item) => { const tier = passiveTier(passiveRankOf(item, ranks)); return <button className={tier.className} key={item} onClick={() => onSelect(item)}><span>{item}</span>{tier.label && <small>{tier.label}</small>}</button>; })}
+    {items.map((item) => { const tier = passiveTier(passiveRankOf(item, ranks)); const effect = passiveEffect(item); return <button className={`${tier.className} passive-hover`} title={effect} data-passive-effect={effect} key={item} onClick={() => onSelect(item)}><span>{item}</span>{tier.label && <small>{tier.label}</small>}</button>; })}
     {query.trim() && !items.length && <p>{emptyText}</p>}
   </div>;
+}
+
+function passiveListEffect(passives: string[]): string {
+  return passives.map((passive) => `${passive}：${passiveEffect(passive)}`).join("\n");
+}
+
+function SelfBreedingOnlyResult({ pal, parents, desiredPassives }: { pal: Pal; parents: InventoryPal[]; desiredPassives: string[] }) {
+  const males = parents.filter((parent) => parent.sex === "M");
+  const females = parents.filter((parent) => parent.sex === "F");
+  const parentPassives = new Set(parents.flatMap((parent) => parent.passives));
+  const missingPassives = desiredPassives.filter((passive) => !parentPassives.has(passive));
+  return <section className="self-breeding-result" aria-label={`${pal.nameZh}同种繁殖说明`}>
+    <div className="self-breeding-heading"><span>同种限定</span><div><strong>不需要计算代数</strong><small>配方表中，{pal.nameZh} 的子代公式只有“自己＋自己”。</small></div></div>
+    <div className="self-breeding-formula">
+      <div><img src={pal.image} alt="" /><span><small>雄性亲代</small><strong>{pal.nameZh}</strong><em>{males.length ? `库存已有 ${males.length} 只` : "需要先获得 1 只雄性"}</em></span></div>
+      <b>＋</b>
+      <div><img src={pal.image} alt="" /><span><small>雌性亲代</small><strong>{pal.nameZh}</strong><em>{females.length ? `库存已有 ${females.length} 只` : "需要先获得 1 只雌性"}</em></span></div>
+      <b>＝</b>
+      <div className="result"><img src={pal.image} alt="" /><span><small>目标子代</small><strong>{pal.nameZh}</strong><em>同种繁殖</em></span></div>
+    </div>
+    {!!desiredPassives.length && <div className={missingPassives.length ? "self-passive-status missing" : "self-passive-status ready"}>
+      <strong>{missingPassives.length ? "目标词条仍有种源缺口" : "同种亲代中已找到全部目标词条"}</strong>
+      <div>{desiredPassives.map((passive) => <PassiveTag key={passive} name={passive} availability={parentPassives.has(passive) ? "owned" : "missing"} />)}</div>
+      <small>{missingPassives.length ? `需要先获得携带“${missingPassives.join("、")}”的 ${pal.nameZh}，再让一雄一雌同种配种；其他物种无法把词条跨物种传入。` : "选择携带目标词条的雄雌亲代反复孵化，保留同时继承四词条的子代即可。"}</small>
+    </div>}
+  </section>;
 }
 
 function effectiveParentSex(
@@ -1295,7 +1337,7 @@ function RoutePalButton({ pal, source, captureSource, sexLabel, passives, onOpen
   const sourceLabel = source === "owned" ? `库存已有${sexLabel ? ` · ${sexLabel}` : ""}` : source === "captured" ? `补抓${sexLabel ? ` · ${sexLabel}` : ""} · ${captureSource ? captureRangeLabel(captureSource) : "等级未知"}` : source === "bred" ? `前序子代${sexLabel ? ` · ${sexLabel}` : ""}` : "本步产出";
   return <button className={`route-pal ${source}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>
     {pal?.image && <img src={pal.image} alt="" />}
-    <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong>{source === "result" && <em>{passives?.length ? passives.join(" · ") : "无指定词条"}</em>}</span>
+    <span><small>{sourceLabel}</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong>{source === "result" && <em className={passives?.length ? "passive-hover" : ""} title={passives?.length ? passiveListEffect(passives) : undefined} data-passive-effect={passives?.length ? passiveListEffect(passives) : undefined}>{passives?.length ? passives.join(" · ") : "无指定词条"}</em>}</span>
   </button>;
 }
 
@@ -1330,7 +1372,7 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
               <span className="breed-plus">＋</span>
               <ParentChip pal={b} parent={step.parentB} gender={effectiveParentSex(step, "B", inventoryById, stepById)} onOpenPal={onOpenPal} />
               <span className="breed-arrow">→</span>
-              <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>目标子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong><em>{step.inheritedPassives.length ? `目标词条：${step.inheritedPassives.join(" · ")}` : "无指定词条"}</em></span></button>
+              <button className="child-chip" onClick={() => onOpenPal(step.childId)} aria-label={`查看${child?.nameZh ?? step.childId}图鉴`}>{child?.image && <img src={child.image} alt="" />}<span><small>目标子代 · 点击看图鉴</small><strong>{child?.nameZh ?? step.childId}</strong><em className={step.inheritedPassives.length ? "passive-hover" : ""} title={step.inheritedPassives.length ? passiveListEffect(step.inheritedPassives) : undefined} data-passive-effect={step.inheritedPassives.length ? passiveListEffect(step.inheritedPassives) : undefined}>{step.inheritedPassives.length ? `目标词条：${step.inheritedPassives.join(" · ")}` : "无指定词条"}</em></span></button>
             </div>
             <div className="step-instructions">
               <p><b>你要做：</b>把 {palLabel(step.parentA.palId)} 与 {palLabel(step.parentB.palId)} 放入配种牧场，使用普通蛋糕；孵化后保留<strong>{step.inheritedPassives.length ? `至少带有 ${step.inheritedPassives.join("、")}` : step.sexRequirement ? `性别为${sexRequirementLabel(step.sexRequirement)}` : "符合后续要求"}{step.inheritedPassives.length && step.sexRequirement ? `、性别为${sexRequirementLabel(step.sexRequirement)}` : ""}</strong>的 {child?.nameZh}。</p>
@@ -1345,5 +1387,6 @@ function PlanExecutionDetails({ result, palById, inventory, palLabel, onOpenPal 
 
 function ParentChip({ pal, parent, gender, onOpenPal }: { pal?: Pal; parent: { source: "owned" | "captured" | "bred"; nickname?: string; passives: string[]; extraPassiveCount: number; captureSource?: CaptureSource }; gender: string; onOpenPal: (id: string) => void }) {
   const sourceLabel = parent.source === "owned" ? "库存个体" : parent.source === "captured" ? "途中补抓" : "上一步子代";
-  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "无指定词条")}</em></span></button>;
+  const effect = parent.passives.length ? passiveListEffect(parent.passives) : undefined;
+  return <button className={`parent-chip ${parent.source === "captured" ? "captured" : ""}`} disabled={!pal} onClick={() => pal && onOpenPal(pal.id)} aria-label={pal ? `查看${pal.nameZh}图鉴` : "未知帕鲁"}>{pal?.image && <img src={pal.image} alt="" />}<span><small>{sourceLabel} · {gender || "需异性配对"} · 点击看图鉴</small><strong>{pal?.nameZh ?? "未知帕鲁"}</strong><em className={effect ? "passive-hover" : ""} title={effect} data-passive-effect={effect}>{parent.passives.join(" · ") || parent.nickname || (parent.captureSource ? captureRangeLabel(parent.captureSource) : "无指定词条")}</em></span></button>;
 }

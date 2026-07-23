@@ -4,6 +4,7 @@
 
 import { ChangeEvent, DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InventoryPal, Pal } from "@/lib/planner";
+import { passiveEffect } from "@/lib/passive-effects";
 import { filterSaveImportedPals } from "@/lib/save-import";
 import type { SaveImportedPal } from "@/lib/save-import";
 import { loadSaveImportIndex } from "@/lib/supabase-data";
@@ -173,7 +174,7 @@ export function SaveImportModal({ pals, onClose, onImport }: {
               <label>选择要导入的玩家<select value={ownerUid} onChange={(event) => setOwnerUid(event.target.value)}>{ownerGroups.map(([uid, items], index) => <option value={uid} key={uid}>{index === 0 ? "主要玩家" : `玩家 ${index + 1}`} · {items.length} 只 · {uid.slice(0, 8)}</option>)}</select></label>
               <label className={`elite-filter-toggle ${eliteOnly ? "active" : ""}`}><input type="checkbox" checked={eliteOnly} onChange={(event) => setEliteOnly(event.target.checked)} /><span><b>仅看有彩色／顶级词条的</b><small>开启后只导入带等级 4–5 词条的帕鲁；路线计算会认为你只有这 {selected.length} 只</small></span><i>{eliteOnly ? `${selected.length} / ${selectedAll.length}` : "全部"}</i></label>
               {eliteOnly && !selected.length && <div className="save-empty-filter">这个玩家的存档中没有识别到带彩色／世界树顶级词条的帕鲁。</div>}
-              <div className="save-pal-sample">{selected.slice(0, 8).map((item) => { const pal = palById.get(item.palId); return <div key={item.id}>{pal?.image && <img src={pal.image} alt="" loading="lazy" decoding="async" />}<span><b>{item.nickname || pal?.nameZh || item.palId}</b><small>Lv.{item.level ?? "?"} · {item.sex === "M" ? "♂" : "♀"} · {item.passives.length ? item.passives.join(" / ") : "无词条"}</small></span></div>; })}</div>
+              <div className="save-pal-sample">{selected.slice(0, 8).map((item) => { const pal = palById.get(item.palId); const effect = item.passives.map((passive) => `${passive}：${passiveEffect(passive)}`).join("\n"); return <div key={item.id}>{pal?.image && <img src={pal.image} alt="" loading="lazy" decoding="async" />}<span><b>{item.nickname || pal?.nameZh || item.palId}</b><small className={effect ? "passive-hover" : ""} title={effect || undefined} data-passive-effect={effect || undefined}>Lv.{item.level ?? "?"} · {item.sex === "M" ? "♂" : "♀"} · {item.passives.length ? item.passives.join(" / ") : "无词条"}</small></span></div>; })}</div>
               {selected.length > 8 && <small className="save-more">另有 {selected.length - 8} 只将在确认后一起导入。</small>}
               {(result.unknownSpecies.length > 0 || result.unknownPassives.length > 0) && <small className="save-warning">有 {result.unknownSpecies.length} 个物种、{result.unknownPassives.length} 个词条尚无中文映射；已识别词条会正常导入。</small>}
             </>}

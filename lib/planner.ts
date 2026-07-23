@@ -225,6 +225,18 @@ export type BreedingCalculatorFilters = {
 };
 
 /**
+ * Returns the sole same-species recipe when a target has no other breeding
+ * route. These targets should be explained directly instead of sent through
+ * the multi-generation path finder.
+ */
+export function selfBreedingOnlyCombo(data: BreedingData, palId: string): ComboTuple | null {
+  if (!palId) return null;
+  const recipes = data.combos.filter(([childId]) => childId === palId);
+  if (!recipes.length || recipes.some(([, parentAId, parentBId]) => parentAId !== palId || parentBId !== palId)) return null;
+  return recipes[0];
+}
+
+/**
  * Filters the full formula table while treating parent order as commutative.
  * The returned formula is oriented to the boxes the user filled, including
  * swapping gender requirements with the parent when necessary.
