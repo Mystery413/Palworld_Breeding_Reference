@@ -43,6 +43,38 @@ test("每个预设帕鲁与词条都能被当前 1.0 路线数据识别", async 
   }
 });
 
+test("探索坐骑使用 1.0 海陆空速度口径与毕业词条", () => {
+  const flying = GRADUATE_PRESETS.find((preset) => preset.id === "flying");
+  const ground = GRADUATE_PRESETS.find((preset) => preset.id === "ground");
+  const water = GRADUATE_PRESETS.find((preset) => preset.id === "water-mount");
+
+  assert.ok(flying);
+  assert.ok(ground);
+  assert.ok(water);
+  assert.deepEqual(flying.defaultPassives, ["次元跳跃", "神速", "传说", "运动健将"]);
+  assert.deepEqual(ground.defaultPassives, ["次元跳跃", "神速", "传说", "运动健将"]);
+  assert.deepEqual(water.defaultPassives, ["次元跳跃", "破浪王者", "游泳健将", "神速"]);
+
+  const ranked = (preset: typeof flying) =>
+    preset.candidates.map(({ palId, rank, stats }) => [rank, palId, Number(stats.match(/冲刺 (\d+)/)?.[1])]);
+
+  assert.deepEqual(ranked(flying), [
+    [1, "202:0", 3300], [2, "203:0", 3000], [3, "192:0", 2800], [4, "171:0", 2750], [5, "171:1", 2750],
+    [6, "196:0", 2700], [7, "200:0", 1800], [8, "200:1", 1800], [9, "189:0", 1600], [10, "190:0", 1600],
+    [11, "124:0", 1400], [12, "124:1", 1400], [13, "188:0", 1400], [14, "188:1", 1400], [15, "177:0", 1350],
+  ]);
+  assert.deepEqual(ranked(ground), [
+    [1, "197:0", 1900], [2, "199:0", 1900], [3, "198:0", 1800], [4, "175:0", 1500], [5, "93:0", 1300],
+    [6, "93:1", 1300], [7, "161:0", 1260], [8, "154:0", 1260], [9, "130:0", 1250], [10, "130:1", 1250],
+    [11, "123:0", 1200], [12, "112:0", 1200], [13, "112:1", 1200], [14, "146:0", 1200], [15, "137:0", 1200],
+  ]);
+  assert.deepEqual(ranked(water), [
+    [1, "201:0", 2000], [2, "103:0", 1890], [3, "121:0", 1800], [4, "75:0", 1440], [5, "63:1", 1440],
+    [6, "97:0", 1350], [7, "97:1", 1350], [8, "169:0", 1300], [9, "169:1", 1300], [10, "41:0", 1000],
+    [11, "41:1", 1000], [12, "151:0", 950], [13, "151:1", 950],
+  ]);
+});
+
 test("每个据点工种都有有效的游戏图标和至少三个可点击替代词条", async () => {
   const data = JSON.parse(await readFile(new URL("../public/data/runtime/planner-core.json", import.meta.url), "utf8")) as RuntimeData;
   const passives = new Set(data.passives);

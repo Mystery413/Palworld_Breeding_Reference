@@ -33,8 +33,9 @@ const WORK = ["恶魔之手", "卓绝技艺", "工匠精神", "社畜"];
 const NIGHT_WORK = ["恶魔之手", "卓绝技艺", "工匠精神", "不眠"];
 const TRANSPORT = ["卓绝技艺", "工匠精神", "神速", "不眠"];
 const RANCH = ["牧场之主", "卓绝技艺", "工匠精神", "社畜"];
-const SPEED = ["次元跳跃", "神速", "运动健将", "灵活"];
-const ENDURANCE = ["次元跳跃", "神速", "运动健将", "永动机"];
+const SPEED = ["次元跳跃", "神速", "传说", "运动健将"];
+const WATER_SPEED = ["次元跳跃", "破浪王者", "游泳健将", "神速"];
+const WATER_ENDURANCE = ["破浪王者", "游泳健将", "神速", "永动机"];
 const GLIDER = ["神速", "运动健将", "灵活", "永动机"];
 
 const WORK_ALTERNATIVES: GraduatePassiveAlternative[] = [
@@ -64,7 +65,7 @@ const RANCH_ALTERNATIVES: GraduatePassiveAlternative[] = [
 export const GRADUATE_PRESET_GROUPS: Array<{ id: GraduatePresetGroup; label: string; short: string }> = [
   { id: "base", label: "据点专家", short: "12 类生产岗位" },
   { id: "combat", label: "战斗主力", short: "输出与前排" },
-  { id: "mount", label: "探索坐骑", short: "飞行、陆地与水上" },
+  { id: "mount", label: "探索坐骑", short: "1.0 海陆空实际速度榜" },
 ];
 
 export const GRADUATE_PRESETS: GraduatePreset[] = [
@@ -255,47 +256,66 @@ export const GRADUATE_PRESETS: GraduatePreset[] = [
   },
   {
     id: "flying", group: "mount", icon: "空", title: "飞行坐骑", eyebrow: "FLYING",
-    summary: "点对点速度与长途续航兼顾；体型、转向和鞍具等级也会影响体验。",
-    defaultPassives: SPEED, passiveNote: "默认纯竞速模板；长途使用可将灵活换成永动机。",
+    summary: "严格按 1.0 基础飞行冲刺速度排名，不计词条、浓缩、队伍及条件加速；排名相同时按参考榜单顺序展示。",
+    defaultPassives: SPEED, passiveNote: "毕业推荐为次元跳跃 + 神速 + 传说 + 运动健将（通用移速合计 +120%）；空涡龙等短耐力坐骑跑长途时，可将运动健将换成永动机。",
     candidates: [
-      { palId: "202:0", rank: 1, stage: "后期", stats: "冲刺 3300", note: "裸面板最快" },
-      { palId: "203:0", rank: 2, stage: "终局", stats: "冲刺 3000", note: "高速且极耐打" },
-      { palId: "192:0", rank: 3, stage: "终局", stats: "冲刺 2800", note: "可野外捕捉的顶级飞行坐骑" },
-      { palId: "171:0", rank: 4, stage: "后期", stats: "冲刺 2750", note: "龙 / 暗队伍还能继续加速" },
-      { palId: "171:1", rank: 5, stage: "终局", stats: "冲刺 2750", note: "火系队伍加速，兼战斗" },
-      { palId: "200:0", rank: 6, stage: "后期", stats: "冲刺 1800", note: "耐力 300，长途稳定", passives: ENDURANCE },
-      { palId: "96:0", rank: 7, stage: "中期", stats: "冲刺 1200", note: "中期优秀选择" },
-      { palId: "51:0", rank: 8, stage: "开荒", stats: "冲刺 750", note: "最早期飞行过渡" },
+      { palId: "202:0", rank: 1, stage: "终局", stats: "飞行冲刺 3300 · 耐力 110", note: "1.0 基础飞行速度第一，最终毕业选择" },
+      { palId: "203:0", rank: 2, stage: "终局", stats: "飞行冲刺 3000 · 耐力 100", note: "特殊方式骑乘，不走常规鞍具科技树" },
+      { palId: "192:0", rank: 3, stage: "终局", stats: "飞行冲刺 2800 · 耐力 100", note: "科技 77 解锁，1.0 新高位飞行坐骑" },
+      { palId: "171:0", rank: 4, stage: "后期", stats: "飞行冲刺 2750 · 耐力 130", note: "科技 68；暗 / 龙队伍条件下还能加速" },
+      { palId: "171:1", rank: 5, stage: "终局", stats: "飞行冲刺 2750 · 耐力 130", note: "科技 76；火 / 龙版本，基础速度相同" },
+      { palId: "196:0", rank: 6, stage: "后期", stats: "飞行冲刺 2700 · 耐力 300", note: "科技 66；浓缩伙伴技能还能提高骑乘速度" },
+      { palId: "200:0", rank: 7, stage: "后期", stats: "飞行冲刺 1800 · 耐力 300", note: "科技 62；速度低于 1.0 新顶级坐骑，但续航稳定" },
+      { palId: "200:1", rank: 8, stage: "后期", stats: "飞行冲刺 1800 · 耐力 300", note: "科技 62；与唤冬兽同速，暗属性版本" },
+      { palId: "189:0", rank: 9, stage: "中期", stats: "飞行冲刺 1600 · 耐力 250", note: "科技 47；适合作为中后期过渡" },
+      { palId: "190:0", rank: 10, stage: "中期", stats: "飞行冲刺 1600 · 耐力 300", note: "科技 53；与异构格里芬同速，耐力更高" },
+      { palId: "124:0", rank: 11, stage: "中期", stats: "飞行冲刺 1400 · 耐力 220", note: "科技 38；中期较早可用的稳定选择" },
+      { palId: "124:1", rank: 12, stage: "中期", stats: "飞行冲刺 1400 · 耐力 220", note: "科技 45；天羽龙草属性变种，同速" },
+      { palId: "188:0", rank: 13, stage: "后期", stats: "飞行冲刺 1400 · 耐力 230", note: "科技 60；速度不再顶尖，但仍可兼顾战斗" },
+      { palId: "188:1", rank: 14, stage: "后期", stats: "飞行冲刺 1400 · 耐力 230", note: "科技 60；荷鲁斯水属性变种，同速" },
+      { palId: "177:0", rank: 15, stage: "终局", stats: "飞行冲刺 1350 · 耐力 200", note: "科技 72；解锁较晚，基础速度并非毕业档" },
     ],
   },
   {
     id: "ground", group: "mount", icon: "陆", title: "陆地坐骑", eyebrow: "GROUND",
-    summary: "直线速度之外，复杂地形还要考虑耐力与跳跃能力。",
-    defaultPassives: SPEED, passiveNote: "默认纯速度模板；长途可将灵活换成永动机。",
+    summary: "严格按 1.0 基础陆地冲刺速度排名，不计词条、浓缩、地形及昼夜加速；复杂地形需另外考虑耐力与跳跃能力。",
+    defaultPassives: SPEED, passiveNote: "毕业推荐为次元跳跃 + 神速 + 传说 + 运动健将（通用移速合计 +120%）；长途可把运动健将换成永动机，跳跃特化再换入凌空微步。",
     candidates: [
-      { palId: "199:0", rank: 1, stage: "后期", stats: "冲刺 1900", note: "高速、高耐力、高战力" },
-      { palId: "197:0", rank: 2, stage: "终局", stats: "冲刺 1900", note: "耐力 400，综合更稳" },
-      { palId: "198:0", rank: 3, stage: "后期", stats: "冲刺 1800", note: "三段跳，复杂地形优秀" },
-      { palId: "175:0", rank: 4, stage: "后期", stats: "冲刺 1500", note: "速度高但耐力较低" },
-      { palId: "93:0", rank: 5, stage: "中期", stats: "冲刺 1300", note: "中期高速选择" },
-      { palId: "161:0", rank: 6, stage: "后期", stats: "冲刺 1260", note: "兼发电与战斗" },
-      { palId: "98:0", rank: 7, stage: "中期", stats: "冲刺 1150", note: "双段跳，中期实用" },
-      { palId: "33:0", rank: 8, stage: "开荒", stats: "冲刺 1050", note: "极早期即可获得" },
+      { palId: "197:0", rank: 1, stage: "终局", stats: "陆地冲刺 1900 · 耐力 400", note: "科技 70；同档速度中续航最高，陆地毕业首选" },
+      { palId: "199:0", rank: 2, stage: "后期", stats: "陆地冲刺 1900 · 耐力 350", note: "科技 61；高速、高耐力并兼顾战斗" },
+      { palId: "198:0", rank: 3, stage: "后期", stats: "陆地冲刺 1800 · 耐力 400", note: "科技 61；速度略低，但三段跳与续航更适合复杂地形" },
+      { palId: "175:0", rank: 4, stage: "终局", stats: "陆地冲刺 1500 · 耐力 100", note: "科技 72；基础速度高，但耐力较短" },
+      { palId: "93:0", rank: 5, stage: "中期", stats: "陆地冲刺 1300 · 耐力 100", note: "科技 29；中期非常强的速度跳点" },
+      { palId: "93:1", rank: 6, stage: "中期", stats: "陆地冲刺 1300 · 耐力 100", note: "科技 34；火麒麟暗属性变种，同速" },
+      { palId: "161:0", rank: 7, stage: "后期", stats: "陆地冲刺 1260 · 耐力 220", note: "科技 58；可空中冲刺，综合机动性出色" },
+      { palId: "154:0", rank: 8, stage: "后期", stats: "陆地冲刺 1260 · 耐力 200", note: "科技 54；比驭雷马更早解锁" },
+      { palId: "130:0", rank: 9, stage: "后期", stats: "陆地冲刺 1250 · 耐力 230", note: "科技 57；夜间伙伴技能可进一步提速" },
+      { palId: "130:1", rank: 10, stage: "终局", stats: "陆地冲刺 1250 · 耐力 230", note: "科技 77；基础速度与夜冥驹相同，解锁更晚" },
+      { palId: "123:0", rank: 11, stage: "中期", stats: "陆地冲刺 1200 · 耐力 100", note: "科技 28；砂地上可获得伙伴技能加速" },
+      { palId: "112:0", rank: 12, stage: "中期", stats: "陆地冲刺 1200 · 耐力 150", note: "科技 33；与战冠雀同速，耐力更好" },
+      { palId: "112:1", rank: 13, stage: "中期", stats: "陆地冲刺 1200 · 耐力 150", note: "科技 35；狱焰王暗属性变种，同速同耐力" },
+      { palId: "146:0", rank: 14, stage: "中期", stats: "陆地冲刺 1200 · 耐力 250", note: "科技 41；1200 速度档中续航最突出" },
+      { palId: "137:0", rank: 15, stage: "中期", stats: "陆地冲刺 1200 · 耐力 190", note: "科技 46；可兼顾战斗与据点用途" },
     ],
   },
   {
     id: "water-mount", group: "mount", icon: "海", title: "水上坐骑", eyebrow: "AQUATIC",
-    summary: "跨海移动优先游泳速度；水上坐骑本身已能避免持续消耗耐力。",
-    defaultPassives: ENDURANCE, passiveNote: "默认长途模板；永动机边际收益较低时，可按偏好换成灵活。",
+    summary: "严格按 1.0 水上冲刺（Swim Dash Speed）排名，不使用普通骑乘冲刺，也不计词条、浓缩和队伍条件加速。",
+    defaultPassives: WATER_SPEED, passiveNote: "纯水毕业推荐为次元跳跃 + 破浪王者 + 游泳健将 + 神速；水陆两用时，可将两个水上专属词条换成传说、运动健将或永动机。",
     candidates: [
-      { palId: "201:0", rank: 1, stage: "后期", stats: "游泳 1800", note: "1.0 水上速度天花板" },
-      { palId: "97:0", rank: 2, stage: "中期", stats: "游泳 1200", note: "中期性价比最高" },
-      { palId: "97:1", rank: 3, stage: "中期", stats: "游泳 1200", note: "火 / 水属性亚种" },
-      { palId: "169:0", rank: 4, stage: "后期", stats: "游泳 1100", note: "耐力较好，兼浇水" },
-      { palId: "169:1", rank: 5, stage: "后期", stats: "游泳 1100", note: "兼发电与水上移动" },
-      { palId: "121:0", rank: 6, stage: "中期", stats: "游泳 1080", note: "可配种，浇水渡海两用" },
-      { palId: "41:0", rank: 7, stage: "中期", stats: "游泳 920", note: "中前期易用" },
-      { palId: "75:0", rank: 8, stage: "开荒", stats: "游泳 900", note: "最早期专业水上坐骑" },
+      { palId: "201:0", rank: 1, stage: "后期", stats: "水上冲刺 2000 · 耐力 410", note: "科技 64；1.0 基础水速与耐力双毕业" },
+      { palId: "103:0", rank: 2, stage: "开荒", stats: "水上冲刺 1890 · 耐力 100", note: "科技 11；极早解锁且水冲速度仅次于海皇鲸", passives: ["神速", "运动健将", "永动机", "破浪王者"] },
+      { palId: "121:0", rank: 3, stage: "中期", stats: "水上冲刺 1800 · 耐力 150", note: "科技 40；水陆两用并可兼顾战斗", passives: ["传说", "神速", "运动健将", "破浪王者"] },
+      { palId: "75:0", rank: 4, stage: "开荒", stats: "水上冲刺 1440 · 耐力 100", note: "科技 16；容易获得的早期专业水上坐骑" },
+      { palId: "63:1", rank: 5, stage: "中期", stats: "水上冲刺 1440 · 耐力 130", note: "科技 32；与滑水蛇同速，续航略好" },
+      { palId: "97:0", rank: 6, stage: "中期", stats: "水上冲刺 1350 · 耐力 320", note: "科技 31；队伍条件加速潜力高", passives: WATER_ENDURANCE },
+      { palId: "97:1", rank: 7, stage: "中期", stats: "水上冲刺 1350 · 耐力 320", note: "科技 42；火属性变种，同速同耐力", passives: WATER_ENDURANCE },
+      { palId: "169:0", rank: 8, stage: "后期", stats: "水上冲刺 1300 · 耐力 220", note: "科技 65；解锁较晚，作为属性或外观选择" },
+      { palId: "169:1", rank: 9, stage: "后期", stats: "水上冲刺 1300 · 耐力 220", note: "科技 66；曼波王雷属性变种，同速同耐力" },
+      { palId: "41:0", rank: 10, stage: "中期", stats: "水上冲刺 1000 · 耐力 160", note: "科技 24；早中期可用，但水冲慢于疾旋鼬与滑水蛇" },
+      { palId: "41:1", rank: 11, stage: "中期", stats: "水上冲刺 1000 · 耐力 160", note: "科技 27；碧海龙冰属性变种，同速同耐力" },
+      { palId: "151:0", rank: 12, stage: "中期", stats: "水上冲刺 950 · 耐力 200", note: "科技 42；续航尚可，但基础水速偏慢" },
+      { palId: "151:1", rank: 13, stage: "终局", stats: "水上冲刺 950 · 耐力 200", note: "科技 71；解锁很晚，不推荐作为主力竞速坐骑" },
     ],
   },
   {
